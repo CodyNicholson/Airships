@@ -85,6 +85,10 @@ mono_crash.*
 *.unitypackage.meta
 *.app
 
+# Editor capture output
+/[Aa]ssets/Captures/
+/[Aa]ssets/Captures.meta
+
 # Crashlytics generated file
 crashlytics-build.properties
 

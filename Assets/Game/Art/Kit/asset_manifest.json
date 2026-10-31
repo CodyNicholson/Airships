@@ -1,0 +1,1174 @@
+{
+  "units": "metres",
+  "coordinates": "glTF: +Y up, +Z is the model's front. Socket positions are relative to the pivot.",
+  "clips": {
+    "Idle": {
+      "loop": true,
+      "frames": 48,
+      "seconds": 2.0
+    },
+    "Walk": {
+      "loop": true,
+      "frames": 24,
+      "seconds": 1.0
+    },
+    "AttackMelee": {
+      "loop": false,
+      "frames": 36,
+      "seconds": 1.5
+    },
+    "AttackRanged": {
+      "loop": false,
+      "frames": 32,
+      "seconds": 1.333
+    },
+    "Hit": {
+      "loop": false,
+      "frames": 18,
+      "seconds": 0.75
+    },
+    "Block": {
+      "loop": false,
+      "frames": 32,
+      "seconds": 1.333
+    },
+    "Death": {
+      "loop": false,
+      "frames": 36,
+      "seconds": 1.5
+    },
+    "Victory": {
+      "loop": true,
+      "frames": 40,
+      "seconds": 1.667
+    }
+  },
+  "fps": 24,
+  "skeleton": [
+    "root",
+    "hips",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "upper_arm.L",
+    "lower_arm.L",
+    "hand.L",
+    "upper_arm.R",
+    "lower_arm.R",
+    "hand.R",
+    "weapon.R",
+    "gun.R",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "held_item_bones": {
+    "weapon.R": [
+      "SM_Prop_Cutlass",
+      "SM_Prop_BoardingAxe"
+    ],
+    "gun.R": [
+      "SM_Prop_Flintlock"
+    ]
+  },
+  "palette_atlases": {
+    "Crimson": {
+      "HQ": "T_Palette_Crimson_HQ.png",
+      "LQ": "T_Palette_Crimson_LQ.png"
+    },
+    "Azure": {
+      "HQ": "T_Palette_Azure_HQ.png",
+      "LQ": "T_Palette_Azure_LQ.png"
+    },
+    "Emerald": {
+      "HQ": "T_Palette_Emerald_HQ.png",
+      "LQ": "T_Palette_Emerald_LQ.png"
+    },
+    "Obsidian": {
+      "HQ": "T_Palette_Obsidian_HQ.png",
+      "LQ": "T_Palette_Obsidian_LQ.png"
+    }
+  },
+  "assets": {
+    "SM_Ship_Sloop": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 2134
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 474
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "boarding_L": [
+            1.4989,
+            1.9,
+            -0.5598
+          ],
+          "boarding_R": [
+            -1.5011,
+            1.9,
+            -0.5598
+          ],
+          "deck_centre": [
+            -0.0011,
+            1.9,
+            -0.5598
+          ],
+          "envelope_centre": [
+            -0.0011,
+            5.225,
+            -0.5598
+          ],
+          "muzzle_L0": [
+            2.1489,
+            1.292,
+            -0.6598
+          ],
+          "muzzle_R0": [
+            -2.1511,
+            1.292,
+            -0.6598
+          ],
+          "propeller_L0": [
+            2.3904,
+            1.178,
+            -4.0798
+          ],
+          "propeller_R0": [
+            -2.3927,
+            1.178,
+            -4.0798
+          ],
+          "smoke_vent": [
+            -0.0011,
+            3.8,
+            -3.5598
+          ]
+        },
+        "LQ": {
+          "boarding_L": [
+            1.5031,
+            1.9,
+            -0.5585
+          ],
+          "boarding_R": [
+            -1.4969,
+            1.9,
+            -0.5585
+          ],
+          "deck_centre": [
+            0.0031,
+            1.9,
+            -0.5585
+          ],
+          "envelope_centre": [
+            0.0031,
+            5.225,
+            -0.5585
+          ],
+          "muzzle_L0": [
+            2.1531,
+            1.292,
+            -0.6585
+          ],
+          "muzzle_R0": [
+            -2.1469,
+            1.292,
+            -0.6585
+          ],
+          "propeller_L0": [
+            2.3947,
+            1.178,
+            -4.0785
+          ],
+          "propeller_R0": [
+            -2.3884,
+            1.178,
+            -4.0785
+          ],
+          "smoke_vent": [
+            0.0031,
+            3.8,
+            -3.5585
+          ]
+        }
+      }
+    },
+    "SM_Ship_Brigantine": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 2546
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 584
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "boarding_L": [
+            2.2989,
+            2.9,
+            -0.8944
+          ],
+          "boarding_R": [
+            -2.3011,
+            2.9,
+            -0.8944
+          ],
+          "deck_centre": [
+            -0.0011,
+            2.9,
+            -0.8944
+          ],
+          "envelope_centre": [
+            -0.0011,
+            7.975,
+            -0.8944
+          ],
+          "muzzle_L0": [
+            3.041,
+            1.972,
+            0.9723
+          ],
+          "muzzle_L1": [
+            3.0489,
+            1.972,
+            -1.0544
+          ],
+          "muzzle_L2": [
+            3.0489,
+            1.9781,
+            -3.0811
+          ],
+          "muzzle_R0": [
+            -3.0432,
+            1.972,
+            0.9723
+          ],
+          "muzzle_R1": [
+            -3.0511,
+            1.972,
+            -1.0544
+          ],
+          "muzzle_R2": [
+            -3.0511,
+            1.9781,
+            -3.0811
+          ],
+          "propeller_L0": [
+            3.666,
+            1.798,
+            -6.5144
+          ],
+          "propeller_R0": [
+            -3.6681,
+            1.798,
+            -6.5144
+          ],
+          "smoke_vent": [
+            -0.0011,
+            5.8,
+            -5.6944
+          ]
+        },
+        "LQ": {
+          "boarding_L": [
+            2.3046,
+            2.9,
+            -0.8925
+          ],
+          "boarding_R": [
+            -2.2954,
+            2.9,
+            -0.8925
+          ],
+          "deck_centre": [
+            0.0046,
+            2.9,
+            -0.8925
+          ],
+          "envelope_centre": [
+            0.0046,
+            7.975,
+            -0.8925
+          ],
+          "muzzle_L0": [
+            3.0467,
+            1.972,
+            0.9742
+          ],
+          "muzzle_L1": [
+            3.0546,
+            1.972,
+            -1.0525
+          ],
+          "muzzle_L2": [
+            3.0546,
+            1.9781,
+            -3.0791
+          ],
+          "muzzle_R0": [
+            -3.0375,
+            1.972,
+            0.9742
+          ],
+          "muzzle_R1": [
+            -3.0454,
+            1.972,
+            -1.0525
+          ],
+          "muzzle_R2": [
+            -3.0454,
+            1.9781,
+            -3.0791
+          ],
+          "propeller_L0": [
+            3.6716,
+            1.798,
+            -6.5125
+          ],
+          "propeller_R0": [
+            -3.6625,
+            1.798,
+            -6.5125
+          ],
+          "smoke_vent": [
+            0.0046,
+            5.8,
+            -5.6925
+          ]
+        }
+      }
+    },
+    "SM_Ship_Galleon": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3926
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 930
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "boarding_L": [
+            3.3988,
+            4.1,
+            -1.3395
+          ],
+          "boarding_R": [
+            -3.4012,
+            4.1,
+            -1.3395
+          ],
+          "deck_centre": [
+            -0.0012,
+            4.1,
+            -1.3395
+          ],
+          "envelope_centre": [
+            -0.0012,
+            9.7,
+            -1.3395
+          ],
+          "muzzle_L0": [
+            4.2452,
+            2.788,
+            2.0685
+          ],
+          "muzzle_L1": [
+            4.2788,
+            2.788,
+            0.2445
+          ],
+          "muzzle_L2": [
+            4.2788,
+            2.788,
+            -1.5795
+          ],
+          "muzzle_L3": [
+            4.2788,
+            2.788,
+            -3.4035
+          ],
+          "muzzle_L4": [
+            4.2788,
+            2.8126,
+            -5.2275
+          ],
+          "muzzle_R0": [
+            -4.2477,
+            2.788,
+            2.0685
+          ],
+          "muzzle_R1": [
+            -4.2812,
+            2.788,
+            0.2445
+          ],
+          "muzzle_R2": [
+            -4.2812,
+            2.788,
+            -1.5795
+          ],
+          "muzzle_R3": [
+            -4.2812,
+            2.788,
+            -3.4035
+          ],
+          "muzzle_R4": [
+            -4.2812,
+            2.8126,
+            -5.2275
+          ],
+          "propeller_L0": [
+            5.4196,
+            2.542,
+            -9.7595
+          ],
+          "propeller_L1": [
+            5.4388,
+            3.69,
+            -3.0395
+          ],
+          "propeller_R0": [
+            -5.4221,
+            2.542,
+            -9.7595
+          ],
+          "propeller_R1": [
+            -5.4412,
+            3.69,
+            -3.0395
+          ],
+          "smoke_vent": [
+            -0.0012,
+            8.2,
+            -8.5395
+          ]
+        },
+        "LQ": {
+          "boarding_L": [
+            3.4061,
+            4.1,
+            -1.3369
+          ],
+          "boarding_R": [
+            -3.3939,
+            4.1,
+            -1.3369
+          ],
+          "deck_centre": [
+            0.0061,
+            4.1,
+            -1.3369
+          ],
+          "envelope_centre": [
+            0.0061,
+            9.7,
+            -1.3369
+          ],
+          "muzzle_L0": [
+            4.2525,
+            2.788,
+            2.0711
+          ],
+          "muzzle_L1": [
+            4.2861,
+            2.788,
+            0.2471
+          ],
+          "muzzle_L2": [
+            4.2861,
+            2.788,
+            -1.5769
+          ],
+          "muzzle_L3": [
+            4.2861,
+            2.788,
+            -3.4009
+          ],
+          "muzzle_L4": [
+            4.2861,
+            2.8126,
+            -5.2249
+          ],
+          "muzzle_R0": [
+            -4.2404,
+            2.788,
+            2.0711
+          ],
+          "muzzle_R1": [
+            -4.2739,
+            2.788,
+            0.2471
+          ],
+          "muzzle_R2": [
+            -4.2739,
+            2.788,
+            -1.5769
+          ],
+          "muzzle_R3": [
+            -4.2739,
+            2.788,
+            -3.4009
+          ],
+          "muzzle_R4": [
+            -4.2739,
+            2.8126,
+            -5.2249
+          ],
+          "propeller_L0": [
+            5.4269,
+            2.542,
+            -9.7569
+          ],
+          "propeller_L1": [
+            5.4461,
+            3.69,
+            -3.0369
+          ],
+          "propeller_R0": [
+            -5.4148,
+            2.542,
+            -9.7569
+          ],
+          "propeller_R1": [
+            -5.4339,
+            3.69,
+            -3.0369
+          ],
+          "smoke_vent": [
+            0.0061,
+            8.2,
+            -8.5369
+          ]
+        }
+      }
+    },
+    "SM_Ship_Propeller": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 156
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 52
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "hub": [
+            0.0,
+            1.0006,
+            0.02
+          ]
+        },
+        "LQ": {
+          "hub": [
+            -0.2131,
+            0.8984,
+            0.01
+          ]
+        }
+      }
+    },
+    "SM_Prop_Cannon": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 328
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 32
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "muzzle": [
+            0.0,
+            0.42,
+            0.7453
+          ]
+        },
+        "LQ": {
+          "muzzle": [
+            0.0,
+            0.4,
+            0.725
+          ]
+        }
+      }
+    },
+    "SM_Prop_Cannonball": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 116
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 44
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Prop_GrapplingHook": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 184
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 66
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "rope": [
+            0.0,
+            0.7782,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "rope": [
+            -0.0749,
+            0.7635,
+            -0.0019
+          ]
+        }
+      }
+    },
+    "SM_Prop_TreasureChest": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 168
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 52
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Prop_TreasureChestOpen": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 512
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 52
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Prop_GoldPile": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 644
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 32
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Prop_Barrel": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 164
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 32
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Prop_Crate": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 156
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 12
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Prop_Cutlass": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 112
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 36
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0232,
+            0.0992,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0768,
+            0.8692,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.02,
+            0.1,
+            -0.0
+          ],
+          "trail_tip": [
+            0.08,
+            0.87,
+            -0.0
+          ]
+        }
+      }
+    },
+    "SM_Prop_Flintlock": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 152
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 40
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0517,
+            0.0477,
+            -0.0011
+          ],
+          "muzzle": [
+            0.0683,
+            0.4977,
+            -0.0011
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0271,
+            0.0412,
+            -0.0
+          ],
+          "muzzle": [
+            0.0929,
+            0.4912,
+            -0.0
+          ]
+        }
+      }
+    },
+    "SM_Prop_BoardingAxe": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 68
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 24
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.03,
+            0.14,
+            -0.0
+          ],
+          "trail_tip": [
+            -0.19,
+            0.82,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.1022,
+            0.14,
+            -0.0
+          ],
+          "trail_tip": [
+            -0.1178,
+            0.82,
+            -0.0
+          ]
+        }
+      }
+    },
+    "SM_Prop_RumBottle": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 152
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 44
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Env_BoardingDeck": {
+      "variants": {
+        "HQ": {
+          "tier": "environment",
+          "tris": 876
+        },
+        "LQ": {
+          "tier": "environment_low",
+          "tris": 222
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "camera_look_at": [
+            0.0,
+            3.09,
+            -0.0
+          ],
+          "centre_stage": [
+            0.0,
+            1.99,
+            -0.0
+          ],
+          "enemy_slot_1": [
+            4.4,
+            1.99,
+            1.6
+          ],
+          "enemy_slot_2": [
+            5.4,
+            1.99,
+            0.55
+          ],
+          "enemy_slot_3": [
+            4.4,
+            1.99,
+            -0.5
+          ],
+          "enemy_slot_4": [
+            5.4,
+            1.99,
+            -1.55
+          ],
+          "party_slot_1": [
+            -4.4,
+            1.99,
+            1.6
+          ],
+          "party_slot_2": [
+            -5.4,
+            1.99,
+            0.55
+          ],
+          "party_slot_3": [
+            -4.4,
+            1.99,
+            -0.5
+          ],
+          "party_slot_4": [
+            -5.4,
+            1.99,
+            -1.55
+          ]
+        },
+        "LQ": {
+          "camera_look_at": [
+            0.0,
+            3.09,
+            -0.0
+          ],
+          "centre_stage": [
+            0.0,
+            1.99,
+            -0.0
+          ],
+          "enemy_slot_1": [
+            4.4,
+            1.99,
+            1.6
+          ],
+          "enemy_slot_2": [
+            5.4,
+            1.99,
+            0.55
+          ],
+          "enemy_slot_3": [
+            4.4,
+            1.99,
+            -0.5
+          ],
+          "enemy_slot_4": [
+            5.4,
+            1.99,
+            -1.55
+          ],
+          "party_slot_1": [
+            -4.4,
+            1.99,
+            1.6
+          ],
+          "party_slot_2": [
+            -5.4,
+            1.99,
+            0.55
+          ],
+          "party_slot_3": [
+            -4.4,
+            1.99,
+            -0.5
+          ],
+          "party_slot_4": [
+            -5.4,
+            1.99,
+            -1.55
+          ]
+        }
+      }
+    },
+    "SM_Env_SkyIsland": {
+      "variants": {
+        "HQ": {
+          "tier": "environment",
+          "tris": 624
+        },
+        "LQ": {
+          "tier": "environment_low",
+          "tris": 100
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SM_Env_Cloud": {
+      "variants": {
+        "HQ": {
+          "tier": "environment",
+          "tris": 1044
+        },
+        "LQ": {
+          "tier": "environment_low",
+          "tris": 128
+        }
+      },
+      "sockets": {
+        "HQ": {},
+        "LQ": {}
+      }
+    },
+    "SK_PirateCaptain": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 1716
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 624
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0476
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0476
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0823
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0823
+          ]
+        }
+      }
+    },
+    "SK_PirateDeckhand": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 1316
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 424
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            0.0634
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            0.0634
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            0.0835
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            0.0835
+          ]
+        }
+      }
+    },
+    "SK_PirateGunner": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 1356
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 424
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0161
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0161
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0101
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0101
+          ]
+        }
+      }
+    },
+    "SK_PirateBrute": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 1216
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 396
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.368,
+            -0.0
+          ],
+          "head_top": [
+            0.0,
+            2.109,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.368,
+            -0.0161
+          ],
+          "head_top": [
+            0.0,
+            2.109,
+            -0.0161
+          ]
+        }
+      }
+    }
+  }
+}

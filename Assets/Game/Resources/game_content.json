@@ -1,0 +1,94 @@
+{
+  "classes": [
+    { "id": "buccaneer", "name": "Buccaneer", "role": "Front-line fighter",
+      "baseStats": { "hp": 120, "mp": 20, "attack": 18, "defense": 14, "spirit": 6, "speed": 11 },
+      "growth": { "hp": 14, "mp": 1.5, "attack": 2.6, "defense": 2.0, "spirit": 0.6, "speed": 1.0 },
+      "skills": [ { "skill": "cleave", "level": 1 }, { "skill": "crushing_blow", "level": 3 } ] },
+    { "id": "gunner", "name": "Gunner", "role": "Fast ranged damage",
+      "baseStats": { "hp": 90, "mp": 24, "attack": 20, "defense": 9, "spirit": 8, "speed": 15 },
+      "growth": { "hp": 10, "mp": 2.0, "attack": 3.0, "defense": 1.2, "spirit": 0.8, "speed": 1.6 },
+      "skills": [ { "skill": "aimed_shot", "level": 1 }, { "skill": "scattershot", "level": 3 } ] },
+    { "id": "stormcaller", "name": "Stormcaller", "role": "Sky magic",
+      "baseStats": { "hp": 75, "mp": 50, "attack": 7, "defense": 8, "spirit": 20, "speed": 12 },
+      "growth": { "hp": 8, "mp": 4.5, "attack": 0.7, "defense": 1.1, "spirit": 3.0, "speed": 1.1 },
+      "skills": [ { "skill": "lightning_bolt", "level": 1 }, { "skill": "squall", "level": 3 } ] },
+    { "id": "surgeon", "name": "Surgeon", "role": "Healer",
+      "baseStats": { "hp": 85, "mp": 45, "attack": 8, "defense": 10, "spirit": 16, "speed": 10 },
+      "growth": { "hp": 9, "mp": 4.0, "attack": 0.8, "defense": 1.4, "spirit": 2.4, "speed": 1.0 },
+      "skills": [ { "skill": "patch_up", "level": 1 }, { "skill": "rally", "level": 3 } ] },
+    { "id": "brigand", "name": "Brigand", "role": "Enemy deckhand",
+      "baseStats": { "hp": 60, "mp": 10, "attack": 13, "defense": 6, "spirit": 4, "speed": 9 },
+      "growth": { "hp": 11, "mp": 1.0, "attack": 2.3, "defense": 1.2, "spirit": 0.4, "speed": 0.9 },
+      "skills": [ { "skill": "dirty_slash", "level": 1 } ] },
+    { "id": "bombardier", "name": "Bombardier", "role": "Enemy area damage",
+      "baseStats": { "hp": 50, "mp": 18, "attack": 11, "defense": 5, "spirit": 11, "speed": 8 },
+      "growth": { "hp": 9, "mp": 1.5, "attack": 1.6, "defense": 1.0, "spirit": 1.8, "speed": 0.8 },
+      "skills": [ { "skill": "powder_bomb", "level": 1 } ] },
+    { "id": "pirate_captain", "name": "Pirate Captain", "role": "Enemy leader",
+      "baseStats": { "hp": 170, "mp": 30, "attack": 17, "defense": 10, "spirit": 9, "speed": 12 },
+      "growth": { "hp": 24, "mp": 2.0, "attack": 2.8, "defense": 1.8, "spirit": 1.0, "speed": 1.1 },
+      "skills": [ { "skill": "captains_fury", "level": 1 }, { "skill": "broad_sweep", "level": 1 } ] }
+  ],
+  "skills": [
+    { "id": "cleave", "name": "Cleave", "description": "Slash every enemy.", "mpCost": 6, "kind": "Physical", "target": "AllEnemies", "power": 0.75 },
+    { "id": "crushing_blow", "name": "Crushing Blow", "description": "A heavy strike on one enemy.", "mpCost": 8, "kind": "Physical", "target": "Enemy", "power": 1.9 },
+    { "id": "aimed_shot", "name": "Aimed Shot", "description": "A precise shot at one enemy.", "mpCost": 5, "kind": "Physical", "target": "Enemy", "power": 1.6 },
+    { "id": "scattershot", "name": "Scattershot", "description": "Pepper every enemy.", "mpCost": 7, "kind": "Physical", "target": "AllEnemies", "power": 0.65 },
+    { "id": "lightning_bolt", "name": "Lightning Bolt", "description": "Strike one enemy with lightning.", "mpCost": 5, "kind": "Magic", "target": "Enemy", "power": 1.5 },
+    { "id": "squall", "name": "Squall", "description": "Batter every enemy with a storm.", "mpCost": 10, "kind": "Magic", "target": "AllEnemies", "power": 0.95 },
+    { "id": "patch_up", "name": "Patch Up", "description": "Heal one ally.", "mpCost": 5, "kind": "Heal", "target": "Ally", "power": 2.2 },
+    { "id": "rally", "name": "Rally", "description": "Heal the whole party.", "mpCost": 12, "kind": "Heal", "target": "AllAllies", "power": 1.1 },
+    { "id": "dirty_slash", "name": "Dirty Slash", "description": "A cheap, vicious cut.", "mpCost": 4, "kind": "Physical", "target": "Enemy", "power": 1.4 },
+    { "id": "powder_bomb", "name": "Powder Bomb", "description": "Blast the whole party.", "mpCost": 6, "kind": "Magic", "target": "AllEnemies", "power": 0.7 },
+    { "id": "captains_fury", "name": "Captain's Fury", "description": "A furious heavy blow.", "mpCost": 6, "kind": "Physical", "target": "Enemy", "power": 1.7 },
+    { "id": "broad_sweep", "name": "Broad Sweep", "description": "A sweep across the party.", "mpCost": 8, "kind": "Physical", "target": "AllEnemies", "power": 0.7 }
+  ],
+  "crew": [
+    { "id": "captain", "name": "Captain Vale", "classId": "buccaneer",
+      "baseStats": { "hp": 125, "mp": 22, "attack": 19, "defense": 13, "spirit": 7, "speed": 12 } },
+    { "id": "mirren", "name": "Mirren", "classId": "gunner",
+      "baseStats": { "hp": 86, "mp": 24, "attack": 21, "defense": 8, "spirit": 8, "speed": 17 } },
+    { "id": "tobin", "name": "Tobin", "classId": "stormcaller",
+      "baseStats": { "hp": 72, "mp": 54, "attack": 6, "defense": 8, "spirit": 22, "speed": 11 } },
+    { "id": "odessa", "name": "Odessa", "classId": "surgeon",
+      "baseStats": { "hp": 90, "mp": 42, "attack": 9, "defense": 11, "spirit": 15, "speed": 10 } }
+  ],
+  "enemies": [
+    { "id": "enemy_captain", "name": "Pirate Captain", "classId": "pirate_captain", "minTier": 0,
+      "baseStats": { "hp": 170, "mp": 30, "attack": 17, "defense": 10, "spirit": 9, "speed": 12 } },
+    { "id": "brigand", "name": "Brigand", "classId": "brigand", "minTier": 0,
+      "baseStats": { "hp": 60, "mp": 10, "attack": 13, "defense": 6, "spirit": 4, "speed": 9 } },
+    { "id": "bombardier", "name": "Bombardier", "classId": "bombardier", "minTier": 1,
+      "baseStats": { "hp": 50, "mp": 18, "attack": 11, "defense": 5, "spirit": 11, "speed": 8 } }
+  ],
+  "cannons": [
+    { "id": "bow_chaser", "name": "Bow Chasers", "mount": "Bow", "damage": 10, "reload": 0.45, "shots": 1, "spreadDegrees": 2, "projectileSpeed": 130, "range": 130, "aimAssistDegrees": 14 },
+    { "id": "broadside_battery", "name": "Broadside Battery", "mount": "Broadside", "damage": 20, "reload": 5, "shots": 5, "spreadDegrees": 24, "projectileSpeed": 95, "range": 110, "aimAssistDegrees": 35 }
+  ],
+  "ships": [
+    { "id": "player_sloop", "name": "The Gilded Gale", "hull": 460, "armor": 4, "speed": 34, "turnDegrees": 70, "radius": 7, "bowCannon": "bow_chaser", "broadsideCannon": "broadside_battery" },
+    { "id": "pirate_raider", "name": "Raider", "hull": 340, "armor": 2, "speed": 30, "turnDegrees": 60, "radius": 7, "bowCannon": "bow_chaser", "broadsideCannon": "broadside_battery" }
+  ],
+  "upgrades": [
+    { "id": "hull", "name": "Reinforced Hull", "description": "+15% hull per level", "stat": "hull", "perLevel": 0.15, "maxLevel": 5, "baseCost": 80, "costGrowth": 1.6 },
+    { "id": "armor", "name": "Iron Plating", "description": "+2 armor per level", "stat": "armor", "perLevel": 2, "maxLevel": 5, "baseCost": 100, "costGrowth": 1.6 },
+    { "id": "engine", "name": "Tuned Engines", "description": "+8% speed per level", "stat": "speed", "perLevel": 0.08, "maxLevel": 5, "baseCost": 70, "costGrowth": 1.6 },
+    { "id": "rudder", "name": "Sky Rudder", "description": "+10% turning per level", "stat": "turn", "perLevel": 0.10, "maxLevel": 5, "baseCost": 60, "costGrowth": 1.6 },
+    { "id": "bow", "name": "Bored Chasers", "description": "+15% bow damage per level", "stat": "bowDamage", "perLevel": 0.15, "maxLevel": 5, "baseCost": 90, "costGrowth": 1.6 },
+    { "id": "broadside", "name": "Heavy Battery", "description": "+15% broadside damage per level", "stat": "broadsideDamage", "perLevel": 0.15, "maxLevel": 5, "baseCost": 110, "costGrowth": 1.6 }
+  ],
+  "economy": {
+    "startingGold": 100,
+    "dogfightGold": 60, "dogfightGoldPerTier": 25,
+    "boardingGold": 90, "boardingGoldPerTier": 35,
+    "defeatGold": 15,
+    "dogfightXp": 12, "dogfightXpPerTier": 4,
+    "boardingXp": 30, "boardingXpPerTier": 8,
+    "enemyShipScalePerTier": 0.18,
+    "enemyStartingDamageScale": 0.7,
+    "maxLevel": 30,
+    "xpCurveBase": 30,
+    "xpCurveExponent": 1.5,
+    "baseStatGrowthInfluence": 0.5
+  }
+}

@@ -68,9 +68,9 @@ Claude recommended the following and Cody accepted:
 - Dogfight rules are written separately from visuals and input, so they can later run on a server that decides outcomes.
 - Open matchmaking pairs players by ship power. Stricter rules wait until Ranked is designed.
 
-## Proposed first playable version
+## First playable version
 
-Claude's proposal, awaiting Cody's approval. It proves that one full pirate encounter works and is fun on the Pixel 10 Pro XL.
+Claude proposed this scope and Cody approved it. It proves that one full pirate encounter works and is fun on the Pixel 10 Pro XL.
 
 **The loop:** real-time dogfight against one AI pirate, choose whether to board, party battle against their crew, earn experience and currency, buy a ship upgrade, then play again with progress saved.
 
@@ -84,28 +84,69 @@ Claude's proposal, awaiting Cody's approval. It proves that one full pirate enco
 
 **Left out for now:** world exploration, story, online multiplayer, in-app purchases, skins and iOS.
 
+### Defaults Claude set for this version
+
+Cody was told about the first three and didn't object. The rest are Claude's choices, and all are open to change.
+
+- Declining to board ends the encounter, and the player keeps only the dogfight reward.
+- The player switches graphics modes manually in Settings. The first launch picks high definition on devices with at least 4 GB of memory.
+- The four classes and all balance numbers live in `Assets/Game/Resources/game_content.json`, for easy editing.
+- The dogfight is played on a flat plane with steering and throttle, so height isn't a control. This suits thumbs, and it's simpler for a server to run later.
+- The game is landscape only.
+- The party recovers fully between battles.
+- Losing a dogfight costs nothing and pays a small salvage reward. Losing a boarding battle keeps the dogfight reward.
+- The visual style uses faceted, two-tone shaded models built in code, without outlines. Placeholder music and sound are generated in code.
+- "Airships" is the working title, and `com.codynicholson.airships` is the working Android package name. The package name can't change after a store release.
+
+### Character classes (draft for Cody's review)
+
+| Class | Role | Starting HP / MP | Attack / Defense / Spirit / Speed | Skills (unlock level) |
+|---|---|---|---|---|
+| Buccaneer | Front-line fighter | 120 / 20 | 18 / 14 / 6 / 11 | Cleave (1), Crushing Blow (3) |
+| Gunner | Fast ranged damage | 90 / 24 | 20 / 9 / 8 / 15 | Aimed Shot (1), Scattershot (3) |
+| Stormcaller | Sky magic | 75 / 50 | 7 / 8 / 20 / 12 | Lightning Bolt (1), Squall (3) |
+| Surgeon | Healer | 85 / 45 | 8 / 10 / 16 / 10 | Patch Up (1), Rally (3) |
+
+The starting crew has individual base stats that differ from these class values: Captain Vale (Buccaneer), Mirren (Gunner), Tobin (Stormcaller) and Odessa (Surgeon).
+
+**Stat growth:** `stat at level = individual base + growth rate x (level - 1)`, rounded down. `growth rate = class growth x (1 + (individual base / class base - 1) x 0.5)`. A character whose base stat beats their class's value therefore grows faster in that stat, which follows Cody's requirement that growth depends on both class and individual base stats.
+
+### Camera and graphics modes
+
+| Setting | Low definition | High definition |
+|---|---|---|
+| Frame rate target | 30 | 60 |
+| Render scale | 60% | 85% |
+| Anti-aliasing | Off | 2x MSAA |
+| Shadows | Off | On |
+| Post-processing and HDR | Off | On |
+| Cloud clusters | 38 | 74 |
+| Particle density | 45% | 100% |
+| Shot trails | Off | On |
+
 ## Open questions
 
-1. What happens if the player declines to board a defeated ship? Claude's suggestion for the first playable version is a smaller reward.
-2. How does the player switch between low and high definition: automatically, manually, or both?
-3. Are airships and upgrades bought only with in-game currency? This is implied by the monetization
+1. Are airships and upgrades bought only with in-game currency? This is implied by the monetization
    decision, but hasn't been stated.
-4. Are skins sold directly or through a premium currency?
-5. Which character classes, stats and growth formulas will the game use?
-6. What is the game's title? "Airships" is currently only the repository name.
+2. Are skins sold directly or through a premium currency?
+3. Do the draft classes, skills and stat growth above suit the game Cody wants?
+4. What is the game's final title?
 
 ## Project state
 
-Checked at the start of this conversation:
-
-- **Editor:** Unity 6000.6.7f1, with URP and separate mobile and PC render settings. The project is still the template, with only `SampleScene`.
-- **Unity plugin:** installed and connected. A read-only script ran successfully in the Editor.
-- **Console:** no errors. Two warnings say Unity couldn't read the Windows signatures for `relay_win.exe` and `claude.exe`; neither blocked the connection.
-- **Build modules:** the Android and iOS modules were missing at first, but a later check found both installed. The active build target is still Windows.
-- **Git:** no commits yet. The template files are staged on `main`.
+- **Editor:** Unity 6000.6.7f1 with URP. The active build target is Android, and the game scene is `Assets/Game/Scenes/Main.unity`.
+- **Packages added:** Cinemachine 6.6.0 and Test Framework 1.8.0. TextMesh Pro's essential resources were imported.
+- **Code layout:** `Assets/Game/Core` holds the game rules with no Unity dependency, so a server can reuse them. `Assets/Game/Scripts` holds visuals, input and screens. `Assets/Game/Editor` holds project setup and the build command, and `Assets/Game/Tests` holds the rules tests.
+- **Asset generation:** Unity's AI asset generation reports `NoSubscription`, so all art and audio are procedural for now.
+- **Audio:** volumes run through a code-based gain layer. Unity has no scripting API for creating an Audio Mixer, so adding one is a later step in the Editor.
+- **Verified in the Editor:** 21 tests pass, and the automated player completed full loops with no console errors. Title, shop, broadside, pause, settings and battle menus were tested with simulated clicks. The thumb stick was tested with events sent directly to it, because the click simulator can't hold a press.
+- **Not yet tested:** the Retreat button, the Leave Them button by click, losing a boarding battle in the running game, and how the audio actually sounds. Music was confirmed playing, but nobody has listened to it.
+- **Known gaps:** ships pass through each other because the dogfight has no ship collisions yet. Classes, balance and art are first drafts.
+- **Android build:** `Builds/Android/Airships.apk` is about 42 MB and builds with no errors. It hasn't run on a phone yet, so frame rate and touch feel are unmeasured. Nearly all build warnings come from shaders in Unity's `com.unity.ai.inference` package.
+- **Git:** the first commit holds the template project and this log. Cody approved only that commit, so the game code is uncommitted.
 
 ## Next steps
 
-1. Cody approves or changes the proposed first playable version, which replaces the earlier suggestion of one explorable area, one battle and a save system.
-2. Claude makes the first git commit, if Cody approves, and switches the active build target to Android.
-3. Claude builds the first playable version.
+1. Cody connects the Pixel 10 Pro XL with USB debugging on, then installs and plays the build.
+2. Tune feel and performance from real play on the phone.
+3. Test low definition mode on a budget Android phone before release.
