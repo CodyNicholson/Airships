@@ -3,20 +3,36 @@ using UnityEngine;
 
 namespace Airships.Game
 {
-    public enum Sfx { Click, Confirm, Cannon, HeavyCannon, Hit, HeavyHit, Explosion, Sting, Heal, Slash, Denied }
+    public enum Sfx { Click, Confirm, Cannon, HeavyCannon, Hit, HeavyHit, Explosion, Sting, Heal, Slash, Denied, WhaleCall }
 
-    // Placeholder audio synthesized at startup, with no asset files. Volumes go through this one gain
-    // layer. Unity has no scripting API for creating an AudioMixer, so that upgrade needs the Editor UI.
+    // Sound effects are synthesized at startup, and songs come from Resources/Music. Volumes go through this
+    // one gain layer. Unity has no scripting API for creating an AudioMixer, so that upgrade needs the Editor UI.
     public class AudioBank : MonoBehaviour
     {
         const int SampleRate = 22050;
         const int VoiceCount = 10;
+        const float MusicLevel = 0.6f;
+        const float SongFadeSeconds = 0.6f;
+        const float DangerFadeSeconds = 1.5f;
+        const double ScheduleLeadSeconds = 0.15;
         static AudioBank instance;
 
         AudioClip[] clips;
         AudioSource[] voices;
-        AudioSource music;
         AudioSource wind;
+
+        // A song is an intro and a loop, each with an optional danger layer, all sample-locked together.
+        AudioSource baseIntro;
+        AudioSource baseLoop;
+        AudioSource dangerIntro;
+        AudioSource dangerLoop;
+        AudioSource jingle;
+        string wantedSong;
+        string currentSong;
+        float songGain;
+        float danger;
+        float dangerTarget;
+        float lastJingleTime = float.NegativeInfinity;
         int nextVoice;
         float sfxVolume = 1f;
         float musicVolume = 1f;
@@ -44,6 +60,7 @@ namespace Airships.Game
             clips[(int)Sfx.Heal] = Tones("Heal", new[] { 784f, 988f, 1175f }, 0.09f, 0.32f);
             clips[(int)Sfx.Slash] = Noise("Slash", 0.13f, 0.5f, 0.75f, random);
             clips[(int)Sfx.Denied] = Tones("Denied", new[] { 196f, 165f }, 0.09f, 0.4f);
+            clips[(int)Sfx.WhaleCall] = WhaleCall();
 
             voices = new AudioSource[VoiceCount];
             for (var i = 0; i < VoiceCount; i++)
@@ -59,11 +76,11 @@ namespace Airships.Game
             wind.playOnAwake = false;
             wind.Play();
 
-            music = gameObject.AddComponent<AudioSource>();
-            music.clip = Shanty();
-            music.loop = true;
-            music.playOnAwake = false;
-            music.Play();
+            baseIntro = MusicSource(false);
+            baseLoop = MusicSource(true);
+            dangerIntro = MusicSource(false);
+            dangerLoop = MusicSource(true);
+            jingle = MusicSource(false);
             ApplyVolumes();
         }
 
@@ -77,7 +94,12 @@ namespace Airships.Game
 
         void ApplyVolumes()
         {
-            music.volume = musicVolume * 0.5f;
+            var level = musicVolume * MusicLevel * songGain;
+            baseIntro.volume = level;
+            baseLoop.volume = level;
+            dangerIntro.volume = level * danger;
+            dangerLoop.volume = level * danger;
+            jingle.volume = musicVolume * MusicLevel;
             wind.volume = sfxVolume * 0.22f;
         }
 
@@ -92,8 +114,111 @@ namespace Airships.Game
             voice.Play();
         }
 
-        public static bool IsMusicPlaying => instance != null && instance.music.isPlaying;
-        public static float EffectiveMusicVolume => instance != null ? instance.music.volume : 0f;
+        // Starts a song, after fading out the last one and after any jingle ends. Null fades to silence.
+        public static void PlayMusic(string song)
+        {
+            if (instance != null) instance.wantedSong = song;
+        }
+
+        // Fades the current song's danger layer. Songs without one ignore this.
+        public static void SetDanger(float level)
+        {
+            if (instance != null) instance.dangerTarget = level;
+        }
+
+        // Plays a one-shot over silence. The song underneath fades out first and returns afterwards.
+        public static void PlayJingle(string name)
+        {
+            if (instance == null) return;
+            var clip = Resources.Load<AudioClip>("Music/" + name);
+            if (clip == null)
+            {
+                Debug.LogError($"Missing jingle '{name}'");
+                return;
+            }
+            instance.jingle.clip = clip;
+            instance.jingle.Play();
+            instance.lastJingleTime = Time.unscaledTime;
+        }
+
+        public static float SecondsSinceJingle => instance != null ? Time.unscaledTime - instance.lastJingleTime : float.PositiveInfinity;
+        public static string CurrentSong => instance != null ? instance.currentSong : null;
+        public static bool IsMusicPlaying => instance != null && (instance.baseIntro.isPlaying || instance.baseLoop.isPlaying);
+        public static float EffectiveMusicVolume => instance != null ? instance.baseLoop.volume : 0f;
+        public static float DangerLevel => instance != null ? instance.danger : 0f;
+
+        // How far apart a song's two layers are, in samples. They should stay locked together.
+        public static int LayerDriftSamples => instance != null && instance.baseLoop.isPlaying && instance.dangerLoop.isPlaying && !instance.baseIntro.isPlaying
+            ? Mathf.Abs(instance.baseLoop.timeSamples - instance.dangerLoop.timeSamples)
+            : 0;
+        public static bool IsJinglePlaying => instance != null && instance.jingle.isPlaying;
+
+        void Update()
+        {
+            var target = jingle.isPlaying ? null : wantedSong;
+            if (target != currentSong)
+            {
+                songGain = Mathf.MoveTowards(songGain, 0f, Time.unscaledDeltaTime / SongFadeSeconds);
+                if (songGain <= 0f)
+                {
+                    StopSong();
+                    currentSong = target;
+                    if (target != null) StartSong(target);
+                }
+            }
+            else
+            {
+                songGain = Mathf.MoveTowards(songGain, 1f, Time.unscaledDeltaTime / SongFadeSeconds);
+            }
+            danger = Mathf.MoveTowards(danger, dangerTarget, Time.unscaledDeltaTime / DangerFadeSeconds);
+            ApplyVolumes();
+        }
+
+        void StartSong(string song)
+        {
+            var start = AudioSettings.dspTime + ScheduleLeadSeconds;
+            var hasBase = Schedule(baseIntro, baseLoop, $"Music/{song}_base", start);
+            Schedule(dangerIntro, dangerLoop, $"Music/{song}_danger", start);
+            if (!hasBase) Debug.LogError($"Missing song '{song}'");
+        }
+
+        // The loop begins exactly as the intro ends, because both are scheduled on the audio clock.
+        static bool Schedule(AudioSource intro, AudioSource loop, string path, double start)
+        {
+            var introClip = Resources.Load<AudioClip>(path + "_intro");
+            var loopClip = Resources.Load<AudioClip>(path + "_loop");
+            if (loopClip == null) return false;
+            var loopStart = start;
+            if (introClip != null)
+            {
+                intro.clip = introClip;
+                intro.PlayScheduled(start);
+                loopStart += introClip.samples / (double)introClip.frequency;
+            }
+            loop.clip = loopClip;
+            loop.PlayScheduled(loopStart);
+            return true;
+        }
+
+        void StopSong()
+        {
+            foreach (var source in new[] { baseIntro, baseLoop, dangerIntro, dangerLoop })
+            {
+                source.Stop();
+                if (source.clip != null) Resources.UnloadAsset(source.clip);
+                source.clip = null;
+            }
+        }
+
+        AudioSource MusicSource(bool loop)
+        {
+            var source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = loop;
+            source.spatialBlend = 0f;
+            source.ignoreListenerPause = true;
+            return source;
+        }
 
         static AudioClip MakeClip(string name, float[] data)
         {
@@ -168,6 +293,22 @@ namespace Airships.Game
             }
         }
 
+        // A long, low moan that rises and falls, so the warning can be heard before it's seen.
+        static AudioClip WhaleCall()
+        {
+            const float seconds = 2.6f;
+            var data = new float[(int)(seconds * SampleRate)];
+            var phase = 0f;
+            for (var i = 0; i < data.Length; i++)
+            {
+                var t = i / (float)data.Length;
+                phase += (70f + 110f * Mathf.Sin(t * Mathf.PI)) * Mathf.PI * 2f / SampleRate;
+                var wave = Mathf.Sin(phase) + 0.4f * Mathf.Sin(phase * 2.01f) + 0.2f * Mathf.Sin(phase * 3.02f);
+                data[i] = wave * 0.5f * Mathf.Sin(t * Mathf.PI);
+            }
+            return MakeClip("Whale Call", data);
+        }
+
         static AudioClip Wind(System.Random random)
         {
             const int seconds = 8;
@@ -190,53 +331,6 @@ namespace Airships.Game
                 data[i] = Mathf.Lerp(data[count - overlap + i], data[i], mix);
             }
             return MakeClip("Wind", data);
-        }
-
-        // A short original shanty-style loop in D minor.
-        static AudioClip Shanty()
-        {
-            const float beat = 60f / 112f;
-            const int bars = 8;
-            const int beatsPerBar = 4;
-            var seconds = beat * beatsPerBar * bars;
-            var data = new float[(int)(seconds * SampleRate)];
-
-            float[][] chords =
-            {
-                new[] { 146.83f, 220f, 293.66f }, new[] { 146.83f, 220f, 293.66f },
-                new[] { 130.81f, 196f, 261.63f }, new[] { 110f, 220f, 277.18f },
-                new[] { 146.83f, 220f, 293.66f }, new[] { 116.54f, 174.61f, 233.08f },
-                new[] { 130.81f, 196f, 261.63f }, new[] { 110f, 164.81f, 220f },
-            };
-            float[,] melody =
-            {
-                { 0f, 587.33f, 1f }, { 1f, 698.46f, 0.5f }, { 1.5f, 659.25f, 0.5f }, { 2f, 587.33f, 1f }, { 3f, 440f, 1f },
-                { 4f, 587.33f, 1f }, { 5f, 698.46f, 0.5f }, { 5.5f, 783.99f, 0.5f }, { 6f, 880f, 2f },
-                { 8f, 783.99f, 1f }, { 9f, 659.25f, 0.5f }, { 9.5f, 523.25f, 0.5f }, { 10f, 659.25f, 1f }, { 11f, 783.99f, 1f },
-                { 12f, 880f, 1f }, { 13f, 783.99f, 0.5f }, { 13.5f, 698.46f, 0.5f }, { 14f, 659.25f, 2f },
-                { 16f, 587.33f, 1f }, { 17f, 698.46f, 0.5f }, { 17.5f, 659.25f, 0.5f }, { 18f, 587.33f, 1f }, { 19f, 440f, 1f },
-                { 20f, 466.16f, 1f }, { 21f, 587.33f, 0.5f }, { 21.5f, 698.46f, 0.5f }, { 22f, 932.33f, 2f },
-                { 24f, 783.99f, 1f }, { 25f, 659.25f, 0.5f }, { 25.5f, 587.33f, 0.5f }, { 26f, 523.25f, 1f }, { 27f, 659.25f, 1f },
-                { 28f, 554.37f, 2f }, { 30f, 440f, 2f },
-            };
-
-            for (var bar = 0; bar < bars; bar++)
-            {
-                var chord = chords[bar];
-                var barStart = bar * beatsPerBar * beat;
-                AddNote(data, barStart, beat * 2f, chord[0] * 0.5f, 0.16f);
-                AddNote(data, barStart + beat * 2f, beat * 2f, chord[0] * 0.5f, 0.13f);
-                for (var b = 1; b < beatsPerBar; b += 2)
-                {
-                    foreach (var note in chord) AddNote(data, barStart + b * beat, beat * 0.9f, note, 0.055f);
-                }
-            }
-            for (var n = 0; n < melody.GetLength(0); n++)
-            {
-                AddNote(data, melody[n, 0] * beat, Mathf.Max(0.3f, melody[n, 2] * beat * 1.3f), melody[n, 1], 0.1f);
-            }
-            for (var i = 0; i < data.Length; i++) data[i] = Mathf.Clamp(data[i], -1f, 1f);
-            return MakeClip("Shanty", data);
         }
     }
 }

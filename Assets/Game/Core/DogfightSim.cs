@@ -14,6 +14,7 @@ namespace Airships.Core
         public CannonDef Broadside;
         public float BowDamageScale = 1f;
         public float BroadsideDamageScale = 1f;
+        public SignatureDef Signature;
     }
 
     // One tick of input for one ship. Both the player's touch controls, the AI, and later a network
@@ -22,9 +23,17 @@ namespace Airships.Core
     {
         public float Turn;     // -1 left .. 1 right
         public float Throttle; // 0 .. 1
+        public float Climb;    // -1 dive .. 1 climb
         public bool FireBow;
         public bool FireBroadside;
+        public bool Signature;
+        public bool Grapple;
+        public bool Patch;
+        public bool Overdrive;
+        public float Evade; // -1 rolls left, 1 rolls right.
     }
+
+    public enum ShipPart { Hull, Engines, Guns, Envelope }
 
     public class ShipState
     {
@@ -32,15 +41,60 @@ namespace Airships.Core
         public int Team;
         public ShipLoadout Loadout;
         public float X;
+        public float Y; // Altitude.
         public float Z;
         public float Heading; // Radians, 0 faces +Z, positive turns toward +X.
         public float Speed;
+        public float ClimbRate; // Meters per second, positive climbing.
         public float TurnRate; // Radians per second this tick, used for visual banking.
         public float Hull;
         public float BowCooldown;
         public float BroadsideCooldown;
+        public float CollisionCooldown; // Grace period after a crash, so one rock can't hit every tick.
+        public bool Eaten;
+        public bool HuntedByWhale = true; // False for AI enemies, which the whale steers around instead.
 
-        public bool Alive => Hull > 0f;
+        public float Engines = 1f;
+        public float Guns = 1f;
+        public float MaxSubsystem = 1f;
+        public float Envelope = 1f;
+        public float EvadeTimer;
+        public float EvadeSide;
+        public float EvadeCooldown;
+        public float ImmuneTimer;
+        public ShipPart Aim;
+        public AmmoDef Ammo;
+        public float HullFloor; // Above zero, this ship can be crippled but never sunk.
+        public bool AltitudeLocked;
+        public bool Departed; // Fled the fight or landed its boarders, so it no longer takes part.
+        public bool Hidden; // Inside a cloud bank, where enemies can't find it.
+        public bool BoardsOnContact; // An assault glider.
+        public bool EasyToBoard; // Hooks can land whatever state it's in.
+        public bool WeakPoints; // This ship's shots find marked weak points.
+        public int HooksRequired = 1;
+        public int Hooks;
+        public float GrappleCooldown;
+        public int TetheredTo = -1;
+        public float TetherTimer;
+        public bool TetherDrags;
+        public float SignatureCooldown;
+        public float BoostTimer;
+        public float BoostScale = 1f;
+        public bool Ramming;
+        public float BurnTimer;
+        public float BurnPerSecond;
+        public float DeckDamage;
+        public int PatchesLeft;
+        public float OverdriveTimer;
+        public float OverdriveCooldown;
+
+        public bool Alive => Hull > 0f && !Departed;
+        public bool EnginesOut => Engines <= 0f;
+        public bool GunsOut => Guns <= 0f;
+        public bool EnvelopeOut => Envelope <= 0f;
+
+        public void TakeDamage(float amount) => Hull = Math.Max(HullFloor, Hull - amount);
+
         public float ForwardX => (float)Math.Sin(Heading);
         public float ForwardZ => (float)Math.Cos(Heading);
     }
@@ -51,25 +105,42 @@ namespace Airships.Core
         public int OwnerId;
         public int Team;
         public float X;
+        public float Y;
         public float Z;
         public float VelocityX;
+        public float VelocityY;
         public float VelocityZ;
         public float Damage;
         public float Remaining;
         public bool Heavy;
+        public float EngineDamage;
+        public float GunDamage;
+        public float DeckDamage;
+        public float BurnSeconds;
+        public float BurnPerSecond;
+        public float HitRadiusBonus;
+        public bool FindsWeakPoints;
+        public float EnvelopeDamage;
+        public string AmmoId;
+        public int HomingOn = -1; // A missile's target.
     }
 
-    public enum DogfightEventKind { Fired, Hit, Missed, Destroyed }
+    public enum DogfightEventKind { Fired, Hit, Missed, Destroyed, HazardHit, HazardBroken, ShotBlocked, ShipBump, WhaleAlert, WhaleLunge, Eaten, PartDisabled, HookLanded, HooksSnapped, Boarded, Tethered, SignatureFired, BoarderLanded, Departed, Patched, Overdrive, Crushing, LightningWarning, LightningStrike, GliderLaunched, Evaded, VolleyWarning, Raked, MissileLaunched, MineBlast, PickupTaken, WaveArrived }
 
     public struct DogfightEvent
     {
         public DogfightEventKind Kind;
         public int ShipId;
         public int ProjectileId;
+        public int HazardId;
+        public HazardKind HazardKind;
         public float X;
+        public float Y;
         public float Z;
         public float Amount;
         public bool Heavy;
+        public ShipPart Part;
+        public string AmmoId;
     }
 
     // Dogfight rules with no Unity dependency. Fixed-step and driven only by commands and a seed, so
@@ -80,14 +151,27 @@ namespace Airships.Core
         public const float TickSeconds = 1f / TicksPerSecond;
         public const float MinimumDamageShare = 0.2f;
         public const float ArenaRadius = 300f;
+        public const float MinAltitude = -45f;
+        public const float MaxAltitude = 65f;
+        public const float ClimbSpeed = 18f;
+        public const int NoWinner = -2;
         const float ProjectileRadius = 1f;
+        const float HullHalfHeight = 6f;
         const float MinimumThrottle = 0.35f;
         const float Acceleration = 16f;
+        const float ClimbAcceleration = 26f;
+        const float ClimbSpeedEffect = 0.25f; // Climbing bleeds speed, and diving gains it.
         const float BoundaryTurnStrength = 2.2f;
+        const float BumpDistanceShare = 1.4f;
+        const float BumpDamage = 12f;
+        const float BumpCooldown = 1f;
 
         readonly List<ShipState> ships = new List<ShipState>();
         readonly List<ProjectileState> projectiles = new List<ProjectileState>();
         readonly List<DogfightEvent> events = new List<DogfightEvent>();
+
+        // Things announced between steps, delivered with the next step's events.
+        readonly List<DogfightEvent> announced = new List<DogfightEvent>();
         readonly GameRandom random;
         int nextProjectileId = 1;
 
@@ -96,11 +180,20 @@ namespace Airships.Core
         public IReadOnlyList<DogfightEvent> Events => events;
         public int Tick { get; private set; }
         public int WinningTeam { get; private set; } = -1;
-        public bool Finished => WinningTeam >= 0;
+        public bool Finished => WinningTeam != -1;
+        public HazardField Field { get; private set; }
+        public SkyWeather Weather { get; private set; }
+        public SkyRulesDef Rules { get; }
+        public int BoardedShipId { get; private set; } = -1;
+        public int BoardersLanded { get; private set; }
 
-        public DogfightSim(int seed)
+        // Set when a mission decides for itself when the fight is over.
+        public bool HoldOpen { get; set; }
+
+        public DogfightSim(int seed, SkyRulesDef rules = null)
         {
             random = new GameRandom(seed);
+            Rules = rules;
         }
 
         public ShipState AddShip(int team, ShipLoadout loadout, float x, float z, float heading)
@@ -116,9 +209,27 @@ namespace Airships.Core
                 Speed = loadout.Speed * 0.75f,
                 Hull = loadout.Hull,
             };
+            if (Rules != null)
+            {
+                ship.MaxSubsystem = loadout.Hull * Rules.subsystemHullShare;
+                ship.Engines = ship.MaxSubsystem;
+                ship.Guns = ship.MaxSubsystem;
+                ship.Envelope = ship.MaxSubsystem;
+            }
             ships.Add(ship);
             return ship;
         }
+
+        public void SetWeather(SkyWeather weather) => Weather = weather;
+
+        // Call after adding ships, so nothing spawns on top of them.
+        public HazardField AddHazards(HazardDef def, int tier, int seed)
+        {
+            Field = new HazardField(def, tier, seed, ships);
+            return Field;
+        }
+
+        public static float ClampAltitude(float y) => Clamp(y, MinAltitude, MaxAltitude);
 
         public ShipState Opponent(ShipState ship)
         {
@@ -126,7 +237,7 @@ namespace Airships.Core
             var bestDistance = float.MaxValue;
             foreach (var other in ships)
             {
-                if (other.Team == ship.Team || !other.Alive) continue;
+                if (other.Team == ship.Team || !other.Alive || other.Hidden) continue;
                 var distance = DistanceSquared(ship.X, ship.Z, other.X, other.Z);
                 if (distance < bestDistance)
                 {
@@ -141,14 +252,343 @@ namespace Airships.Core
         public void Step(IReadOnlyList<ShipCommand> commands)
         {
             events.Clear();
+            events.AddRange(announced);
+            announced.Clear();
             if (Finished) return;
             Tick++;
             for (var i = 0; i < ships.Count; i++)
             {
                 if (ships[i].Alive) StepShip(ships[i], commands[i]);
             }
+            Field?.Step(ships, events);
+            Weather?.Step(this, events);
+            StepTethers();
+            BumpShips();
             StepProjectiles();
             CheckFinished();
+        }
+
+        // A hook or harpoon can land when the target is disabled, nearly beaten, or already tethered.
+        public bool CanBoard(ShipState ship, ShipState target)
+        {
+            if (Rules == null || target == null || !target.Alive || target.Team == ship.Team || target.BoardsOnContact) return false;
+            // Being dragged by someone's line means you can climb it. Your own line still needs a beaten target.
+            if (target.TetheredTo == ship.Id) return true;
+            if (ship.TetheredTo == target.Id && target.Hull <= target.Loadout.Hull * Rules.tetherBoardShare) return true;
+            return IsBoardable(target) && InGrappleRange(ship, target);
+        }
+
+        public bool IsBoardable(ShipState target)
+        {
+            return Rules != null && (target.EasyToBoard || target.EnginesOut || target.Hull <= target.Loadout.Hull * Rules.grappleHullShare);
+        }
+
+        public bool InGrappleRange(ShipState ship, ShipState target)
+        {
+            return DistanceSquared(ship.X, ship.Z, target.X, target.Z) <= Rules.grappleRange * Rules.grappleRange
+                && Math.Abs(ship.Y - target.Y) <= Rules.grappleAltitude;
+        }
+
+        public ShipState BoardingTarget(ShipState ship)
+        {
+            ShipState best = null;
+            var bestDistance = float.MaxValue;
+            foreach (var other in ships)
+            {
+                if (!CanBoard(ship, other)) continue;
+                var distance = DistanceSquared(ship.X, ship.Z, other.X, other.Z);
+                if (distance >= bestDistance) continue;
+                best = other;
+                bestDistance = distance;
+            }
+            return best;
+        }
+
+        void TryGrapple(ShipState ship)
+        {
+            if (ship.GrappleCooldown > 0f) return;
+            var target = BoardingTarget(ship);
+            if (target == null) return;
+            ship.GrappleCooldown = Rules.grappleCooldown;
+            target.Hooks++;
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.HookLanded, ShipId = target.Id, X = target.X, Y = target.Y, Z = target.Z, Amount = target.Hooks });
+            var tethered = ship.TetheredTo == target.Id || target.TetheredTo == ship.Id;
+            if (!tethered && target.Hooks < target.HooksRequired) return;
+            BoardedShipId = target.Id;
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.Boarded, ShipId = target.Id, X = target.X, Y = target.Y, Z = target.Z });
+        }
+
+        // Hooks hold only while the ships stay close. Tethers reel ships together, and an anchor drags
+        // both of them down until the lower one is crushed against the bottom of the sky.
+        void StepTethers()
+        {
+            if (Rules == null) return;
+            foreach (var ship in ships)
+            {
+                if (!ship.Alive) continue;
+                if (ship.Hooks > 0)
+                {
+                    var limit = Rules.grappleRange * Rules.snapRangeScale;
+                    var near = false;
+                    foreach (var other in ships)
+                    {
+                        if (other.Team != ship.Team && other.Alive && DistanceSquared(ship.X, ship.Z, other.X, other.Z) <= limit * limit) near = true;
+                    }
+                    if (!near)
+                    {
+                        ship.Hooks = 0;
+                        events.Add(new DogfightEvent { Kind = DogfightEventKind.HooksSnapped, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+                    }
+                }
+
+                if (ship.TetheredTo < 0) continue;
+                var victim = ships[ship.TetheredTo];
+                if (!ship.TetherDrags) ship.TetherTimer -= TickSeconds;
+                if (!victim.Alive || (!ship.TetherDrags && ship.TetherTimer <= 0f))
+                {
+                    ship.TetheredTo = -1;
+                    continue;
+                }
+                var dx = victim.X - ship.X;
+                var dz = victim.Z - ship.Z;
+                var distance = Math.Max(0.01f, (float)Math.Sqrt(dx * dx + dz * dz));
+                var reach = (ship.Loadout.Radius + victim.Loadout.Radius) * 1.2f;
+                if (distance > reach)
+                {
+                    victim.X -= dx / distance * Rules.reelSpeed * TickSeconds;
+                    victim.Z -= dz / distance * Rules.reelSpeed * TickSeconds;
+                }
+                if (!ship.TetherDrags) continue;
+                ship.Y = ClampAltitude(ship.Y - Rules.tetherSinkSpeed * TickSeconds);
+                victim.Y = ClampAltitude(victim.Y - Rules.tetherSinkSpeed * TickSeconds);
+                if (victim.Y > MinAltitude + 1f) continue;
+                victim.TakeDamage(Rules.crushPerSecond * TickSeconds);
+                if (Tick % TicksPerSecond == 0) events.Add(new DogfightEvent { Kind = DogfightEventKind.Crushing, ShipId = victim.Id, X = victim.X, Y = victim.Y, Z = victim.Z, Amount = Rules.crushPerSecond });
+                if (!victim.Alive) events.Add(new DogfightEvent { Kind = DogfightEventKind.Destroyed, ShipId = victim.Id, X = victim.X, Y = victim.Y, Z = victim.Z });
+            }
+        }
+
+        void UseSignature(ShipState ship)
+        {
+            var signature = ship.Loadout.Signature;
+            if (signature == null || ship.SignatureCooldown > 0f) return;
+            switch (signature.kind)
+            {
+                case "harpoon":
+                    var target = Opponent(ship);
+                    if (target == null || DistanceSquared(ship.X, ship.Z, target.X, target.Z) > signature.range * signature.range) return;
+                    ship.TetheredTo = target.Id;
+                    ship.TetherTimer = signature.seconds;
+                    events.Add(new DogfightEvent { Kind = DogfightEventKind.Tethered, ShipId = target.Id, X = target.X, Y = target.Y, Z = target.Z });
+                    break;
+                case "afterburner":
+                    ship.BoostTimer = signature.seconds;
+                    ship.BoostScale = signature.power;
+                    break;
+                case "ram":
+                    ship.BoostTimer = signature.seconds;
+                    ship.BoostScale = signature.power;
+                    ship.Ramming = true;
+                    break;
+                case "thunder":
+                    ship.BroadsideCooldown = 0f;
+                    FireBroadside(ship, signature.power);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown signature kind '{signature.kind}'");
+            }
+            ship.SignatureCooldown = signature.cooldown;
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.SignatureFired, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+        }
+
+        void UseCrewAbilities(ShipState ship, ShipCommand command)
+        {
+            if (command.Patch && ship.PatchesLeft > 0 && ship.Hull < ship.Loadout.Hull)
+            {
+                ship.PatchesLeft--;
+                var amount = ship.Loadout.Hull * Rules.patchShare;
+                ship.Hull = Math.Min(ship.Loadout.Hull, ship.Hull + amount);
+                events.Add(new DogfightEvent { Kind = DogfightEventKind.Patched, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z, Amount = amount });
+            }
+            if (command.Overdrive && ship.OverdriveCooldown <= 0f)
+            {
+                ship.OverdriveTimer = Rules.overdriveSeconds;
+                ship.OverdriveCooldown = Rules.overdriveCooldown;
+                ship.TakeDamage(ship.Loadout.Hull * Rules.overdriveHullCost);
+                events.Add(new DogfightEvent { Kind = DogfightEventKind.Overdrive, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+            }
+        }
+
+        void UpdateEvade(ShipState ship, ShipCommand command)
+        {
+            ship.EvadeCooldown = Math.Max(0f, ship.EvadeCooldown - TickSeconds);
+            ship.ImmuneTimer = Math.Max(0f, ship.ImmuneTimer - TickSeconds);
+            if (command.Evade != 0f && ship.EvadeCooldown <= 0f && ship.EvadeTimer <= 0f)
+            {
+                ship.EvadeTimer = Rules.evadeSeconds;
+                ship.EvadeSide = Math.Sign(command.Evade);
+                ship.EvadeCooldown = Rules.evadeCooldown;
+                ship.ImmuneTimer = Rules.evadeImmunity;
+                events.Add(new DogfightEvent { Kind = DogfightEventKind.Evaded, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+            }
+            if (ship.EvadeTimer <= 0f) return;
+
+            // A roll throws the ship sideways, across the line of whatever was aimed at it.
+            ship.EvadeTimer -= TickSeconds;
+            ship.X += ship.ForwardZ * ship.EvadeSide * Rules.evadeSpeed * TickSeconds;
+            ship.Z -= ship.ForwardX * ship.EvadeSide * Rules.evadeSpeed * TickSeconds;
+        }
+
+        // Announced first, so a player has time to roll out of the way.
+        public void WarnVolley(ShipState ship)
+        {
+            announced.Add(new DogfightEvent { Kind = DogfightEventKind.VolleyWarning, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+        }
+
+        // A homing missile. It steers for a while, then runs out of fuel.
+        public void LaunchMissile(ShipState ship, ShipState target)
+        {
+            var angle = (float)Math.Atan2(target.X - ship.X, target.Z - ship.Z);
+            var projectile = new ProjectileState
+            {
+                Id = nextProjectileId++,
+                OwnerId = ship.Id,
+                Team = ship.Team,
+                X = ship.X,
+                Y = ship.Y,
+                Z = ship.Z,
+                VelocityX = (float)Math.Sin(angle) * Rules.missileSpeed,
+                VelocityZ = (float)Math.Cos(angle) * Rules.missileSpeed,
+                Damage = Rules.missileDamage * ship.Loadout.BroadsideDamageScale,
+                Remaining = Rules.missileSeconds,
+                Heavy = true,
+                AmmoId = "missile",
+                HomingOn = target.Id,
+            };
+            projectiles.Add(projectile);
+            announced.Add(new DogfightEvent { Kind = DogfightEventKind.MissileLaunched, ShipId = ship.Id, ProjectileId = projectile.Id, X = ship.X, Y = ship.Y, Z = ship.Z, Heavy = true, AmmoId = "missile" });
+        }
+
+        void SteerMissile(ProjectileState projectile)
+        {
+            var target = ships[projectile.HomingOn];
+            if (!target.Alive) return;
+            var dx = target.X - projectile.X;
+            var dy = target.Y - projectile.Y;
+            var dz = target.Z - projectile.Z;
+            var length = Math.Max(0.01f, (float)Math.Sqrt(dx * dx + dy * dy + dz * dz));
+            var blend = Math.Min(1f, Rules.missileTurn * TickSeconds);
+            var speed = Rules.missileSpeed;
+            projectile.VelocityX += (dx / length * speed - projectile.VelocityX) * blend;
+            projectile.VelocityY += (dy / length * speed - projectile.VelocityY) * blend;
+            projectile.VelocityZ += (dz / length * speed - projectile.VelocityZ) * blend;
+        }
+
+        float SpeedScale(ShipState ship)
+        {
+            if (Rules == null) return 1f;
+            var scale = ship.EnginesOut ? Rules.disabledSpeedScale : 1f;
+            if (ship.Hooks > 0) scale *= Rules.hookedSpeedScale;
+            if (ship.BoostTimer > 0f) scale *= ship.BoostScale;
+            if (ship.OverdriveTimer > 0f) scale *= Rules.overdriveSpeedScale;
+            if (Weather != null) scale *= Weather.WindScale(ship, Rules.windSpeedScale);
+            return scale;
+        }
+
+        float ReloadScale(ShipState ship)
+        {
+            if (Rules == null) return 1f;
+            var scale = ship.GunsOut ? Rules.disabledReloadScale : 1f;
+            if (ship.OverdriveTimer > 0f) scale *= Rules.overdriveReloadScale;
+            return scale;
+        }
+
+        // Launches an assault glider mid-fight. Every list indexed by ship id grows with it.
+        public ShipState LaunchGlider(ShipState from, ShipLoadout loadout)
+        {
+            var glider = AddShip(from.Team, loadout, from.X, from.Z, from.Heading);
+            glider.Y = from.Y;
+            glider.BoardsOnContact = true;
+            glider.HuntedByWhale = false;
+            glider.AltitudeLocked = from.AltitudeLocked;
+            announced.Add(new DogfightEvent { Kind = DogfightEventKind.GliderLaunched, ShipId = glider.Id, X = from.X, Y = from.Y, Z = from.Z });
+            return glider;
+        }
+
+        public void AnnouncePickup(int id, float x, float y, float z)
+        {
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.PickupTaken, HazardId = id, X = x, Y = y, Z = z });
+        }
+
+        public void AnnounceWave(float x, float y, float z)
+        {
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.WaveArrived, X = x, Y = y, Z = z });
+        }
+
+        public void Depart(ShipState ship)
+        {
+            ship.Departed = true;
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.Departed, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+        }
+
+        void Land(ShipState glider)
+        {
+            BoardersLanded++;
+            glider.Departed = true;
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.BoarderLanded, ShipId = glider.Id, X = glider.X, Y = glider.Y, Z = glider.Z });
+        }
+
+        // Ships can't overlap, and a collision scrapes both hulls.
+        void BumpShips()
+        {
+            for (var a = 0; a < ships.Count; a++)
+            {
+                for (var b = a + 1; b < ships.Count; b++)
+                {
+                    var first = ships[a];
+                    var second = ships[b];
+                    if (!first.Alive || !second.Alive) continue;
+                    var reach = (first.Loadout.Radius + second.Loadout.Radius) * BumpDistanceShare * 0.5f;
+                    var dx = second.X - first.X;
+                    var dy = second.Y - first.Y;
+                    var dz = second.Z - first.Z;
+                    var distanceSquared = dx * dx + dy * dy + dz * dz;
+                    if (distanceSquared >= reach * reach) continue;
+
+                    if (first.BoardsOnContact || second.BoardsOnContact)
+                    {
+                        if (first.Team != second.Team) Land(first.BoardsOnContact ? first : second);
+                        continue;
+                    }
+
+                    var distance = Math.Max(0.01f, (float)Math.Sqrt(distanceSquared));
+                    var push = (reach - distance) * 0.5f;
+                    first.X -= dx / distance * push;
+                    first.Z -= dz / distance * push;
+                    first.Y = ClampAltitude(first.Y - dy / distance * push);
+                    second.X += dx / distance * push;
+                    second.Z += dz / distance * push;
+                    second.Y = ClampAltitude(second.Y + dy / distance * push);
+
+                    if (first.CollisionCooldown > 0f || second.CollisionCooldown > 0f) continue;
+                    first.CollisionCooldown = BumpCooldown;
+                    second.CollisionCooldown = BumpCooldown;
+                    first.TakeDamage(BumpDamageTo(first, second));
+                    second.TakeDamage(BumpDamageTo(second, first));
+                    events.Add(new DogfightEvent { Kind = DogfightEventKind.ShipBump, ShipId = first.Id, X = first.X + dx * 0.5f, Y = first.Y + dy * 0.5f, Z = first.Z + dz * 0.5f, Amount = BumpDamage });
+                    foreach (var ship in new[] { first, second })
+                    {
+                        if (!ship.Alive) events.Add(new DogfightEvent { Kind = DogfightEventKind.Destroyed, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+                    }
+                }
+            }
+        }
+
+        // A ramming prow punishes what it hits and shrugs off most of the blow.
+        static float BumpDamageTo(ShipState ship, ShipState other)
+        {
+            if (other.Ramming && other.Loadout.Signature != null) return BumpDamage * other.Loadout.Signature.range;
+            return ship.Ramming ? BumpDamage * 0.2f : BumpDamage;
         }
 
         void StepShip(ShipState ship, ShipCommand command)
@@ -168,22 +608,56 @@ namespace Airships.Core
             ship.TurnRate = turn;
             ship.Heading = WrapAngle(ship.Heading + turn * TickSeconds);
 
+            var climb = ship.AltitudeLocked ? 0f : Clamp(command.Climb, -1f, 1f);
+            if (Rules != null && ship.EnvelopeOut) climb = -Rules.envelopeSinkSpeed / ClimbSpeed;
+            ship.ClimbRate = MoveTowards(ship.ClimbRate, climb * ClimbSpeed, ClimbAcceleration * TickSeconds);
+            var altitude = ship.Y + ship.ClimbRate * TickSeconds;
+            ship.Y = ClampAltitude(altitude);
+            if (ship.Y != altitude) ship.ClimbRate = 0f;
+
             var throttle = Clamp(command.Throttle, MinimumThrottle, 1f);
-            ship.Speed = MoveTowards(ship.Speed, loadout.Speed * throttle, Acceleration * TickSeconds);
+            var climbEffect = 1f - ClimbSpeedEffect * ship.ClimbRate / ClimbSpeed;
+            var speedAcceleration = ship.BoostTimer > 0f ? Acceleration * 3f : Acceleration;
+            ship.Speed = MoveTowards(ship.Speed, loadout.Speed * throttle * climbEffect * SpeedScale(ship), speedAcceleration * TickSeconds);
             ship.X += ship.ForwardX * ship.Speed * TickSeconds;
             ship.Z += ship.ForwardZ * ship.Speed * TickSeconds;
 
             ship.BowCooldown = Math.Max(0f, ship.BowCooldown - TickSeconds);
             ship.BroadsideCooldown = Math.Max(0f, ship.BroadsideCooldown - TickSeconds);
+            ship.CollisionCooldown = Math.Max(0f, ship.CollisionCooldown - TickSeconds);
+            ship.GrappleCooldown = Math.Max(0f, ship.GrappleCooldown - TickSeconds);
+            ship.SignatureCooldown = Math.Max(0f, ship.SignatureCooldown - TickSeconds);
+            ship.OverdriveTimer = Math.Max(0f, ship.OverdriveTimer - TickSeconds);
+            ship.OverdriveCooldown = Math.Max(0f, ship.OverdriveCooldown - TickSeconds);
+            if (ship.BoostTimer > 0f)
+            {
+                ship.BoostTimer -= TickSeconds;
+                if (ship.BoostTimer <= 0f) ship.Ramming = false;
+            }
+            if (ship.BurnTimer > 0f)
+            {
+                ship.BurnTimer -= TickSeconds;
+                ship.TakeDamage(ship.BurnPerSecond * TickSeconds);
+                if (!ship.Alive)
+                {
+                    events.Add(new DogfightEvent { Kind = DogfightEventKind.Destroyed, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+                    return;
+                }
+            }
 
             if (command.FireBow && ship.BowCooldown <= 0f) FireBow(ship);
             if (command.FireBroadside && ship.BroadsideCooldown <= 0f) FireBroadside(ship);
+            if (Rules == null) return;
+            UpdateEvade(ship, command);
+            if (command.Signature) UseSignature(ship);
+            if (command.Grapple) TryGrapple(ship);
+            UseCrewAbilities(ship, command);
         }
 
         void FireBow(ShipState ship)
         {
             var cannon = ship.Loadout.Bow;
-            ship.BowCooldown = cannon.reload;
+            ship.BowCooldown = cannon.reload * ReloadScale(ship);
             var aim = ship.Heading;
 
             // Gentle aim assist so firing works with thumbs: shots curve onto a target near the bow.
@@ -196,13 +670,33 @@ namespace Airships.Core
                     aim = toTarget;
                 }
             }
-            FireVolley(ship, cannon, aim, ship.Loadout.BowDamageScale, 0f, false);
+            FireVolley(ship, cannon, aim, PitchToward(ship, target, cannon), ship.Loadout.BowDamageScale, 0f, false);
         }
 
-        void FireBroadside(ShipState ship)
+        // Guns angle toward a target's altitude only within their elevation limit. Beyond it they fire
+        // level, so getting far enough above or below a ship puts you out of its guns' reach.
+        static float PitchToward(ShipState ship, ShipState target, CannonDef cannon, bool ignoresElevation = false)
+        {
+            if (target == null) return 0f;
+            var distance = (float)Math.Sqrt(DistanceSquared(ship.X, ship.Z, target.X, target.Z));
+            var travelTime = distance / Math.Max(1f, cannon.projectileSpeed);
+            var pitch = (float)Math.Atan2(target.Y + target.ClimbRate * travelTime - ship.Y, Math.Max(1f, distance));
+            return ignoresElevation || Math.Abs(pitch) <= cannon.elevationDegrees * DegreesToRadians ? pitch : 0f;
+        }
+
+        // Whether a gun can angle far enough to reach a target at its current altitude.
+        public static bool CanElevate(ShipState ship, ShipState target, CannonDef cannon)
+        {
+            var distance = (float)Math.Sqrt(DistanceSquared(ship.X, ship.Z, target.X, target.Z));
+            var pitch = (float)Math.Atan2(target.Y - ship.Y, Math.Max(1f, distance));
+            return Math.Abs(pitch) <= cannon.elevationDegrees * DegreesToRadians;
+        }
+
+        void FireBroadside(ShipState ship, float extraDamage = 1f)
         {
             var cannon = ship.Loadout.Broadside;
-            ship.BroadsideCooldown = cannon.reload;
+            var ammo = ship.Ammo;
+            ship.BroadsideCooldown = cannon.reload * ReloadScale(ship) * (ammo != null ? ammo.reloadScale : 1f);
             var target = Opponent(ship);
 
             // Fire from whichever side faces the target, and fan the volley toward it.
@@ -221,10 +715,10 @@ namespace Airships.Core
                     aim = toTarget;
                 }
             }
-            FireVolley(ship, cannon, aim, ship.Loadout.BroadsideDamageScale, side, true);
+            FireVolley(ship, cannon, aim, PitchToward(ship, target, cannon, ammo != null && ammo.ignoresElevation), ship.Loadout.BroadsideDamageScale * extraDamage, side, true);
         }
 
-        void FireVolley(ShipState ship, CannonDef cannon, float aim, float damageScale, float side, bool heavy)
+        void FireVolley(ShipState ship, CannonDef cannon, float aim, float pitch, float damageScale, float side, bool heavy)
         {
             var count = Math.Max(1, cannon.shots);
             for (var i = 0; i < count; i++)
@@ -232,6 +726,7 @@ namespace Airships.Core
                 var fraction = count == 1 ? 0f : i / (float)(count - 1) - 0.5f;
                 var angle = aim + (fraction + random.Range(-0.12f, 0.12f)) * cannon.spreadDegrees * DegreesToRadians;
                 var speed = cannon.projectileSpeed;
+                var flatSpeed = speed * (float)Math.Cos(pitch);
 
                 // Broadside guns sit along the hull; bow guns sit at the front.
                 var alongHull = heavy ? fraction * ship.Loadout.Radius * 1.4f : ship.Loadout.Radius;
@@ -245,13 +740,17 @@ namespace Airships.Core
                     OwnerId = ship.Id,
                     Team = ship.Team,
                     X = startX,
+                    Y = ship.Y,
                     Z = startZ,
-                    VelocityX = (float)Math.Sin(angle) * speed,
-                    VelocityZ = (float)Math.Cos(angle) * speed,
+                    VelocityX = (float)Math.Sin(angle) * flatSpeed,
+                    VelocityY = (float)Math.Sin(pitch) * speed,
+                    VelocityZ = (float)Math.Cos(angle) * flatSpeed,
                     Damage = cannon.damage * damageScale,
                     Remaining = cannon.range / speed,
                     Heavy = heavy,
+                    FindsWeakPoints = ship.WeakPoints,
                 };
+                ApplyShotType(ship, projectile, heavy);
                 projectiles.Add(projectile);
                 events.Add(new DogfightEvent
                 {
@@ -259,10 +758,42 @@ namespace Airships.Core
                     ShipId = ship.Id,
                     ProjectileId = projectile.Id,
                     X = startX,
+                    Y = ship.Y,
                     Z = startZ,
                     Heavy = heavy,
+                    AmmoId = projectile.AmmoId,
                 });
             }
+        }
+
+        // Sets what a shot does to each part of its target, from the ship's aim and ammunition.
+        void ApplyShotType(ShipState ship, ProjectileState projectile, bool heavy)
+        {
+            if (Rules == null) return;
+            var damage = projectile.Damage;
+            var ammo = heavy ? ship.Ammo : null;
+            var hull = ammo != null ? ammo.hullScale : 1f;
+            var engines = ammo != null ? ammo.engineScale : 0f;
+            var guns = ammo != null ? ammo.gunScale : 0f;
+            var envelope = 0f;
+            projectile.AmmoId = ammo?.id;
+            if (ship.Aim != ShipPart.Hull)
+            {
+                hull *= Rules.aimHullScale;
+                if (ship.Aim == ShipPart.Engines) engines += Rules.aimSubsystemScale;
+                else if (ship.Aim == ShipPart.Guns) guns += Rules.aimSubsystemScale;
+                else envelope += Rules.aimSubsystemScale;
+            }
+            if (ship.Hidden && heavy) hull *= Rules.ambushScale;
+            projectile.Damage = damage * hull;
+            projectile.EngineDamage = damage * engines;
+            projectile.GunDamage = damage * guns;
+            projectile.EnvelopeDamage = damage * envelope;
+            if (ammo == null) return;
+            projectile.DeckDamage = damage * ammo.deckScale;
+            projectile.BurnSeconds = ammo.burnSeconds;
+            projectile.BurnPerSecond = ammo.burnPerSecond;
+            projectile.HitRadiusBonus = ammo.hitRadiusBonus;
         }
 
         void StepProjectiles()
@@ -270,7 +801,9 @@ namespace Airships.Core
             for (var i = projectiles.Count - 1; i >= 0; i--)
             {
                 var projectile = projectiles[i];
+                if (projectile.HomingOn >= 0) SteerMissile(projectile);
                 projectile.X += projectile.VelocityX * TickSeconds;
+                projectile.Y += projectile.VelocityY * TickSeconds;
                 projectile.Z += projectile.VelocityZ * TickSeconds;
                 projectile.Remaining -= TickSeconds;
 
@@ -280,6 +813,10 @@ namespace Airships.Core
                     ApplyHit(projectile, hit);
                     projectiles.RemoveAt(i);
                 }
+                else if (Field != null && Field.BlocksShot(projectile, events))
+                {
+                    projectiles.RemoveAt(i);
+                }
                 else if (projectile.Remaining <= 0f)
                 {
                     events.Add(new DogfightEvent
@@ -287,6 +824,7 @@ namespace Airships.Core
                         Kind = DogfightEventKind.Missed,
                         ProjectileId = projectile.Id,
                         X = projectile.X,
+                        Y = projectile.Y,
                         Z = projectile.Z,
                         Heavy = projectile.Heavy,
                     });
@@ -299,8 +837,9 @@ namespace Airships.Core
         {
             foreach (var ship in ships)
             {
-                if (!ship.Alive || ship.Team == projectile.Team) continue;
-                var radius = ship.Loadout.Radius + ProjectileRadius;
+                if (!ship.Alive || ship.Team == projectile.Team || ship.ImmuneTimer > 0f) continue;
+                if (Math.Abs(projectile.Y - ship.Y) > HullHalfHeight + ProjectileRadius + projectile.HitRadiusBonus) continue;
+                var radius = ship.Loadout.Radius + ProjectileRadius + projectile.HitRadiusBonus;
                 if (DistanceSquared(projectile.X, projectile.Z, ship.X, ship.Z) <= radius * radius) return ship;
             }
             return null;
@@ -308,26 +847,64 @@ namespace Airships.Core
 
         void ApplyHit(ProjectileState projectile, ShipState ship)
         {
-            var damage = DamageAfterArmor(projectile.Damage, ship.Loadout.Armor);
-            ship.Hull = Math.Max(0f, ship.Hull - damage);
+            var raw = projectile.Damage;
+            var stern = Rules != null && projectile.HomingOn < 0 && IsStern(projectile, ship);
+            if (projectile.FindsWeakPoints && stern) raw *= Rules.weakPointScale;
+            if (stern && projectile.Heavy)
+            {
+                raw *= Rules.rakeScale;
+                events.Add(new DogfightEvent { Kind = DogfightEventKind.Raked, ShipId = ship.Id, X = projectile.X, Y = projectile.Y, Z = projectile.Z });
+            }
+            var damage = DamageAfterArmor(raw, ship.Loadout.Armor);
+            ship.TakeDamage(damage);
+            DamagePart(ship, ShipPart.Engines, projectile.EngineDamage);
+            DamagePart(ship, ShipPart.Guns, projectile.GunDamage);
+            DamagePart(ship, ShipPart.Envelope, projectile.EnvelopeDamage);
+            ship.DeckDamage += projectile.DeckDamage;
+            if (projectile.BurnSeconds > 0f)
+            {
+                ship.BurnTimer = projectile.BurnSeconds;
+                ship.BurnPerSecond = projectile.BurnPerSecond;
+            }
             events.Add(new DogfightEvent
             {
                 Kind = DogfightEventKind.Hit,
                 ShipId = ship.Id,
                 ProjectileId = projectile.Id,
                 X = projectile.X,
+                Y = projectile.Y,
                 Z = projectile.Z,
                 Amount = damage,
                 Heavy = projectile.Heavy,
+                AmmoId = projectile.AmmoId,
             });
             if (!ship.Alive)
             {
-                events.Add(new DogfightEvent { Kind = DogfightEventKind.Destroyed, ShipId = ship.Id, X = ship.X, Z = ship.Z });
+                events.Add(new DogfightEvent { Kind = DogfightEventKind.Destroyed, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
             }
+        }
+
+        // Whether a shot struck from behind the ship, where its weak points are.
+        static bool IsStern(ProjectileState projectile, ShipState ship)
+        {
+            return (projectile.X - ship.X) * ship.ForwardX + (projectile.Z - ship.Z) * ship.ForwardZ < 0f;
+        }
+
+        void DamagePart(ShipState ship, ShipPart part, float amount)
+        {
+            if (amount <= 0f) return;
+            var before = part == ShipPart.Engines ? ship.Engines : part == ShipPart.Guns ? ship.Guns : ship.Envelope;
+            if (before <= 0f) return;
+            var after = Math.Max(0f, before - amount);
+            if (part == ShipPart.Engines) ship.Engines = after;
+            else if (part == ShipPart.Guns) ship.Guns = after;
+            else ship.Envelope = after;
+            if (after <= 0f) events.Add(new DogfightEvent { Kind = DogfightEventKind.PartDisabled, ShipId = ship.Id, Part = part, X = ship.X, Y = ship.Y, Z = ship.Z });
         }
 
         void CheckFinished()
         {
+            if (HoldOpen) return;
             var aliveTeam = -1;
             foreach (var ship in ships)
             {
@@ -335,7 +912,7 @@ namespace Airships.Core
                 if (aliveTeam >= 0 && aliveTeam != ship.Team) return;
                 aliveTeam = ship.Team;
             }
-            if (aliveTeam >= 0) WinningTeam = aliveTeam;
+            WinningTeam = aliveTeam >= 0 ? aliveTeam : NoWinner;
         }
 
         public static float DamageAfterArmor(float damage, float armor)
@@ -382,22 +959,43 @@ namespace Airships.Core
     // Flies a ship by producing the same commands a player would.
     public class DogfightAi
     {
+        enum Phase { Attack, Broadside, BreakAway }
+
         const float DegreesToRadians = (float)(Math.PI / 180.0);
+        const float DefaultBroadsideDistance = 62f;
+        const float BreakAwayDistance = 120f;
+        const float BroadsidePhaseSeconds = 4.5f;
+        const float BreakAwayPhaseSeconds = 6f;
+        const float AltitudeSwing = 30f;
+        const float AttackAltitudeShare = 0.7f;
+        const float TailedDistance = 90f;
+        const float TailedAngle = 2.2f; // Radians from the nose, so the target is behind.
+        const float WeaveSeconds = 1.4f;
+        const float LookAheadSeconds = 2.4f;
+        const float AvoidMargin = 14f;
+        const float WhaleFleeRange = 230f;
+
         readonly GameRandom random;
         readonly float aimJitterDegrees;
+        readonly float broadsideDistance;
+        Phase phase;
+        float phaseTime;
+        float altitudeOffset;
         float jitter;
         float nextJitterAt;
         float time;
 
-        public DogfightAi(int seed, float aimJitterDegrees)
+        public DogfightAi(int seed, float aimJitterDegrees, float broadsideDistance = 0f)
         {
             random = new GameRandom(seed);
             this.aimJitterDegrees = aimJitterDegrees;
+            this.broadsideDistance = broadsideDistance > 0f ? broadsideDistance : DefaultBroadsideDistance;
         }
 
         public ShipCommand Think(DogfightSim sim, ShipState ship)
         {
             time += DogfightSim.TickSeconds;
+            phaseTime += DogfightSim.TickSeconds;
             var target = sim.Opponent(ship);
             if (target == null) return new ShipCommand { Throttle = 0.6f };
 
@@ -410,31 +1008,155 @@ namespace Airships.Core
             var distance = (float)Math.Sqrt(DogfightSim.DistanceSquared(ship.X, ship.Z, target.X, target.Z));
             var toTarget = (float)Math.Atan2(target.X - ship.X, target.Z - ship.Z);
             var relative = DogfightSim.WrapAngle(toTarget - ship.Heading);
-            var broadsideRange = ship.Loadout.Broadside.range * 0.8f;
+            var side = relative >= 0f ? 1f : -1f;
+            UpdatePhase(ship, distance);
 
-            // Chase from afar. Once in range, turn side-on so the broadside bears on the target.
+            // Attack runs instead of an endless orbit: close nose-on with the bow guns, turn to deliver
+            // a broadside, then break away to a new altitude and come around again.
             float desired;
-            if (distance > broadsideRange)
+            float throttle;
+            float altitudeGoal;
+            switch (phase)
             {
-                desired = toTarget + jitter;
-            }
-            else
-            {
-                var side = relative >= 0f ? 1f : -1f;
-                desired = toTarget - side * (float)Math.PI * 0.42f + jitter;
+                case Phase.Attack:
+                    desired = DogfightSim.LeadAngle(ship, target, ship.Loadout.Bow.projectileSpeed) + jitter;
+                    throttle = 1f;
+                    altitudeGoal = target.Y + altitudeOffset * AttackAltitudeShare;
+                    break;
+                case Phase.Broadside:
+                    desired = toTarget - side * (float)Math.PI * 0.5f + jitter;
+                    throttle = 0.75f;
+                    altitudeGoal = target.Y;
+                    break;
+                default:
+                    desired = toTarget + (float)Math.PI + side * 0.5f;
+                    throttle = 1f;
+                    altitudeGoal = target.Y + altitudeOffset;
+                    break;
             }
 
-            var error = DogfightSim.WrapAngle(desired - ship.Heading);
+            var bow = ship.Loadout.Bow;
+            var broadside = ship.Loadout.Broadside;
             var beamError = Math.Abs(Math.Abs(relative) - (float)Math.PI * 0.5f);
-            return new ShipCommand
+            var command = new ShipCommand
             {
-                Turn = error * 2.2f,
-                Throttle = distance > broadsideRange ? 1f : 0.7f,
-                FireBow = distance < ship.Loadout.Bow.range * 0.95f
-                    && Math.Abs(relative) <= ship.Loadout.Bow.aimAssistDegrees * DegreesToRadians,
-                FireBroadside = distance < broadsideRange && beamError <= 35f * DegreesToRadians,
+                Turn = DogfightSim.WrapAngle(desired - ship.Heading) * 2.2f,
+                Throttle = throttle,
+                Climb = Clamp1((altitudeGoal - ship.Y) / 10f),
+                FireBow = distance < bow.range * 0.95f
+                    && Math.Abs(relative) <= bow.aimAssistDegrees * DegreesToRadians
+                    && DogfightSim.CanElevate(ship, target, bow),
+                FireBroadside = distance < broadside.range * 0.85f
+                    && beamError <= 30f * DegreesToRadians
+                    && DogfightSim.CanElevate(ship, target, broadside),
             };
+
+            // A ship with an enemy on its tail weaves and changes altitude to throw off the bow guns.
+            if (distance < TailedDistance && Math.Abs(relative) > TailedAngle)
+            {
+                var weave = (int)(time / WeaveSeconds) % 2 == 0 ? 1f : -1f;
+                command.Turn = weave;
+                command.Climb = AwayFromAltitude(ship.Y - weave, ship.Y);
+                command.Throttle = 1f;
+            }
+
+            if (sim.Field != null)
+            {
+                AvoidHazards(sim.Field, ship, ref command);
+                FleeWhale(sim.Field, ship, ref command);
+            }
+            return command;
         }
+
+        void UpdatePhase(ShipState ship, float distance)
+        {
+            switch (phase)
+            {
+                case Phase.Attack:
+                    if (distance < broadsideDistance) SetPhase(Phase.Broadside);
+                    break;
+                case Phase.Broadside:
+                    var fired = ship.BroadsideCooldown > ship.Loadout.Broadside.reload - 0.5f;
+                    if (fired || phaseTime > BroadsidePhaseSeconds)
+                    {
+                        SetPhase(Phase.BreakAway);
+                        altitudeOffset = (random.Value() < 0.5f ? -1f : 1f) * AltitudeSwing;
+                    }
+                    break;
+                default:
+                    if (distance > BreakAwayDistance || phaseTime > BreakAwayPhaseSeconds) SetPhase(Phase.Attack);
+                    break;
+            }
+        }
+
+        void SetPhase(Phase next)
+        {
+            phase = next;
+            phaseTime = 0f;
+        }
+
+        // Steers around the nearest thing on the ship's path, in both heading and altitude.
+        static void AvoidHazards(HazardField field, ShipState ship, ref ShipCommand command)
+        {
+            var speed = Math.Max(1f, ship.Speed);
+            var forwardX = ship.ForwardX;
+            var forwardZ = ship.ForwardZ;
+            var forwardY = ship.ClimbRate / speed;
+            var length = (float)Math.Sqrt(1f + forwardY * forwardY);
+            forwardX /= length;
+            forwardY /= length;
+            forwardZ /= length;
+
+            HazardState threat = null;
+            var nearest = float.MaxValue;
+            foreach (var hazard in field.Hazards)
+            {
+                if (!hazard.Alive) continue;
+                var rx = hazard.X - ship.X;
+                var ry = hazard.Y - ship.Y;
+                var rz = hazard.Z - ship.Z;
+                var along = rx * forwardX + ry * forwardY + rz * forwardZ;
+                if (along < -hazard.Radius || along > speed * LookAheadSeconds + hazard.Radius || along >= nearest) continue;
+                var px = rx - forwardX * along;
+                var py = ry - forwardY * along;
+                var pz = rz - forwardZ * along;
+                var clearance = hazard.Radius + AvoidMargin;
+                if (px * px + py * py + pz * pz >= clearance * clearance) continue;
+                threat = hazard;
+                nearest = along;
+            }
+            if (threat == null) return;
+
+            var bearing = DogfightSim.WrapAngle((float)Math.Atan2(threat.X - ship.X, threat.Z - ship.Z) - ship.Heading);
+            command.Turn = bearing >= 0f ? -1f : 1f;
+            command.Climb = AwayFromAltitude(threat.Y, ship.Y);
+        }
+
+        static void FleeWhale(HazardField field, ShipState ship, ref ShipCommand command)
+        {
+            var whale = field.Whale;
+            if (whale == null || !whale.MouthOpen || whale.TargetId != ship.Id) return;
+            var dx = ship.X - whale.X;
+            var dz = ship.Z - whale.Z;
+            if (dx * dx + dz * dz > WhaleFleeRange * WhaleFleeRange) return;
+
+            // Fly across the whale's line and change altitude, because it can't turn once it lunges.
+            var across = (float)Math.Atan2(whale.DirX, whale.DirZ) + (float)Math.PI * 0.5f;
+            if (Math.Abs(DogfightSim.WrapAngle(across - ship.Heading)) > (float)Math.PI * 0.5f) across += (float)Math.PI;
+            command.Turn = DogfightSim.WrapAngle(across - ship.Heading) * 2.2f;
+            command.Climb = AwayFromAltitude(whale.Y, ship.Y);
+            command.Throttle = 1f;
+        }
+
+        static float AwayFromAltitude(float threatY, float shipY)
+        {
+            var direction = threatY >= shipY ? -1f : 1f;
+            if (shipY <= DogfightSim.MinAltitude + 8f) return 1f;
+            if (shipY >= DogfightSim.MaxAltitude - 8f) return -1f;
+            return direction;
+        }
+
+        static float Clamp1(float value) => value < -1f ? -1f : value > 1f ? 1f : value;
     }
 
     // Small seeded generator, so battle and dogfight results replay the same on any machine.

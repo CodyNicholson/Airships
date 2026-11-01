@@ -27,8 +27,10 @@ namespace Airships.Game
                 if (File.Exists(SavePath))
                 {
                     var save = JsonUtility.FromJson<SaveData>(File.ReadAllText(SavePath));
-                    if (save != null && save.version == SaveData.CurrentVersion)
+                    if (save != null && save.version <= SaveData.CurrentVersion)
                     {
+                        if (save.version < SaveData.CurrentVersion) KeepBackup(save.version);
+                        Campaign.Migrate(save, content);
                         Reconcile(save, content);
                         return save;
                     }
@@ -59,12 +61,25 @@ namespace Airships.Game
             }
         }
 
-        // Adds crew added to the content since this save was written.
+        // Drops crew the content no longer has. Crew now join through the story, so none are added here.
         static void Reconcile(SaveData save, GameContent content)
         {
-            foreach (var member in content.crew)
+            save.crew.RemoveAll(c => Array.Find(content.crew, m => m.id == c.id) == null);
+
+            // A saved party can be short on purpose, with the rest of the crew holding the helm.
+            save.EnsureValidParty(save.party.Count == 0);
+        }
+
+        // A format change keeps the old file, so a bad migration can never cost a player their progress.
+        static void KeepBackup(int version)
+        {
+            try
             {
-                if (save.crew.Find(c => c.id == member.id) == null) save.crew.Add(new CrewProgress { id = member.id });
+                File.Copy(SavePath, SavePath + ".v" + version + ".backup", true);
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[Save] Could not back up the old save: {exception.Message}");
             }
         }
 

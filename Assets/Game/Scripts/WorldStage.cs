@@ -18,6 +18,9 @@ namespace Airships.Game
         public Light Sun { get; private set; }
         public bool HighDefinition { get; private set; } = true;
 
+        Material skyMaterial;
+        Material panoMaterial;
+        Material cloudMaterial;
         Transform clouds;
         GameObject extraClouds;
         Transform islands;
@@ -98,6 +101,7 @@ namespace Airships.Game
             sky.SetColor("_SunColor", Palette.Sun);
             sky.SetVector("_SunDirection", -Sun.transform.forward);
             RenderSettings.skybox = sky;
+            skyMaterial = sky;
 
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = Palette.AmbientSky;
@@ -141,6 +145,7 @@ namespace Airships.Game
             clouds = new GameObject("Clouds").transform;
             clouds.SetParent(transform, false);
             var material = Models.NewLitMaterial("Clouds", -0.25f, 0.45f);
+            cloudMaterial = material;
             Models.Attach("Base Clouds", clouds, BuildCloudMesh(38, 1234), material, false);
             extraClouds = Models.Attach("Extra Clouds", clouds, BuildCloudMesh(36, ExtraCloudSeed), material, false);
         }
@@ -200,11 +205,74 @@ namespace Airships.Game
             if (clouds.position.x > 180f) clouds.position = new Vector3(-180f, 0f, -75f);
         }
 
+        // Sets the sky, fog and sunlight for one of the campaign's weathers.
+        public void ApplyWeather(Airships.Core.WeatherDef weather)
+        {
+            var pano = string.IsNullOrEmpty(weather.sky) ? null : Effects.Data.Sky(weather.sky);
+            if (pano != null)
+            {
+                ApplySky(pano, weather.lightBoost > 0f ? weather.lightBoost : 1f);
+                return;
+            }
+            RenderSettings.skybox = skyMaterial;
+            skyMaterial.SetColor("_TopColor", HexColor(weather.skyTop));
+            skyMaterial.SetColor("_HorizonColor", HexColor(weather.skyHorizon));
+            skyMaterial.SetColor("_BelowColor", HexColor(weather.skyBelow));
+            RenderSettings.fogColor = HexColor(weather.fog);
+            Sun.color = HexColor(weather.sun);
+            Sun.intensity = weather.sunIntensity;
+            var ambient = Mathf.Clamp01(weather.sunIntensity / 1.15f);
+            var sky = Palette.AmbientSky * ambient;
+            var ground = Palette.AmbientGround * ambient;
+            RenderSettings.ambientSkyColor = sky;
+            RenderSettings.ambientEquatorColor = sky;
+            RenderSettings.ambientGroundColor = ground;
+            Shader.SetGlobalColor("_AirshipsSkyAmbient", sky.linear);
+            Shader.SetGlobalColor("_AirshipsGroundAmbient", ground.linear);
+        }
+
+        // The kit's sky values assume a realistic renderer, and this one is flat-shaded, so light is scaled down.
+        const float SunScale = 0.5f;
+        const float AmbientScale = 0.95f;
+        const float AmbientFloor = 0.16f;
+        const float FogDistanceScale = 1.5f;
+
+        void ApplySky(SkyDef def, float boost)
+        {
+            if (panoMaterial == null) panoMaterial = new Material(Resources.Load<Shader>("Shaders/PanoSky")) { name = "Panorama" };
+            var file = System.IO.Path.GetFileNameWithoutExtension(HighDefinition ? def.fileHq : def.fileLq);
+            panoMaterial.SetTexture("_MainTex", Resources.Load<Texture2D>("Art/Sky/" + file));
+            RenderSettings.skybox = panoMaterial;
+
+            var toSun = new Vector3(def.sunX, def.sunY, def.sunZ).normalized;
+            var up = Mathf.Abs(toSun.y) > 0.95f ? Vector3.forward : Vector3.up;
+            Sun.transform.rotation = Quaternion.LookRotation(-toSun, up);
+            Sun.color = new Color(def.sunR, def.sunG, def.sunB);
+            Sun.intensity = def.sunIntensity * SunScale * boost;
+
+            // A floor under the ambient light, so a dark hull still reads against a dark sky.
+            var ambient = Color.Lerp(new Color(def.ambientR, def.ambientG, def.ambientB), Color.white, AmbientFloor) * AmbientScale * boost;
+            var ground = ambient * 0.6f;
+            RenderSettings.ambientSkyColor = ambient;
+            RenderSettings.ambientEquatorColor = ambient;
+            RenderSettings.ambientGroundColor = ground;
+            Shader.SetGlobalColor("_AirshipsSkyAmbient", ambient.linear);
+            Shader.SetGlobalColor("_AirshipsGroundAmbient", ground.linear);
+
+            RenderSettings.fogColor = new Color(def.fogR, def.fogG, def.fogB);
+            RenderSettings.fogStartDistance = def.fogStart * FogDistanceScale;
+            RenderSettings.fogEndDistance = def.fogEnd * FogDistanceScale;
+            if (cloudMaterial != null) cloudMaterial.SetColor("_BaseColor", Color.Lerp(new Color(def.fogR, def.fogG, def.fogB), Color.white, 0.55f));
+        }
+
+        static Color HexColor(string hex) => ColorUtility.TryParseHtmlString("#" + hex, out var color) ? color : Color.white;
+
         // Switches every setting that separates the low and high definition modes.
         public void ApplyDefinition(bool high)
         {
             var rebuildIslands = islands == null || HighDefinition != high;
             HighDefinition = high;
+            Effects.SetDefinition(high);
             if (rebuildIslands) BuildIslands();
             var level = high ? HighQualityLevel : LowQualityLevel;
             QualitySettings.SetQualityLevel(level, true);

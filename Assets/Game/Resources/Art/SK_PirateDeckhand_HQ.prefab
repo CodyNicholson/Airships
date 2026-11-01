@@ -169,10 +169,16 @@ MonoBehaviour:
   - {fileID: -777296343502656771, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
   - {fileID: 1705358518000571087, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
   - {fileID: -4669247909627572057, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
+  - {fileID: -6316996661543968562, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
   - {fileID: -5193681874456876713, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
   - {fileID: 8513874004014098567, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
+  - {fileID: 2025402319704000096, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
+  - {fileID: 7800948684081849595, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
+  - {fileID: 6015577108654207987, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
+  - {fileID: -8912999345867134160, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
   - {fileID: -1972327132127149101, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
   - {fileID: -1881101361428871385, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
+  - {fileID: 1022657724240690386, guid: a60f9808d42d2c642b808ff966293f3b, type: 3}
 --- !u!1 &1076570272176982669
 GameObject:
   m_ObjectHideFlags: 0
@@ -395,6 +401,8 @@ SkinnedMeshRenderer:
   - {fileID: 932028407246541363}
   - {fileID: 4347301244008000385}
   - {fileID: 7808853319431260497}
+  - {fileID: 6605857837749194764}
+  - {fileID: 505462559501170265}
   - {fileID: 6783511893766468788}
   - {fileID: 7787755493487169726}
   - {fileID: 7718865997392061895}
@@ -477,6 +485,37 @@ Transform:
   - {fileID: 9052334783944346370}
   m_Father: {fileID: 8977489280777067161}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3999276285599982867
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 505462559501170265}
+  m_Layer: 0
+  m_Name: weapon.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &505462559501170265
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3999276285599982867}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.4749763, y: -0.41092566, z: 0.47497654, w: 0.6163886}
+  m_LocalPosition: {x: -0.000000044703484, y: 0.051234774, z: 0.000000014901161}
+  m_LocalScale: {x: 0.9999998, y: 0.99999994, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7808853319431260497}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4573711799744086784
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,6 +580,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8560749578994210572}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5339117077423983061
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6605857837749194764}
+  m_Layer: 0
+  m_Name: gun.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6605857837749194764
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5339117077423983061}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00000010174316, y: -0.62641275, z: -2.3037511e-10, w: 0.7794916}
+  m_LocalPosition: {x: -0.000000044703484, y: 0.051234774, z: 0.000000014901161}
+  m_LocalScale: {x: 1, y: 0.99999994, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7808853319431260497}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5381891209469936031
 GameObject:
@@ -826,7 +896,9 @@ Transform:
   m_LocalPosition: {x: -0.000000026077032, y: 0.23151666, z: 0.0000000037252903}
   m_LocalScale: {x: 0.99999994, y: 0.99999994, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6605857837749194764}
+  - {fileID: 505462559501170265}
   m_Father: {fileID: 4347301244008000385}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8164429558944111892

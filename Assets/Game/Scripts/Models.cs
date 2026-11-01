@@ -11,6 +11,8 @@ namespace Airships.Game
         public Transform Body;
         public Transform[] Propellers;
         public Material Material;
+        public GameObject Kit;
+        public float Scale = 1f;
     }
 
     public class CharacterModel
@@ -19,6 +21,9 @@ namespace Airships.Game
         public KitCharacter Animation;
         public float HeadHeight;
         public List<Material> Materials = new List<Material>();
+        public string Faction;
+        public Material Body;
+        public List<GameObject> Held = new List<GameObject>();
 
         public void SetEmission(Color color)
         {
@@ -76,16 +81,27 @@ namespace Airships.Game
             return go;
         }
 
+        // A ship from its data: its silhouette, and its paint.
+        public static ShipModel CreateShip(string name, Airships.Core.ShipDef def, Transform parent)
+        {
+            return CreateShip(name, def.model, def.faction, def.modelScale > 0f ? def.modelScale : 1f, parent);
+        }
+
         public static ShipModel CreateShip(string name, ShipHull hull, string faction, Transform parent)
+        {
+            return CreateShip(name, "SM_Ship_" + hull, faction, hull == ShipHull.Sloop ? SloopScale : hull == ShipHull.Brigantine ? BrigantineScale : GalleonScale, parent);
+        }
+
+        public static ShipModel CreateShip(string name, string asset, string faction, float scale, Transform parent)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent, false);
             var body = new GameObject("Body").transform;
             body.SetParent(root.transform, false);
 
-            var model = KitArt.Spawn("SM_Ship_" + hull, body);
+            var model = KitArt.Spawn(asset, body);
             model.transform.localPosition = Vector3.down * ShipDrop;
-            model.transform.localScale = Vector3.one * (hull == ShipHull.Sloop ? SloopScale : hull == ShipHull.Brigantine ? BrigantineScale : GalleonScale);
+            model.transform.localScale = Vector3.one * scale;
 
             // The propeller's pivot is at its base, so each spins under a parent placed at its hub.
             var hubs = new List<Transform>();
@@ -102,12 +118,24 @@ namespace Airships.Game
             // A low band edge keeps most of the ship in the sun, so sails stay bright when back-lit.
             var material = KitArt.NewMaterial(name + " Paint", faction, -0.45f, 0.2f);
             KitArt.Paint(model, material);
-            return new ShipModel { Root = root, Body = body, Propellers = hubs.ToArray(), Material = material };
+            return new ShipModel { Root = root, Body = body, Propellers = hubs.ToArray(), Material = material, Kit = model, Scale = scale };
         }
 
-        public static CharacterModel CreateCharacter(string name, string classId, Transform parent)
+        // A character from the kit's named looks, or by class for the older generic crews.
+        public static CharacterModel CreateCharacter(string name, string lookOrClass, Transform parent)
         {
-            switch (classId)
+            var look = GameDirector.Instance != null ? GameDirector.Instance.Content.Look(lookOrClass) : null;
+            if (look != null)
+            {
+                var character = Character(name, look.asset, look.faction, parent);
+                Hold(character, look.weaponR, "weapon.R");
+                Hold(character, look.weaponL, "weapon.L");
+                Hold(character, look.gunR, "gun.R");
+                Hold(character, look.gunL, "gun.L");
+                return character;
+            }
+
+            switch (lookOrClass)
             {
                 case "buccaneer": return Character(name, "SK_PirateCaptain", KitArt.Crimson, parent, "SM_Prop_Cutlass", "weapon.R");
                 case "gunner": return Character(name, "SK_PirateGunner", KitArt.Crimson, parent, "SM_Prop_Flintlock", "gun.R");
@@ -128,7 +156,13 @@ namespace Airships.Game
                     var bombardier = Character(name, "SK_PirateGunner", KitArt.Obsidian, parent);
                     AddHeld(bombardier, "gun.R", BuildBomb(), Vector3.zero);
                     return bombardier;
-                default: return Character(name, "SK_PirateDeckhand", KitArt.Obsidian, parent, "SM_Prop_Cutlass", "weapon.R");
+                case "saboteur": return Character(name, "SK_Sable", KitArt.Obsidian, parent, "SM_Prop_SableDagger", "weapon.R");
+                case "armada_guard": return Character(name, "SK_ArmadaSoldier", "Gilded", parent, "SM_Prop_Cutlass", "weapon.R");
+                case "armada_officer": return Character(name, "SK_ArmadaOfficer", "Gilded", parent, "SM_Prop_RoyalSabre", "weapon.R");
+                case "bruiser": return Character(name, "SK_PirateBrute", "Scrap", parent, "SM_Prop_BoardingAxe", "weapon.R");
+                case "corsair": return Character(name, "SK_Vex", "Syndicate", parent, "SM_Prop_TwinScimitar", "weapon.R");
+                case "warlord": return Character(name, "SK_CassianAdmiral", "Gilded", parent, "SM_Prop_RoyalSabre", "weapon.R");
+                default: return Character(name, "SK_PirateDeckhand", "Scrap", parent, "SM_Prop_Cutlass", "weapon.R");
             }
         }
 
@@ -142,18 +176,26 @@ namespace Airships.Game
                 Root = model,
                 Animation = model.GetComponent<KitCharacter>(),
                 HeadHeight = KitArt.Socket(model, "head_top").localPosition.y,
+                Faction = faction,
+                Body = material,
             };
             character.Materials.Add(material);
-
-            if (heldProp != null)
-            {
-                // The kit's rule: no rotation offset, and a local position of the negative grip.
-                var prop = KitArt.Spawn(heldProp, KitArt.FindDeep(model.transform, bone));
-                var grip = KitArt.Socket(prop, "grip");
-                if (grip != null) prop.transform.localPosition = -grip.localPosition;
-            }
+            Hold(character, heldProp, bone);
             KitArt.Paint(model, material);
             return character;
+        }
+
+        // The kit's rule: no rotation offset, and a local position of the negative grip.
+        static void Hold(CharacterModel character, string prop, string bone)
+        {
+            if (string.IsNullOrEmpty(prop)) return;
+            var parent = KitArt.FindDeep(character.Root.transform, bone);
+            if (parent == null) return;
+            var held = KitArt.Spawn(prop, parent);
+            KitArt.Paint(held, character.Body);
+            var grip = KitArt.Socket(held, "grip");
+            if (grip != null) held.transform.localPosition = -grip.localPosition;
+            character.Held.Add(held);
         }
 
         static void AddHat(CharacterModel character, System.Action<MeshKit> build)
@@ -226,11 +268,11 @@ namespace Airships.Game
         }
 
         // The boarding battle stage. The kit's deck faces its intended camera, so it turns to face ours.
-        public static DeckModel CreateDeck(Transform parent, string faction)
+        public static DeckModel CreateDeck(Transform parent, string faction, string asset = "SM_Env_BoardingDeck")
         {
             var root = new GameObject("Boarding Deck");
             root.transform.SetParent(parent, false);
-            var model = KitArt.Spawn("SM_Env_BoardingDeck", root.transform);
+            var model = KitArt.Spawn(string.IsNullOrEmpty(asset) ? "SM_Env_BoardingDeck" : asset, root.transform);
             model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             var surface = KitArt.Socket(model, "centre_stage").localPosition.y;
             model.transform.localPosition = Vector3.down * surface;

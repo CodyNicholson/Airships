@@ -75,7 +75,7 @@ These decisions are workable, but each carries a risk the plan has to manage.
 1. **Two battles, one fight:** how you win in the sky shapes the battle on the deck.
 2. **Real stakes:** board an enemy ship and you can lose your own, then hunt its captor down.
 3. **Rivals with memory:** the captain who takes your ship becomes a named enemy with a bounty.
-4. **A crew of four:** classes with signature abilities, personal stat growth and levels.
+4. **Three on deck, timing decides:** choose three of your crew to board, then tap in time to hit harder and block blows in turn-based battles.
 5. **Your ship, your style:** ship classes and cannon types earned in play, with cosmetic skins that survive ship loss.
 
 **Where each experience goal lives**
@@ -171,6 +171,8 @@ These decisions are workable, but each carries a risk the plan has to manage.
 
 ### Ship metrics
 
+*Altitude, hazards, the sky whale and a new attack-run AI were added after this table was written. See `claude_logs/2026-10-31-dogfight-altitude-hazards.md`. The "Today" values for standoff and collisions, and the Evade and bow rows, are out of date.*
+
 | Metric | Today (observed) | Proposed start | Why |
 |---|---|---|---|
 | Top speed, player | 34 m/s | 24 m/s | Fights need time for positioning |
@@ -204,10 +206,10 @@ These decisions are workable, but each carries a risk the plan has to manage.
 
 | Input | Action | Notes |
 |---|---|---|
-| Left thumb, floating stick on the left 40% of the screen | Steer and throttle | Exists on the left 48%. Keep the floating behavior, which matches the blueprint. |
+| Left thumb, floating stick on the left 48% of the screen | Steer, and climb or dive | Built. Replaced steer and throttle when altitude was added. |
 | Right thumb, large button | Broadside: hold to ready, and it fires automatically when the arc bears | Today it fires immediately even if out of arc, wasting the 5-second reload |
 | Right thumb, medium button | Bow chain shot | Keep to tap or hold |
-| Right thumb, third button | Evade | New. Three is the blueprint's limit, and movement verbs are never disabled. |
+| Right thumb, third button | Boost, held | Built, in place of the proposed Evade. Three is the blueprint's limit, so climbing and diving now serve as the dodge. |
 | Deck battle | Tap commands, then tap the target on deck or in the list | List-only today |
 
 - **Input buffering:** a fire or evade press in the last 120 ms of a cooldown triggers when it's ready.
@@ -215,6 +217,8 @@ These decisions are workable, but each carries a risk the plan has to manage.
 - **Keyboard controls** stay as a development aid only.
 
 ## 3.5 Master Beat Chart (one-region vertical slice)
+
+*Replaced for single-player by Cody's campaign plan, "Shattered Skies". The campaign's story, crew and acts supersede this chart, the named crew in section 3.2 and the region structure. See `claude_logs/2026-11-01-campaign-mode.md`, and `claude_logs/2026-11-01-new-assets-and-expansion.md` for the later expansion. The chart stays here as the earlier proposal.*
 
 The region and rival names are placeholders. Encounters target 3 minutes or less, per the mobile blueprint.
 

@@ -93,7 +93,9 @@ Transform:
   m_LocalPosition: {x: 0.000000027008355, y: 0.27042904, z: -0.0000000037252903}
   m_LocalScale: {x: 0.9999999, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 7501448841138804009}
+  - {fileID: 2752992408240234672}
   m_Father: {fileID: 2469958990969345092}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1754759985254961107
@@ -444,6 +446,37 @@ Transform:
   - {fileID: 4110702084839168780}
   m_Father: {fileID: 6009551321252793729}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3939340461036720634
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2752992408240234672}
+  m_Layer: 0
+  m_Name: weapon.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2752992408240234672
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3939340461036720634}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.4753319, y: -0.3725376, z: 0.47533205, w: 0.6397928}
+  m_LocalPosition: {x: -0.000000018626451, y: 0.059227776, z: -0.000000009313226}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8546778111130393419}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4145030617713006997
 GameObject:
   m_ObjectHideFlags: 0
@@ -637,6 +670,37 @@ Transform:
   - {fileID: 1524184122520548366}
   m_Father: {fileID: 7765923268191520540}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4913090710620210188
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7501448841138804009}
+  m_Layer: 0
+  m_Name: gun.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7501448841138804009
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4913090710620210188}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.00000011140666, y: -0.6001127, z: 0.00000008292893, w: 0.7999155}
+  m_LocalPosition: {x: -0.000000018626451, y: 0.059227776, z: -0.000000009313226}
+  m_LocalScale: {x: 1, y: 1.0000001, z: 1.0000001}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8546778111130393419}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5343863067940458240
 GameObject:
   m_ObjectHideFlags: 0
@@ -777,10 +841,16 @@ MonoBehaviour:
   - {fileID: -777296343502656771, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
   - {fileID: 1705358518000571087, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
   - {fileID: -4669247909627572057, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
+  - {fileID: -6316996661543968562, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
   - {fileID: -5193681874456876713, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
   - {fileID: 8513874004014098567, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
+  - {fileID: 2025402319704000096, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
+  - {fileID: 7800948684081849595, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
+  - {fileID: 6015577108654207987, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
+  - {fileID: -8912999345867134160, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
   - {fileID: -1972327132127149101, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
   - {fileID: -1881101361428871385, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
+  - {fileID: 1022657724240690386, guid: 1af78097da4d38f4f99bc68acf493431, type: 3}
 --- !u!1 &8111189511498714347
 GameObject:
   m_ObjectHideFlags: 0
@@ -908,6 +978,8 @@ SkinnedMeshRenderer:
   - {fileID: 60494578231530450}
   - {fileID: 2469958990969345092}
   - {fileID: 8546778111130393419}
+  - {fileID: 7501448841138804009}
+  - {fileID: 2752992408240234672}
   - {fileID: 1524184122520548366}
   - {fileID: 7167705100963972469}
   - {fileID: 1249962204138860659}

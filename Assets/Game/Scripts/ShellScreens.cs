@@ -66,7 +66,7 @@ namespace Airships.Game
             if (leaving) return;
             leaving = true;
             AudioBank.Play(Sfx.Confirm);
-            GameDirector.Instance.ShowPort();
+            GameDirector.Instance.LeaveTitle();
         }
     }
 
@@ -95,10 +95,13 @@ namespace Airships.Game
             BuildHeader(safe);
             BuildCrew(safe);
             BuildShop(safe);
+            BuildChandler(safe);
 
-            var sail = UIKit.Button("Set Sail", safe, "SET SAIL", 54f, Palette.PlayerPaint, SetSail);
+            var sail = UIKit.Button("Free Skies", safe, "FREE SKIES", 50f, Palette.PlayerPaint, SetSail);
             sail.ClickSound = Sfx.Confirm;
             UIKit.Place((RectTransform)sail.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 28f), new Vector2(520f, 130f));
+            var back = UIKit.Button("Back", safe, "QUARTERDECK", 34f, Palette.PanelLight, director.ShowHub);
+            UIKit.Place((RectTransform)back.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(400f, 86f));
 
             Refresh();
             if (GameDirector.Autoplay) StartCoroutine(AutoPlay());
@@ -114,7 +117,7 @@ namespace Airships.Game
             director.SaveGame();
             Refresh();
             yield return new WaitForSecondsRealtime(0.4f);
-            SetSail();
+            director.ShowHub();
         }
 
         void SetSail()
@@ -142,18 +145,27 @@ namespace Airships.Game
             UIKit.Place(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(540f, 56f));
 
             var rows = director.Save.crew;
-            for (var i = 0; i < rows.Count && i < BattleSetup.MaxPartySize; i++)
+            CampaignLook.ScrollList(panel.transform, new Vector2(580f, 770f), new Vector2(0f, -82f), new Vector2(0.5f, 1f), out var crewList);
+            ((RectTransform)crewList.parent).pivot = new Vector2(0.5f, 1f);
+            crewList.sizeDelta = new Vector2(0f, rows.Count * 188f);
+            for (var i = 0; i < rows.Count; i++)
             {
                 var progress = rows[i];
                 var member = Array.Find(director.Content.crew, c => c.id == progress.id);
                 var cls = director.Content.Class(member.classId);
-                var row = UIKit.Panel(member.name, panel.transform, Palette.WithAlpha(Palette.PanelLight, 0.7f));
-                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -90f - i * 188f), new Vector2(560f, 176f));
+                var row = UIKit.Panel(member.name, crewList, Palette.WithAlpha(Palette.PanelLight, 0.7f));
+                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f - i * 188f), new Vector2(560f, 176f));
 
                 var name = UIKit.Text("Name", row.transform, member.name, 34f, Palette.TextLight, TextAlignmentOptions.Left);
                 UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -10f), new Vector2(380f, 44f));
                 var level = UIKit.Text("Level", row.transform, "", 34f, Palette.Accent, TextAlignmentOptions.Right);
                 UIKit.Place(level.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -10f), new Vector2(150f, 44f));
+                var look = director.Content.Look(member.look);
+                var weapon = look != null ? (!string.IsNullOrEmpty(look.weaponR) ? look.weaponR : look.gunR) : null;
+                var weaponIcon = UIKit.Icon("Weapon", row.transform, null);
+                weaponIcon.sprite = KitArt.WeaponIcon(weapon);
+                weaponIcon.enabled = weaponIcon.sprite != null;
+                UIKit.Place(weaponIcon.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-14f, -4f), Vector2.one * 58f);
                 var role = UIKit.Text("Class", row.transform, cls.name, 26f, Palette.TextMuted, TextAlignmentOptions.Left, false);
                 UIKit.Place(role.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -54f), new Vector2(520f, 34f));
 
@@ -164,8 +176,29 @@ namespace Airships.Game
                 var xpBar = UIKit.Bar("XP", row.transform, Palette.Accent);
                 UIKit.Place((RectTransform)xpBar.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(520f, 22f));
 
+                // The captain always sails. Anyone else can trade places with whoever is in reserve.
+                GameButton swap = null;
+                if (i > 0)
+                {
+                    swap = UIKit.Button("Swap", row.transform, "SWAP", 24f, Palette.PanelLight, () =>
+                    {
+                        if (!director.Save.SwapOut(progress.id)) return;
+                        director.SaveGame();
+                        Refresh();
+                    });
+                    UIKit.Place((RectTransform)swap.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-120f, -8f), new Vector2(150f, 48f));
+                }
+
+                var rowColor = row.color;
                 refreshers.Add(() =>
                 {
+                    var active = director.Save.IsInParty(progress.id);
+                    row.color = active ? rowColor : Palette.WithAlpha(Palette.Panel, 0.8f);
+                    role.text = active ? cls.name : $"{cls.name}  (in reserve)";
+                    if (swap != null)
+                    {
+                        swap.gameObject.SetActive(active);
+                    }
                     var s = Growth.StatsAtLevel(member.baseStats, cls, progress.level, director.Content.economy.baseStatGrowthInfluence);
                     level.text = $"LV {progress.level}";
                     stats.text = $"HP {s.hp}  MP {s.mp}  ATK {s.attack}  DEF {s.defense}  SPI {s.spirit}  SPD {s.speed}";
@@ -207,6 +240,37 @@ namespace Airships.Game
                     var maxed = current >= upgrade.maxLevel;
                     buy.Label.text = maxed ? "MAX" : $"{Shop.Cost(upgrade, current)} G";
                     buy.Interactable = Shop.CanBuy(director.Save, upgrade);
+                });
+            }
+        }
+
+        // Consumables for the fights ahead.
+        void BuildChandler(RectTransform safe)
+        {
+            var items = director.Content.items;
+            for (var i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                var row = UIKit.Panel(item.name, safe, Palette.WithAlpha(Palette.Panel, 0.92f));
+                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-98f + i * 98f, -118f), new Vector2(92f, 142f));
+                var icon = UIKit.Icon("Icon", row.transform, item.icon);
+                UIKit.Place(icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), Vector2.one * 66f);
+                var count = UIKit.Text("Count", row.transform, "", 22f, Palette.Accent);
+                UIKit.Place(count.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -64f), new Vector2(90f, 26f));
+                var buy = UIKit.Button("Buy Item", row.transform, $"{item.cost}G", 20f, Palette.PlayerPaint, () =>
+                {
+                    if (!director.Save.BuyItem(item)) return;
+                    director.SaveGame();
+                    Refresh();
+                });
+                buy.Label.characterSpacing = 0f;
+                buy.Label.rectTransform.offsetMin = new Vector2(2f, 2f);
+                buy.Label.rectTransform.offsetMax = new Vector2(-2f, -2f);
+                UIKit.Place((RectTransform)buy.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(84f, 44f));
+                refreshers.Add(() =>
+                {
+                    count.text = $"x{director.Save.ItemCount(item.id)}";
+                    buy.Interactable = director.Save.gold >= item.cost;
                 });
             }
         }
@@ -324,6 +388,8 @@ namespace Airships.Game
         Color color;
         List<string> lines;
         bool hadLevelUp;
+        Action retry;
+        Action abandon;
 
         public void Setup(string resultTitle, Color resultColor, List<string> resultLines, bool levelUp)
         {
@@ -331,6 +397,13 @@ namespace Airships.Game
             color = resultColor;
             lines = resultLines;
             hadLevelUp = levelUp;
+        }
+
+        // A failed mission phase offers another go, from its checkpoint.
+        public void SetupRetry(Action onRetry, Action onAbandon)
+        {
+            retry = onRetry;
+            abandon = onAbandon;
         }
 
         void Start()
@@ -360,9 +433,20 @@ namespace Airships.Game
             var total = UIKit.Text("Gold", panel.transform, $"{director.Save.gold} GOLD", 46f, Palette.Accent);
             UIKit.Place(total.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 156f), new Vector2(880f, 60f));
 
-            var next = UIKit.Button("Continue", panel.transform, "RETURN TO PORT", 40f, Palette.PlayerPaint, director.FinishResults);
-            next.ClickSound = Sfx.Confirm;
-            UIKit.Place((RectTransform)next.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(560f, 110f));
+            if (retry != null)
+            {
+                var again = UIKit.Button("Retry", panel.transform, "TRY AGAIN", 40f, Palette.PlayerPaint, retry);
+                again.ClickSound = Sfx.Confirm;
+                UIKit.Place((RectTransform)again.transform, new Vector2(0.5f, 0f), new Vector2(1f, 0f), new Vector2(-12f, 30f), new Vector2(430f, 110f));
+                var leave = UIKit.Button("Leave", panel.transform, "BACK TO DECK", 36f, Palette.PanelLight, abandon);
+                UIKit.Place((RectTransform)leave.transform, new Vector2(0.5f, 0f), new Vector2(0f, 0f), new Vector2(12f, 30f), new Vector2(430f, 110f));
+            }
+            else
+            {
+                var next = UIKit.Button("Continue", panel.transform, director.Run != null ? "TO THE QUARTERDECK" : "RETURN TO PORT", 40f, Palette.PlayerPaint, director.FinishResults);
+                next.ClickSound = Sfx.Confirm;
+                UIKit.Place((RectTransform)next.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(640f, 110f));
+            }
 
             StartCoroutine(Celebrate(director));
         }
@@ -386,7 +470,8 @@ namespace Airships.Game
             if (hadLevelUp) director.ScreenFx.Milestone("LEVEL UP!", Palette.Accent);
             if (!GameDirector.Autoplay) yield break;
             yield return new WaitForSecondsRealtime(1.5f);
-            director.FinishResults();
+            if (retry != null) retry();
+            else director.FinishResults();
         }
     }
 }

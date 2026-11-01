@@ -118,6 +118,18 @@ namespace Airships.Game
             return text;
         }
 
+        // A kit icon. It stays blank if the kit has no such icon, so a missing one can't break a screen.
+        public static Image Icon(string name, Transform parent, string icon)
+        {
+            var rect = Node(name, parent);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.sprite = KitArt.Icon(icon);
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.enabled = image.sprite != null;
+            return image;
+        }
+
         public static void Fill(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
@@ -402,6 +414,8 @@ namespace Airships.Game
         Image fade;
         Image flash;
         RectTransform floating;
+        Coroutine bannerRoutine;
+        GameObject banner;
 
         public static ScreenFx Create(Transform parent)
         {
@@ -466,12 +480,18 @@ namespace Airships.Game
         {
             Flash(Palette.Accent);
             AudioBank.Play(Sfx.Sting, 1f, 0f);
-            StartCoroutine(BannerRoutine(message, color));
+            if (bannerRoutine != null) StopCoroutine(bannerRoutine);
+            if (banner != null) Destroy(banner);
+            bannerRoutine = StartCoroutine(BannerRoutine(message, color));
         }
 
         IEnumerator BannerRoutine(string message, Color color)
         {
             var text = UIKit.Text("Banner", floating, message, 104f, color);
+            banner = text.gameObject;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 40f;
+            text.fontSizeMax = 104f;
             text.outlineWidth = 0.22f;
             text.outlineColor = Palette.Ink;
             var rect = text.rectTransform;

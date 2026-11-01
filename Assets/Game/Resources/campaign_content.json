@@ -1,0 +1,5704 @@
+{
+ "title": "Shattered Skies",
+ "startingShip": "rust_wing",
+ "startingMechanics": [],
+ "speakers": [
+  {
+   "id": "vane",
+   "name": "Vane",
+   "classId": "buccaneer",
+   "look": "vane"
+  },
+  {
+   "id": "cassian",
+   "name": "Cassian",
+   "classId": "warlord",
+   "look": "cassian"
+  },
+  {
+   "id": "morrow",
+   "name": "Morrow",
+   "classId": "gunner",
+   "look": "morrow"
+  },
+  {
+   "id": "mirren",
+   "name": "Mirren",
+   "classId": "gunner",
+   "look": "mirren"
+  },
+  {
+   "id": "odessa",
+   "name": "Odessa",
+   "classId": "surgeon",
+   "look": "odessa"
+  },
+  {
+   "id": "tobin",
+   "name": "Tobin",
+   "classId": "stormcaller",
+   "look": "tobin"
+  },
+  {
+   "id": "rook",
+   "name": "Rook",
+   "classId": "gunner",
+   "look": "rook"
+  },
+  {
+   "id": "lyra",
+   "name": "Lyra",
+   "classId": "stormcaller",
+   "look": "lyra"
+  },
+  {
+   "id": "sable",
+   "name": "Sable",
+   "classId": "saboteur",
+   "look": "sable"
+  },
+  {
+   "id": "thorne",
+   "name": "Dr. Thorne",
+   "classId": "surgeon",
+   "look": "thorne"
+  },
+  {
+   "id": "krag",
+   "name": "\"Dead-Weight\" Krag",
+   "classId": "pirate_captain",
+   "look": "krag"
+  },
+  {
+   "id": "gorse",
+   "name": "Captain Gorse",
+   "classId": "pirate_captain",
+   "look": "gorse"
+  },
+  {
+   "id": "ashgrave",
+   "name": "Lord Ashgrave",
+   "classId": "corsair",
+   "look": "ashgrave"
+  },
+  {
+   "id": "thrace",
+   "name": "Lady Thrace",
+   "classId": "corsair",
+   "look": "thrace"
+  },
+  {
+   "id": "vex",
+   "name": "Vex",
+   "classId": "corsair",
+   "look": "vex"
+  },
+  {
+   "id": "vesper",
+   "name": "Vesper",
+   "classId": "corsair",
+   "look": "vesper"
+  },
+  {
+   "id": "malakor",
+   "name": "Warden Malakor",
+   "classId": "bruiser",
+   "look": "malakor"
+  },
+  {
+   "id": "armada",
+   "name": "Armada Officer",
+   "classId": "armada_officer",
+   "look": "armada_officer"
+  },
+  {
+   "id": "scav",
+   "name": "Scrapper",
+   "classId": "brigand",
+   "look": "scrap_hand"
+  },
+  {
+   "id": "nemesis",
+   "name": "Rival Captain",
+   "classId": "pirate_captain",
+   "look": "gorse"
+  },
+  {
+   "id": "hask",
+   "name": "Hask",
+   "classId": "gunner",
+   "look": "hask"
+  },
+  {
+   "id": "brill",
+   "name": "Bosun Brill",
+   "classId": "buccaneer",
+   "look": "brill"
+  },
+  {
+   "id": "wren",
+   "name": "Sawbones Wren",
+   "classId": "surgeon",
+   "look": "wren"
+  },
+  {
+   "id": "ivo",
+   "name": "Ivo",
+   "classId": "stormcaller",
+   "look": "ivo"
+  },
+  {
+   "id": "admiral",
+   "name": "Grand Admiral Cassian",
+   "classId": "warlord",
+   "look": "admiral"
+  },
+  {
+   "id": "runner",
+   "name": "Haven Runner",
+   "classId": "gunner",
+   "look": "syndicate_gunner"
+  },
+  {
+   "id": "captain_ria",
+   "name": "Captain Ria",
+   "classId": "buccaneer",
+   "look": "brill"
+  }
+ ],
+ "acts": [
+  {
+   "number": 0,
+   "name": "Prologue",
+   "setting": "The Mutiny at Cloud-Break"
+  },
+  {
+   "number": 1,
+   "name": "Act I",
+   "setting": "The Scrap-Winds"
+  },
+  {
+   "number": 2,
+   "name": "Act II",
+   "setting": "The Smuggler's Jetstream"
+  },
+  {
+   "number": 3,
+   "name": "Act III",
+   "setting": "The Cirrus Citadel"
+  },
+  {
+   "number": 4,
+   "name": "Act IV",
+   "setting": "Eye of the Maelstrom"
+  }
+ ],
+ "missions": [
+  {
+   "id": "p_mutiny",
+   "act": 0,
+   "title": "The Mutiny at Cloud-Break",
+   "blurb": "The richest vault in the upper skies. One last job.",
+   "kind": "story",
+   "requires": "",
+   "gold": 80,
+   "xp": 60,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Shattered Sky",
+     "lines": [],
+     "shots": [
+      {
+       "cam": [
+        0,
+        40,
+        -150
+       ],
+       "look": [
+        0,
+        30,
+        40
+       ],
+       "line": "They say there was ground, once. Then the world broke, and everything worth keeping rose into the sky.",
+       "speaker": "",
+       "camTo": [
+        40,
+        34,
+        -120
+       ],
+       "lookTo": [
+        10,
+        24,
+        40
+       ],
+       "weather": "heist",
+       "music": "skyward_regatta",
+       "seconds": 5,
+       "ships": [
+        {
+         "ship": "armada_patrol",
+         "at": [
+          -120,
+          30,
+          40
+         ],
+         "yaw": 80,
+         "to": [
+          -40,
+          34,
+          60
+         ]
+        },
+        {
+         "ship": "scrap_raider",
+         "at": [
+          70,
+          10,
+          30
+         ],
+         "yaw": -70,
+         "to": [
+          20,
+          14,
+          50
+         ]
+        }
+       ]
+      },
+      {
+       "cam": [
+        -70,
+        -70,
+        -190
+       ],
+       "look": [
+        0,
+        -170,
+        60
+       ],
+       "line": "Below the clouds is the Undertow. It crushes whatever falls in. Nobody has ever sailed back out of it.",
+       "speaker": "",
+       "camTo": [
+        -40,
+        -95,
+        -150
+       ],
+       "lookTo": [
+        0,
+        -180,
+        60
+       ],
+       "weather": "heist",
+       "seconds": 5,
+       "props": [
+        {
+         "asset": "SM_Env_UndertowDisc",
+         "mark": "",
+         "at": [
+          0,
+          -190,
+          0
+         ],
+         "scale": 3
+        },
+        {
+         "asset": "SM_Env_DebrisField",
+         "mark": "",
+         "at": [
+          20,
+          -110,
+          10
+         ],
+         "scale": 4
+        }
+       ]
+      },
+      {
+       "cam": [
+        -30,
+        30,
+        -38
+       ],
+       "look": [
+        0,
+        12,
+        0
+       ],
+       "line": "Lift-Stone keeps the islands up. A Lift-Core keeps a ship up. Lose yours, and the Undertow gets you.",
+       "speaker": "",
+       "camTo": [
+        -12,
+        22,
+        -44
+       ],
+       "lookTo": [
+        0,
+        12,
+        0
+       ],
+       "weather": "heist",
+       "seconds": 5,
+       "props": [
+        {
+         "asset": "SM_Env_LiftMine",
+         "mark": "",
+         "at": [
+          0,
+          0,
+          0
+         ],
+         "scale": 1.4
+        }
+       ],
+       "effects": [
+        {
+         "preset": "LiftCoreSabotage",
+         "at": [
+          0,
+          13,
+          0
+         ],
+         "delay": 0.4,
+         "scale": 0.6
+        }
+       ]
+      },
+      {
+       "cam": [
+        30,
+        34,
+        -70
+       ],
+       "look": [
+        0,
+        26,
+        40
+       ],
+       "line": "The Armada claims all of it. Their sky-lanes, their tax, and their noose for anyone who won't pay.",
+       "speaker": "",
+       "camTo": [
+        -10,
+        30,
+        -60
+       ],
+       "lookTo": [
+        0,
+        24,
+        60
+       ],
+       "weather": "heist",
+       "seconds": 5,
+       "ships": [
+        {
+         "ship": "armada_frigate",
+         "at": [
+          -70,
+          30,
+          30
+         ],
+         "yaw": 90,
+         "to": [
+          10,
+          32,
+          40
+         ]
+        },
+        {
+         "ship": "armada_patrol",
+         "at": [
+          -110,
+          44,
+          60
+         ],
+         "yaw": 90,
+         "to": [
+          -30,
+          46,
+          70
+         ]
+        },
+        {
+         "ship": "armada_patrol",
+         "at": [
+          -110,
+          16,
+          10
+         ],
+         "yaw": 90,
+         "to": [
+          -30,
+          18,
+          20
+         ]
+        },
+        {
+         "ship": "armada_corvette",
+         "at": [
+          -30,
+          16,
+          80
+         ],
+         "yaw": 90,
+         "to": [
+          50,
+          18,
+          90
+         ]
+        }
+       ]
+      },
+      {
+       "cam": [
+        -40,
+        18,
+        -70
+       ],
+       "look": [
+        0,
+        14,
+        20
+       ],
+       "line": "Scrappers, smugglers, Syndicate lords. Everyone else takes what they can from whoever's looking the other way.",
+       "speaker": "",
+       "camTo": [
+        -20,
+        22,
+        -60
+       ],
+       "lookTo": [
+        10,
+        14,
+        20
+       ],
+       "weather": "scrapwinds",
+       "seconds": 5,
+       "ships": [
+        {
+         "ship": "scrap_raider",
+         "at": [
+          -40,
+          10,
+          10
+         ],
+         "yaw": 70,
+         "to": [
+          10,
+          12,
+          30
+         ]
+        },
+        {
+         "ship": "scrap_brig",
+         "at": [
+          40,
+          20,
+          40
+         ],
+         "yaw": -80,
+         "to": [
+          0,
+          22,
+          50
+         ]
+        },
+        {
+         "ship": "syndicate_cutter",
+         "at": [
+          -70,
+          28,
+          40
+         ],
+         "yaw": 80,
+         "to": [
+          -20,
+          30,
+          50
+         ]
+        }
+       ]
+      },
+      {
+       "cam": [
+        60,
+        12,
+        -60
+       ],
+       "look": [
+        0,
+        16,
+        0
+       ],
+       "line": "And then there's the Sovereign Gale, the one ship the Armada never caught. The only home I've ever had.",
+       "speaker": "",
+       "camTo": [
+        -60,
+        22,
+        -70
+       ],
+       "lookTo": [
+        0,
+        16,
+        0
+       ],
+       "weather": "heist",
+       "seconds": 7,
+       "title": "",
+       "ships": [
+        {
+         "ship": "sovereign_gale",
+         "at": [
+          0,
+          4,
+          30
+         ],
+         "yaw": 180,
+         "to": [
+          0,
+          6,
+          -10
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "kind": "story",
+     "title": "Aboard the Gale",
+     "lines": [],
+     "shots": [
+      {
+       "cam": [
+        -6,
+        2,
+        -9
+       ],
+       "look": [
+        -3.5,
+        1.3,
+        -2
+       ],
+       "line": "I'm Vane. Deck rat, then gunner, now First Mate. Cassian pulled me off an Armada prison barge when I was twelve. I never asked why.",
+       "speaker": "vane",
+       "camTo": [
+        -4.6,
+        1.8,
+        -6.4
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 4,
+       "cardName": "VANE",
+       "cardRole": "First Mate of the Gale. That's you.",
+       "actors": [
+        {
+         "look": "vane",
+         "mark": "",
+         "at": [
+          -9,
+          0,
+          -4
+         ],
+         "to": [
+          -3.5,
+          0,
+          -2
+         ],
+         "yaw": 70,
+         "endYaw": 180,
+         "clip": "Talk"
+        },
+        {
+         "look": "cassian",
+         "mark": "",
+         "at": [
+          -1.3,
+          0.9,
+          2.0
+         ],
+         "yaw": 180
+        }
+       ]
+      },
+      {
+       "cam": [
+        -2.1,
+        2.9,
+        -2.4
+       ],
+       "look": [
+        -2,
+        2.2,
+        2
+       ],
+       "line": "Eyes up, Vane. By tomorrow we'll have robbed the Armada blind, and every sky-lane from here to the Maelstrom will know my name.",
+       "speaker": "cassian",
+       "camTo": [
+        -2,
+        2.7,
+        -1
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 4,
+       "cardName": "CAPTAIN CASSIAN",
+       "cardRole": "Most wanted pirate in the skies. Raised you.",
+       "actors": [
+        {
+         "look": "cassian",
+         "mark": "",
+         "at": [
+          -1.3,
+          0.9,
+          2.0
+         ],
+         "yaw": 180,
+         "clip": "Talk"
+        }
+       ]
+      },
+      {
+       "cam": [
+        4.8,
+        1.7,
+        -0.6
+       ],
+       "look": [
+        5.3,
+        1.2,
+        3.3
+       ],
+       "line": "Give me one clear broadside, First Mate, and I'll put a hole in the moon.",
+       "speaker": "mirren",
+       "camTo": [
+        5.3,
+        1.5,
+        0.5
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 4,
+       "cardName": "MIRREN",
+       "cardRole": "Master gunner. Loudest laugh in the fleet.",
+       "actors": [
+        {
+         "look": "mirren",
+         "mark": "station_rook",
+         "yaw": 180,
+         "clip": "Work",
+         "clip2": "Talk",
+         "clip2Delay": 1.2
+        }
+       ]
+      },
+      {
+       "cam": [
+        3.8,
+        1.7,
+        -5
+       ],
+       "look": [
+        4.2,
+        1.2,
+        -1
+       ],
+       "line": "Keep your limbs attached and my Lift-Core cool. That's all I've ever asked of you lot.",
+       "speaker": "odessa",
+       "camTo": [
+        4.2,
+        1.5,
+        -3.8
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 4,
+       "cardName": "ODESSA",
+       "cardRole": "Ship's surgeon, keeper of the Lift-Core.",
+       "actors": [
+        {
+         "look": "odessa",
+         "mark": "station_thorne",
+         "yaw": 180,
+         "clip": "Work",
+         "clip2": "Talk",
+         "clip2Delay": 1.2
+        }
+       ]
+      },
+      {
+       "cam": [
+        -6.6,
+        1.7,
+        -0.4
+       ],
+       "look": [
+        -7.8,
+        1.2,
+        3.6
+       ],
+       "line": "Wind's turned our way all week. Feels like luck. I've never trusted luck.",
+       "speaker": "tobin",
+       "camTo": [
+        -7,
+        1.5,
+        0.8
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 4,
+       "cardName": "TOBIN",
+       "cardRole": "Stormcaller. Reads the wind and the crew.",
+       "actors": [
+        {
+         "look": "tobin",
+         "mark": "station_sable",
+         "yaw": 180,
+         "clip": "Work",
+         "clip2": "Talk",
+         "clip2Delay": 1.2
+        }
+       ]
+      },
+      {
+       "cam": [
+        -3,
+        1.7,
+        -3
+       ],
+       "look": [
+        -3.4,
+        1.2,
+        1
+       ],
+       "line": "Course is plotted, Vane. Cloud-Break, by the back door. Have I ever steered you wrong?",
+       "speaker": "morrow",
+       "camTo": [
+        -3.2,
+        1.5,
+        -1.8
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 4,
+       "cardName": "MORROW",
+       "cardRole": "Navigator, and your oldest friend aboard.",
+       "actors": [
+        {
+         "look": "morrow",
+         "mark": "station_lyra",
+         "yaw": 180,
+         "clip": "Work",
+         "clip2": "Talk",
+         "clip2Delay": 1.2
+        }
+       ]
+      },
+      {
+       "cam": [
+        -1.6,
+        3,
+        -2.8
+       ],
+       "look": [
+        -2.6,
+        1,
+        1.6
+       ],
+       "line": "The Sky Vault at Cloud-Break: every coin the Armada ever taxed. One last job, then none of us ever runs again. Freedom has a price, and tonight the Armada pays it.",
+       "speaker": "cassian",
+       "camTo": [
+        -2,
+        2.5,
+        -1.7
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "seconds": 5,
+       "actors": [
+        {
+         "look": "cassian",
+         "mark": "",
+         "at": [
+          -4,
+          0,
+          1.4
+         ],
+         "yaw": 90,
+         "clip": "Talk"
+        },
+        {
+         "look": "morrow",
+         "mark": "",
+         "at": [
+          -1.2,
+          0,
+          1.4
+         ],
+         "yaw": -90
+        },
+        {
+         "look": "vane",
+         "mark": "",
+         "at": [
+          -2.6,
+          0,
+          0.5
+         ],
+         "yaw": 20
+        }
+       ]
+      },
+      {
+       "cam": [
+        -110,
+        40,
+        -60
+       ],
+       "look": [
+        0,
+        24,
+        100
+       ],
+       "line": "By first light the vault was open and the gold was in our hold. Then the patrols found us.",
+       "speaker": "",
+       "camTo": [
+        -60,
+        34,
+        -30
+       ],
+       "lookTo": [
+        0,
+        30,
+        120
+       ],
+       "weather": "heist",
+       "seconds": 5,
+       "props": [
+        {
+         "asset": "SM_Env_SkyVault",
+         "mark": "",
+         "at": [
+          10,
+          0,
+          140
+         ],
+         "scale": 4,
+         "faction": "Gilded"
+        }
+       ],
+       "ships": [
+        {
+         "ship": "sovereign_gale",
+         "at": [
+          -30,
+          18,
+          60
+         ],
+         "yaw": 200,
+         "to": [
+          -10,
+          18,
+          40
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "heist",
+     "objective": "sink_all",
+     "enemies": [
+      {
+       "key": "patrol_a",
+       "shipId": "armada_patrol",
+       "name": "Armada Patrol",
+       "ai": "patrol",
+       "damageScale": 0.35,
+       "accuracy": 18,
+       "hullScale": 0.9
+      },
+      {
+       "key": "patrol_b",
+       "shipId": "armada_patrol",
+       "name": "Armada Patrol",
+       "ai": "patrol",
+       "damageScale": 0.35,
+       "accuracy": 18,
+       "hullScale": 0.9
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "cassian",
+       "text": "Vault's cracked, Vane. Two patrols inbound. She's your ship: show them why.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "mirren",
+       "text": "Ha! Did you see that one fold?",
+       "trigger": "enemyDown"
+      }
+     ],
+     "teach": [
+      {
+       "control": "stick",
+       "speaker": "cassian",
+       "text": "Thumb on the stick, and bring her around.",
+       "delay": 1
+      },
+      {
+       "control": "broadside",
+       "speaker": "mirren",
+       "text": "Side-on to them, Vane, then hit BROADSIDE. All guns!",
+       "delay": 3
+      },
+      {
+       "control": "boost",
+       "speaker": "tobin",
+       "text": "Need to close the gap? Hold BOOST and open her up. A quick tap rolls you clear of shots.",
+       "delay": 14
+      }
+     ],
+     "ship": "sovereign_gale",
+     "shipHullScale": 1.5,
+     "music": "broadsides_at_dawn"
+    },
+    {
+     "kind": "story",
+     "title": "The Mutiny",
+     "lines": [],
+     "music": "the_sovereign_descends",
+     "shots": [
+      {
+       "cam": [
+        0,
+        3.2,
+        -8
+       ],
+       "look": [
+        0,
+        1.4,
+        0
+       ],
+       "line": "Ha! Did you see that last one fold? Drinks are on the Armada tonight!",
+       "speaker": "mirren",
+       "camTo": [
+        0,
+        2.8,
+        -6.4
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        },
+        {
+         "asset": "SM_Prop_TreasureChest",
+         "mark": "",
+         "at": [
+          0,
+          0,
+          1
+         ]
+        }
+       ],
+       "music": "skyward_regatta",
+       "seconds": 4,
+       "actors": [
+        {
+         "look": "mirren",
+         "mark": "",
+         "at": [
+          3,
+          0,
+          -1
+         ],
+         "yaw": 180,
+         "clip": "Victory"
+        },
+        {
+         "look": "odessa",
+         "mark": "",
+         "at": [
+          1.5,
+          0,
+          0.4
+         ],
+         "yaw": 180,
+         "clip": "Victory"
+        },
+        {
+         "look": "tobin",
+         "mark": "",
+         "at": [
+          -3,
+          0,
+          -0.5
+         ],
+         "yaw": 180,
+         "clip": "Victory"
+        },
+        {
+         "look": "vane",
+         "mark": "",
+         "at": [
+          -1,
+          0,
+          -1
+         ],
+         "yaw": 180,
+         "clip": "Talk"
+        },
+        {
+         "look": "cassian",
+         "mark": "",
+         "at": [
+          -1.3,
+          0.9,
+          2.0
+         ],
+         "yaw": 180
+        },
+        {
+         "look": "morrow",
+         "mark": "station_lyra",
+         "yaw": 180
+        }
+       ]
+      },
+      {
+       "cam": [
+        0.4,
+        2,
+        -6
+       ],
+       "look": [
+        0.4,
+        1.2,
+        -1.2
+       ],
+       "line": "Sorry, Captain. The Armada pays better than you do.",
+       "speaker": "morrow",
+       "camTo": [
+        0.4,
+        1.7,
+        -4.6
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        },
+        {
+         "asset": "SM_Prop_TreasureChest",
+         "mark": "",
+         "at": [
+          0,
+          0,
+          1
+         ]
+        }
+       ],
+       "music": "the_sovereign_descends",
+       "danger": true,
+       "seconds": 5,
+       "effects": [
+        {
+         "preset": "CannonFire",
+         "at": [
+          -0.5,
+          1.3,
+          -1.2
+         ],
+         "delay": 2.4,
+         "sfx": "Cannon",
+         "shake": 0.5
+        }
+       ],
+       "actors": [
+        {
+         "look": "morrow",
+         "mark": "",
+         "at": [
+          -2.6,
+          0,
+          1
+         ],
+         "to": [
+          -1.4,
+          0,
+          -1.2
+         ],
+         "yaw": 150,
+         "endYaw": 90,
+         "clip": "Talk",
+         "clip2": "AttackRanged",
+         "clip2Delay": 1.0
+        },
+        {
+         "look": "mirren",
+         "mark": "",
+         "at": [
+          2.4,
+          0,
+          -1.2
+         ],
+         "yaw": -90,
+         "clip": "Victory",
+         "clip2": "Death",
+         "clip2Delay": 2.4
+        }
+       ]
+      },
+      {
+       "cam": [
+        3,
+        2.6,
+        -13
+       ],
+       "look": [
+        -1,
+        2,
+        -1
+       ],
+       "line": "Lift-Core's burning! Morrow locked the doors! We're going down!",
+       "speaker": "odessa",
+       "camTo": [
+        1,
+        2,
+        -10.5
+       ],
+       "lookTo": [
+        -1.5,
+        1.5,
+        -6
+       ],
+       "arena": "SM_Env_LiftCoreChamber",
+       "faction": "Crimson",
+       "weather": "below",
+       "danger": true,
+       "seconds": 5,
+       "effects": [
+        {
+         "preset": "LiftCoreSabotage",
+         "at": [
+          0,
+          3.4,
+          -0.9
+         ],
+         "delay": 0.2
+        },
+        {
+         "preset": "ShipExplosion",
+         "at": [
+          0,
+          3.4,
+          -0.9
+         ],
+         "delay": 1.8,
+         "scale": 0.7,
+         "shake": 1.5,
+         "sfx": "Explosion"
+        },
+        {
+         "preset": "HullFire",
+         "at": [
+          -4,
+          0,
+          -4
+         ],
+         "delay": 0.6
+        }
+       ],
+       "actors": [
+        {
+         "look": "odessa",
+         "mark": "",
+         "at": [
+          4,
+          0,
+          -5
+         ],
+         "to": [
+          -1.6,
+          0,
+          -6.6
+         ],
+         "run": true,
+         "yaw": -100,
+         "endYaw": 180,
+         "clip": "Hit",
+         "clip2": "Talk",
+         "clip2Delay": 0.9
+        }
+       ]
+      },
+      {
+       "cam": [
+        70,
+        26,
+        -50
+       ],
+       "look": [
+        0,
+        12,
+        0
+       ],
+       "line": "One blast tore her open. And the Armada was already there, waiting, as if someone had told them where to look.",
+       "speaker": "",
+       "camTo": [
+        50,
+        14,
+        -60
+       ],
+       "lookTo": [
+        0,
+        6,
+        0
+       ],
+       "weather": "heist",
+       "danger": true,
+       "seconds": 5,
+       "ships": [
+        {
+         "ship": "gale_wreck",
+         "at": [
+          0,
+          8,
+          0
+         ],
+         "yaw": 150,
+         "to": [
+          0,
+          2,
+          0
+         ],
+         "burning": true,
+         "bank": 8
+        },
+        {
+         "ship": "armada_frigate",
+         "at": [
+          -90,
+          30,
+          90
+         ],
+         "yaw": 110,
+         "to": [
+          -50,
+          30,
+          70
+         ]
+        },
+        {
+         "ship": "armada_patrol",
+         "at": [
+          50,
+          34,
+          90
+         ],
+         "yaw": -120,
+         "to": [
+          30,
+          30,
+          70
+         ]
+        }
+       ],
+       "effects": [
+        {
+         "preset": "ShipExplosion",
+         "at": [
+          0,
+          16,
+          0
+         ],
+         "delay": 0.2,
+         "scale": 3,
+         "shake": 2.5,
+         "sfx": "Explosion"
+        },
+        {
+         "preset": "ShipShockwave",
+         "at": [
+          0,
+          16,
+          0
+         ],
+         "delay": 0.2,
+         "scale": 3
+        },
+        {
+         "preset": "ShipExplosion",
+         "at": [
+          8,
+          10,
+          -14
+         ],
+         "delay": 1.6,
+         "scale": 2,
+         "shake": 1.5,
+         "sfx": "Explosion"
+        }
+       ]
+      },
+      {
+       "cam": [
+        -1.6,
+        2.6,
+        -5.4
+       ],
+       "look": [
+        -1.2,
+        1.6,
+        1.5
+       ],
+       "line": "Vane! That scout off the rail! Get on it and get out! That's an order!",
+       "speaker": "cassian",
+       "camTo": [
+        -1.4,
+        2.2,
+        -4.2
+       ],
+       "arena": "SM_Env_QuarterdeckHub",
+       "faction": "Crimson",
+       "weather": "heist",
+       "props": [
+        {
+         "asset": "SM_Prop_HelmWheel",
+         "mark": "station_helm",
+         "at": [
+          0,
+          0,
+          -0.9
+         ]
+        },
+        {
+         "asset": "SM_Prop_SkyChartTable",
+         "mark": "station_lyra_table"
+        },
+        {
+         "asset": "SM_Prop_Cannon",
+         "mark": "station_rook",
+         "at": [
+          -1.2,
+          0,
+          0
+         ],
+         "scale": 1.1
+        },
+        {
+         "asset": "SM_Prop_AetherComm",
+         "mark": "station_thorne",
+         "at": [
+          1.4,
+          0,
+          -0.6
+         ]
+        },
+        {
+         "asset": "SM_Prop_RopeCoil",
+         "mark": "station_sable",
+         "at": [
+          1.6,
+          0,
+          0.8
+         ]
+        }
+       ],
+       "danger": true,
+       "seconds": 4,
+       "effects": [
+        {
+         "preset": "HullFire",
+         "at": [
+          3.5,
+          0.2,
+          1.5
+         ]
+        },
+        {
+         "preset": "HullFire",
+         "at": [
+          -5,
+          0.2,
+          1
+         ]
+        },
+        {
+         "preset": "DamageSmoke",
+         "at": [
+          1,
+          1,
+          3
+         ]
+        }
+       ],
+       "actors": [
+        {
+         "look": "cassian",
+         "mark": "",
+         "at": [
+          -1.3,
+          0.9,
+          2.0
+         ],
+         "yaw": 180,
+         "clip": "Talk",
+         "clip2": "Surrender",
+         "clip2Delay": 2.4
+        },
+        {
+         "look": "armada_soldier",
+         "mark": "",
+         "at": [
+          1.5,
+          0,
+          -0.5
+         ],
+         "yaw": -60,
+         "delay": 0.2,
+         "clip": "AttackRanged"
+        },
+        {
+         "look": "armada_soldier",
+         "mark": "",
+         "at": [
+          -4,
+          0,
+          -0.5
+         ],
+         "yaw": 60,
+         "delay": 0.5,
+         "clip": "AttackRanged"
+        },
+        {
+         "look": "vane",
+         "mark": "",
+         "at": [
+          0,
+          0,
+          -2
+         ],
+         "to": [
+          -9,
+          0,
+          -7
+         ],
+         "run": true,
+         "yaw": -130,
+         "delay": 1.8
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "heist",
+     "objective": "sink_all",
+     "enemies": [
+      {
+       "key": "scout",
+       "shipId": "armada_scout",
+       "name": "Armada Scout",
+       "ai": "patrol",
+       "damageScale": 0.2,
+       "accuracy": 20,
+       "unsinkable": true,
+       "easyToBoard": true,
+       "target": true
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "tobin",
+       "text": "Hull's going, Vane! Move!",
+       "trigger": "hullBelow",
+       "value": 0.4
+      }
+     ],
+     "teach": [
+      {
+       "control": "stick",
+       "speaker": "tobin",
+       "text": "She's still answering the stick! Barely!",
+       "delay": 0
+      },
+      {
+       "control": "boost",
+       "speaker": "tobin",
+       "text": "Hold BOOST! Catch that scout before she drops!",
+       "delay": 2
+      },
+      {
+       "control": "broadside",
+       "speaker": "tobin",
+       "text": "If you need to, BROADSIDE still fires. Go!",
+       "delay": 5
+      },
+      {
+       "control": "grapple",
+       "speaker": "cassian",
+       "text": "GRAPPLE! Throw the hook when you're close!",
+       "delay": 0,
+       "afterBetrayal": true
+      }
+     ],
+     "ship": "sovereign_gale",
+     "shipHullScale": 1.5,
+     "script": "betrayal",
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "deck",
+     "location": "Armada Scout, Main Deck",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 1,
+       "hpScale": 0.45,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 1,
+       "hpScale": 0.45,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "solo",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Two guards. Fine. Time the strike as it lands.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vane",
+       "text": "This is mine now.",
+       "trigger": "enemyLow"
+      }
+     ],
+     "music": "the_sovereign_descends",
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Gilded"
+    },
+    {
+     "kind": "story",
+     "title": "The Fall of the Gale",
+     "lines": [],
+     "music": "the_sovereign_descends",
+     "shots": [
+      {
+       "cam": [
+        34,
+        8,
+        -56
+       ],
+       "look": [
+        0,
+        8,
+        0
+       ],
+       "line": "I cut the lines and watched her go. The Sovereign Gale, burning, falling into the clouds. Everyone I knew was on that ship.",
+       "speaker": "vane",
+       "camTo": [
+        30,
+        -30,
+        -56
+       ],
+       "lookTo": [
+        0,
+        -60,
+        5
+       ],
+       "weather": "heist",
+       "seconds": 7,
+       "ships": [
+        {
+         "ship": "gale_wreck",
+         "at": [
+          0,
+          0,
+          0
+         ],
+         "yaw": 150,
+         "to": [
+          0,
+          -80,
+          10
+         ],
+         "burning": true,
+         "bank": 14,
+         "pitch": 8
+        }
+       ],
+       "effects": [
+        {
+         "preset": "ShipExplosion",
+         "at": [
+          0,
+          -18,
+          4
+         ],
+         "delay": 2.6,
+         "scale": 2.4,
+         "sfx": "Explosion",
+         "shake": 1
+        },
+        {
+         "preset": "ShipExplosion",
+         "at": [
+          4,
+          -38,
+          8
+         ],
+         "delay": 4.6,
+         "scale": 2,
+         "sfx": "Explosion",
+         "shake": 0.6
+        }
+       ]
+      },
+      {
+       "cam": [
+        1.4,
+        2.6,
+        -7.5
+       ],
+       "look": [
+        0,
+        1.3,
+        -1
+       ],
+       "line": "Cassian in irons, Admiral. Crew accounted for. The First Mate? Lost overboard.",
+       "speaker": "armada",
+       "camTo": [
+        1,
+        2.2,
+        -6
+       ],
+       "arena": "SM_Env_DreadnoughtDeck",
+       "faction": "Gilded",
+       "weather": "heist",
+       "seconds": 5,
+       "actors": [
+        {
+         "look": "armada_officer",
+         "mark": "",
+         "at": [
+          2.2,
+          0,
+          -1.4
+         ],
+         "yaw": -90,
+         "clip": "Talk"
+        },
+        {
+         "look": "cassian",
+         "mark": "",
+         "at": [
+          -0.6,
+          0,
+          -1.2
+         ],
+         "yaw": 90,
+         "clip": "Surrender"
+        },
+        {
+         "look": "armada_soldier",
+         "mark": "",
+         "at": [
+          -2.6,
+          0,
+          -0.2
+         ],
+         "yaw": 90
+        },
+        {
+         "look": "armada_soldier",
+         "mark": "",
+         "at": [
+          -3.2,
+          0,
+          -2
+         ],
+         "yaw": 60
+        },
+        {
+         "look": "morrow",
+         "mark": "",
+         "at": [
+          4.2,
+          0,
+          -0.4
+         ],
+         "yaw": -120
+        }
+       ]
+      },
+      {
+       "cam": [
+        -40,
+        22,
+        -60
+       ],
+       "look": [
+        0,
+        8,
+        20
+       ],
+       "line": "Lost. Good. Let them think so. I've got a stolen gunboat, a price on my head, and one name: Morrow.",
+       "speaker": "vane",
+       "camTo": [
+        -20,
+        16,
+        -40
+       ],
+       "lookTo": [
+        10,
+        8,
+        60
+       ],
+       "weather": "scrapwinds",
+       "music": "skyward_regatta",
+       "seconds": 6,
+       "ships": [
+        {
+         "ship": "rust_wing",
+         "at": [
+          0,
+          8,
+          0
+         ],
+         "yaw": 10,
+         "to": [
+          10,
+          10,
+          70
+         ]
+        }
+       ]
+      },
+      {
+       "cam": [
+        0,
+        40,
+        -160
+       ],
+       "look": [
+        0,
+        44,
+        40
+       ],
+       "line": "",
+       "speaker": "",
+       "camTo": [
+        0,
+        60,
+        -120
+       ],
+       "weather": "heist",
+       "seconds": 5,
+       "title": "RANSOM SKIES",
+       "subtitle": "Shattered Skies",
+       "ships": [
+        {
+         "ship": "rust_wing",
+         "at": [
+          0,
+          14,
+          0
+         ],
+         "yaw": 0,
+         "to": [
+          0,
+          16,
+          60
+         ]
+        }
+       ]
+      }
+     ],
+     "ship": "gale_wreck",
+     "weather": "heist"
+    }
+   ],
+   "ships": [
+    "rust_wing"
+   ],
+   "mechanics": [
+    "stick",
+    "broadside",
+    "boost",
+    "bow",
+    "grapple"
+   ]
+  },
+  {
+   "id": "a1_leak",
+   "act": 1,
+   "title": "Leaking Lift-Gas",
+   "blurb": "The Scrap-Winds. Everyone here wants the bounty on your head.",
+   "kind": "story",
+   "requires": "",
+   "gold": 110,
+   "xp": 90,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Scrap-Winds",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Toxic cloud, floating junk and a leak in the lift-bag. Below the sky-lanes nobody asks questions."
+      },
+      {
+       "speaker": "scav",
+       "text": "Well now. That's the gunboat with the Armada bounty on it. Open up, boys!"
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "sink_all",
+     "enemies": [
+      {
+       "key": "raider_a",
+       "shipId": "scrap_raider",
+       "name": "Scrap Raider",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 15
+      },
+      {
+       "key": "raider_b",
+       "shipId": "scrap_raider",
+       "name": "Scrap Raider",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 15,
+       "hullScale": 0.8
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "scav",
+       "text": "Fresh meat! Mind the junk, she's a small ship!",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vane",
+       "text": "Sunk. And there goes everything they were carrying.",
+       "trigger": "enemyDown"
+      },
+      {
+       "speaker": "vane",
+       "text": "Careful. Every hit costs gold to patch.",
+       "trigger": "hullBelow",
+       "value": 0.5
+      },
+      {
+       "speaker": "vane",
+       "text": "Their guns glow before they fire. Tap BOOST and roll clear.",
+       "trigger": "volley"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "story",
+     "title": "Scrap",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Barely worth the powder. Sink a ship and you get scrap. If I want real prizes, I need its deck, not its wreckage."
+      },
+      {
+       "speaker": "vane",
+       "text": "And I need someone who can shoot. The Armada is hauling a disgraced cannoneer through here in irons."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "a1_rook",
+   "act": 1,
+   "title": "The Disgraced Cannoneer",
+   "blurb": "An Armada brig skiff carries a prisoner who knows how their guns work.",
+   "kind": "story",
+   "requires": "",
+   "gold": 150,
+   "xp": 120,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "brig",
+       "shipId": "armada_scout",
+       "name": "Brig Skiff",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "damageScale": 0.55,
+       "accuracy": 14,
+       "hullScale": 1.2
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "armada",
+       "text": "Unknown gunboat, you are in restricted sky. Turn back.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vane",
+       "text": "She's wallowing. Close in and throw the hook!",
+       "trigger": "grappleReady"
+      }
+     ],
+     "teach": [
+      {
+       "control": "grapple",
+       "speaker": "vane",
+       "text": "Beat her down, then get close and GRAPPLE. No sinking this one.",
+       "delay": 6
+      }
+     ]
+    },
+    {
+     "kind": "deck",
+     "location": "Brig Skiff, Holding Deck",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 2,
+       "hpScale": 0.7,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 1,
+       "hpScale": 0.7,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "armada",
+       "text": "Prisoner stays in irons! Hold the deck!",
+       "trigger": "start"
+      }
+     ],
+     "arena": "SM_Env_CellBlock",
+     "arenaFaction": "Warden"
+    },
+    {
+     "kind": "story",
+     "title": "Rook",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "You're not Armada. You're not rescue, either. What are you?"
+      },
+      {
+       "speaker": "vane",
+       "text": "Short a gunner. Know anything about their ships?"
+      },
+      {
+       "speaker": "rook",
+       "text": "I built half their gun drills. Hit the propellers, not the hull. A ship that can't run can't stop you walking onto it."
+      }
+     ]
+    }
+   ],
+   "recruits": [
+    "rook"
+   ],
+   "recruitLevel": 2,
+   "mechanics": [
+    "aim",
+    "flak"
+   ]
+  },
+  {
+   "id": "a1_mines",
+   "act": 1,
+   "title": "The Lift-Stone Run",
+   "blurb": "The leak's getting worse. There's raw Lift-Stone adrift in a mine field, and you need it.",
+   "kind": "story",
+   "requires": "",
+   "gold": 170,
+   "xp": 110,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "Lift-Stone",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "That leak will drop us by morning. Raw Lift-Stone would seal it."
+      },
+      {
+       "speaker": "vane",
+       "text": "And where do we get raw Lift-Stone?"
+      },
+      {
+       "speaker": "rook",
+       "text": "Old mine field. The mines still work. Shoot them from far off, or fly around them."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "collect",
+     "enemies": [
+      {
+       "key": "raider_a",
+       "shipId": "scrap_raider",
+       "name": "Scrap Raider",
+       "ai": "raider",
+       "damageScale": 0.45,
+       "accuracy": 16,
+       "hullScale": 0.8
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Fly through the glowing stones. Keep clear of the mines, and of the green smog: it eats hulls.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "rook",
+       "text": "That's one. Keep going!",
+       "trigger": "pickup"
+      },
+      {
+       "speaker": "scav",
+       "text": "Mine field's ours! Get him!",
+       "trigger": "time",
+       "value": 12
+      }
+     ],
+     "teach": [],
+     "pickups": 5,
+     "mines": 12,
+     "pickupModel": "SM_Prop_LiftStone"
+    },
+    {
+     "kind": "story",
+     "title": "Sealed",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "She'll hold. Let's find something bigger to steal."
+      }
+     ]
+    }
+   ],
+   "items": [
+    "rum",
+    "rum"
+   ]
+  },
+  {
+   "id": "a1_prize",
+   "act": 1,
+   "title": "Claim or Strip",
+   "blurb": "A salvage brig worth having, if you can take it in one piece.",
+   "kind": "story",
+   "requires": "",
+   "gold": 240,
+   "xp": 150,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "prize",
+       "shipId": "scrap_brig",
+       "name": "Gorse's Brig",
+       "ai": "raider",
+       "captain": "gorse",
+       "target": true,
+       "flees": true,
+       "hooks": 3,
+       "damageScale": 0.6,
+       "accuracy": 12
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "gorse",
+       "text": "A gunboat? Bold. I'll hang your hull from my bowsprit.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "rook",
+       "text": "Engines are gone! She's dead in the air. Get your hooks on her!",
+       "trigger": "enginesOut"
+      },
+      {
+       "speaker": "rook",
+       "text": "Hook's on! Stay close, the lines won't hold if you drift.",
+       "trigger": "hook"
+      },
+      {
+       "speaker": "gorse",
+       "text": "Not today, you lunatic! Full burn!",
+       "trigger": "escaping"
+      }
+     ],
+     "teach": [
+      {
+       "control": "aim",
+       "speaker": "rook",
+       "text": "Set AIM to ENGINES. Shoot the propellers and she can't run.",
+       "delay": 2
+      },
+      {
+       "control": "multihook",
+       "speaker": "rook",
+       "text": "A brig takes three hooks. Keep tapping GRAPPLE while you're close.",
+       "delay": 16
+      }
+     ]
+    },
+    {
+     "kind": "deck",
+     "location": "Gorse's Brig, Main Deck",
+     "crew": [
+      {
+       "id": "gorse",
+       "name": "Captain Gorse",
+       "classId": "pirate_captain",
+       "level": 2,
+       "hpScale": 0.7,
+       "look": "gorse"
+      },
+      {
+       "id": "deck_a",
+       "name": "Brigand",
+       "classId": "brigand",
+       "level": 2,
+       "look": "scrap_hand"
+      }
+     ],
+     "party": "boarding",
+     "lines": [],
+     "boardOnly": true,
+     "arena": "SM_Env_ScrapDeck",
+     "arenaFaction": "Scrap"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "Captain Gorse",
+     "shipId": "scrap_brig",
+     "gold": 220,
+     "officer": "brill",
+     "module": "scrap_plating",
+     "signature": "",
+     "lines": [
+      {
+       "speaker": "gorse",
+       "text": "All right, it's your deck. Name your price, pirate."
+      }
+     ],
+     "captainLook": "gorse"
+    }
+   ],
+   "mechanics": [
+    "multihook"
+   ]
+  },
+  {
+   "id": "a1_krag",
+   "act": 1,
+   "title": "Dead-Weight",
+   "blurb": "Krag anchors ships and drags them into the Undertow. Then he picks through what's left.",
+   "kind": "story",
+   "requires": "",
+   "gold": 300,
+   "xp": 220,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Salvage King",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Krag's fleet has the lane. He doesn't shoot you down. He harpoons you and takes you down with him."
+      },
+      {
+       "speaker": "vane",
+       "text": "So when that harpoon comes, I climb it."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "krag",
+       "shipId": "iron_maw",
+       "name": "The Iron Maw",
+       "ai": "krag",
+       "target": true,
+       "unsinkable": true,
+       "harpoonAfter": 32,
+       "damageScale": 0.6,
+       "accuracy": 10,
+       "hooks": 3,
+       "hullScale": 0.9
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "krag",
+       "text": "I've sunk better than you for less. Down you go.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "krag",
+       "text": "Got you. Feel that? That's the Undertow, calling.",
+       "trigger": "tethered"
+      },
+      {
+       "speaker": "rook",
+       "text": "We're being dragged down! Hit GRAPPLE, ride the line onto his deck!",
+       "trigger": "tethered"
+      },
+      {
+       "speaker": "krag",
+       "text": "My balloon! You'll pay in scrap for that!",
+       "trigger": "enemyHullBelow",
+       "value": 0.55
+      },
+      {
+       "speaker": "rook",
+       "text": "Line of fire's clear astern. Hit him from behind and it rakes the whole hull.",
+       "trigger": "time",
+       "value": 10
+      }
+     ],
+     "teach": [],
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "The Iron Maw, Winch Deck",
+     "crew": [
+      {
+       "id": "bruiser_a",
+       "name": "Bruiser",
+       "classId": "bruiser",
+       "level": 3,
+       "hpScale": 0.8,
+       "look": "scrap_bruiser"
+      },
+      {
+       "id": "bruiser_b",
+       "name": "Bruiser",
+       "classId": "bruiser",
+       "level": 2,
+       "hpScale": 0.8,
+       "look": "scrap_bruiser"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Bruisers at the winch! Cut through them!",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_ScrapDeck",
+     "arenaFaction": "Scrap",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "The Iron Maw, Open Cargo Bay",
+     "crew": [
+      {
+       "id": "krag",
+       "name": "\"Dead-Weight\" Krag",
+       "classId": "salvage_king",
+       "level": 3,
+       "hpScale": 0.85,
+       "enrageAt": 0.5,
+       "look": "krag"
+      }
+     ],
+     "party": "solo",
+     "lines": [
+      {
+       "speaker": "krag",
+       "text": "Just you and me, and a long way down.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "krag",
+       "text": "No... the doors... get back!",
+       "trigger": "enemyLow"
+      },
+      {
+       "speaker": "krag",
+       "text": "Enough! I'll drag you down myself!",
+       "trigger": "enrage"
+      }
+     ],
+     "boardOnly": true,
+     "healBefore": 0.35,
+     "arena": "SM_Env_ScrapDeck",
+     "arenaFaction": "Scrap",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "\"Dead-Weight\" Krag",
+     "shipId": "iron_maw",
+     "gold": 340,
+     "officer": "hask",
+     "module": "winch_motor",
+     "signature": "harpoon_winch",
+     "lines": [
+      {
+       "speaker": "krag",
+       "text": "Winch is yours whatever happens, pirate. Now what about me and my ship?"
+      }
+     ],
+     "captainLook": "krag"
+    }
+   ],
+   "mechanics": [
+    "signature"
+   ]
+  },
+  {
+   "id": "a2_lyra",
+   "act": 2,
+   "title": "Eye of the Cyclone",
+   "blurb": "A smuggler's distress call from inside a storm that shouldn't be flyable.",
+   "kind": "story",
+   "requires": "",
+   "gold": 240,
+   "xp": 200,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Smuggler's Jetstream",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Intercepted Armada traffic. Cassian's alive, Vane. They're holding him on the Tartarus Aloft. It never lands."
+      },
+      {
+       "speaker": "vane",
+       "text": "Then we go up after him. Who knows its flight path?"
+      },
+      {
+       "speaker": "rook",
+       "text": "Three Syndicate lords, each with one cipher. And there's a wind-reader out there who could get us to them, if she survives the cyclone."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "cyclone",
+     "objective": "survive",
+     "enemies": [
+      {
+       "key": "hunter_a",
+       "shipId": "syndicate_cutter",
+       "name": "Syndicate Hunter",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 13,
+       "hullScale": 0.75
+      },
+      {
+       "key": "hunter_b",
+       "shipId": "syndicate_cutter",
+       "name": "Syndicate Hunter",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 14,
+       "hullScale": 0.75
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "Whoever's out there, I can hear your engines! Stay high! Don't fight the wind, ride it!",
+       "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "Yes! Let the current carry you, it'll double your speed!",
+       "trigger": "time",
+       "value": 12
+      },
+      {
+       "speaker": "lyra",
+       "text": "Nearly clear. Hold on a little longer!",
+       "trigger": "time",
+       "value": 34
+      }
+     ],
+     "teach": [
+      {
+       "control": "altitude",
+       "speaker": "lyra",
+       "text": "Push the stick up to CLIMB, down to DIVE. Their guns can't angle far!",
+       "delay": 3
+      }
+     ],
+     "seconds": 45
+    },
+    {
+     "kind": "story",
+     "title": "Lyra",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "You flew into that on purpose? Either you're mad or you're useful. I read winds. Give me your helm."
+      },
+      {
+       "speaker": "rook",
+       "text": "With her charts we can use the currents, and hide in the cloud banks. I've rigged chain-shot for sails, and fire-shot for decks."
+      }
+     ]
+    }
+   ],
+   "recruits": [
+    "lyra"
+   ],
+   "recruitLevel": 3,
+   "mechanics": [
+    "altitude",
+    "winds",
+    "clouds",
+    "chain",
+    "fire"
+   ]
+  },
+  {
+   "id": "a2_haven",
+   "act": 2,
+   "title": "Haven Under Fire",
+   "blurb": "The Smugglers' Haven will sell you a lead on the ciphers, if it's still standing.",
+   "kind": "story",
+   "requires": "",
+   "gold": 280,
+   "xp": 200,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Haven",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "The Smugglers' Haven. Every cipher lead in the Jetstream passes through here."
+      },
+      {
+       "speaker": "runner",
+       "text": "You, with the harpoon! Syndicate hunters are on my tail. Get me to the dock and I'll tell you where Ashgrave flies."
+      }
+     ],
+     "backdrop": "SM_Env_SmugglersHaven",
+     "weather": "jetstream"
+    },
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "escort",
+     "enemies": [
+      {
+       "key": "runner",
+       "shipId": "freedom_runner",
+       "name": "Haven Runner",
+       "ai": "raider",
+       "ally": true,
+       "target": true,
+       "accuracy": 12,
+       "hullScale": 1.1,
+       "damageScale": 0.5
+      },
+      {
+       "key": "hunter_a",
+       "shipId": "syndicate_cutter",
+       "name": "Syndicate Hunter",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 13,
+       "hullScale": 0.7
+      },
+      {
+       "key": "hunter_b",
+       "shipId": "scrap_raider",
+       "name": "Syndicate Hunter",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 14,
+       "wave": 1
+      },
+      {
+       "key": "hunter_c",
+       "shipId": "syndicate_cutter",
+       "name": "Syndicate Hunter",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 13,
+       "hullScale": 0.7,
+       "wave": 1
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "runner",
+       "text": "Keep them off me! I can't take many hits!",
+       "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "More coming in from the current!",
+       "trigger": "wave"
+      },
+      {
+       "speaker": "vane",
+       "text": "When their guns glow, tap BOOST to roll out of the way.",
+       "trigger": "time",
+       "value": 8
+      }
+     ],
+     "teach": [],
+     "seconds": 75
+    },
+    {
+     "kind": "story",
+     "title": "A Lead",
+     "lines": [
+      {
+       "speaker": "runner",
+       "text": "You saved my neck. Ashgrave runs the western current, and never without an escort. That's the first cipher."
+      }
+     ],
+     "backdrop": "SM_Env_SmugglersHaven",
+     "weather": "jetstream"
+    }
+   ],
+   "items": [
+    "repair_kit",
+    "rum"
+   ]
+  },
+  {
+   "id": "a2_ashgrave",
+   "act": 2,
+   "title": "First Cipher: Lord Ashgrave",
+   "blurb": "Ashgrave runs the western current and never flies without an escort.",
+   "kind": "story",
+   "requires": "",
+   "gold": 300,
+   "xp": 220,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "ashgrave",
+       "shipId": "syndicate_cutter",
+       "name": "Ashgrave's Cutter",
+       "ai": "raider",
+       "captain": "ashgrave",
+       "target": true,
+       "flees": true,
+       "hooks": 3,
+       "damageScale": 0.65,
+       "accuracy": 10,
+       "hullScale": 1.05
+      },
+      {
+       "key": "escort",
+       "shipId": "scrap_raider",
+       "name": "Syndicate Escort",
+       "ai": "raider",
+       "damageScale": 0.5,
+       "accuracy": 14
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "ashgrave",
+       "text": "No one flies my current without paying my toll.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "We're in the cloud. They can't see us. Your first volley will hit hard.",
+       "trigger": "stealth"
+      },
+      {
+       "speaker": "rook",
+       "text": "Chain-shot's tearing up the sails. Keep it on them!",
+       "trigger": "enginesOut"
+      },
+      {
+       "speaker": "ashgrave",
+       "text": "Burn everything! Get me out of here!",
+       "trigger": "escaping"
+      }
+     ],
+     "teach": [
+      {
+       "control": "ammo",
+       "speaker": "rook",
+       "text": "Tap AMMO to change shot. CHAIN wrecks engines, FIRE burns the crew you'll meet on deck.",
+       "delay": 3
+      }
+     ],
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "Ashgrave's Cutter, Quarterdeck",
+     "crew": [
+      {
+       "id": "ashgrave",
+       "name": "Lord Ashgrave",
+       "classId": "corsair",
+       "level": 5,
+       "look": "ashgrave"
+      },
+      {
+       "id": "deck_a",
+       "name": "Brigand",
+       "classId": "brigand",
+       "level": 5,
+       "look": "syndicate_hand"
+      },
+      {
+       "id": "deck_b",
+       "name": "Bombardier",
+       "classId": "bombardier",
+       "level": 4,
+       "look": "syndicate_gunner"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "ashgrave",
+       "text": "You want the cipher? Come and take it, then.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Syndicate",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "Lord Ashgrave",
+     "shipId": "syndicate_cutter",
+     "gold": 300,
+     "officer": "wren",
+     "module": "syndicate_rudder",
+     "signature": "",
+     "lines": [
+      {
+       "speaker": "ashgrave",
+       "text": "The cipher's in my coat. Please. There's no need for this to get ugly."
+      }
+     ],
+     "captainLook": "ashgrave"
+    }
+   ],
+   "cipher": true
+  },
+  {
+   "id": "a2_sable",
+   "act": 2,
+   "title": "Second Cipher: The Assassin",
+   "blurb": "The second cipher is guarded by the Syndicate's best blade.",
+   "kind": "story",
+   "requires": "",
+   "gold": 340,
+   "xp": 240,
+   "phases": [
+    {
+     "kind": "assign",
+     "title": "Divide the Crew",
+     "minDefenders": 1,
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "They raid ships while the boarding party's away. Whoever you leave behind keeps our hull in one piece."
+      },
+      {
+       "speaker": "vane",
+       "text": "So who boards, and who holds the helm?"
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "courier",
+       "shipId": "syndicate_cutter",
+       "name": "Cipher Courier",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.65,
+       "accuracy": 10
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "Whoever you are, turn around. I don't get paid extra for you.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "There's the courier. Ride the current behind them.",
+       "trigger": "time",
+       "value": 8
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "Cipher Courier, Main Deck",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Bodyguard",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_hand"
+      },
+      {
+       "id": "guard_b",
+       "name": "Bodyguard",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_hand"
+      },
+      {
+       "id": "sable",
+       "name": "Sable",
+       "classId": "corsair",
+       "level": 6,
+       "spare": true,
+       "look": "sable"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Take the bodyguards. Leave Sable standing. I want that blade on my side.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "sable",
+       "text": "You're not even trying to hit me. Why?",
+       "trigger": "enemyLow"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Syndicate"
+    },
+    {
+     "kind": "story",
+     "title": "Sable",
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "My bodyguards are down, and you held back. Nobody holds back."
+      },
+      {
+       "speaker": "vane",
+       "text": "I've got a crew of outcasts and a grudge against the whole sky. Interested?"
+      },
+      {
+       "speaker": "sable",
+       "text": "Give me the run of any enemy ship. I'll set charges on their Lift-Core. Captains surrender quickly with a timer ticking under their feet."
+      }
+     ]
+    }
+   ],
+   "recruits": [
+    "sable"
+   ],
+   "recruitLevel": 4,
+   "mechanics": [
+    "sabotage",
+    "assign"
+   ],
+   "cipher": true
+  },
+  {
+   "id": "a2_thrace",
+   "act": 2,
+   "title": "Third Cipher: Lady Thrace",
+   "blurb": "Thrace flies at the very top of the Jetstream, out of reach of most guns.",
+   "kind": "story",
+   "requires": "",
+   "gold": 380,
+   "xp": 260,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "thrace",
+       "shipId": "syndicate_cutter",
+       "name": "Thrace's Cutter",
+       "ai": "raider",
+       "captain": "thrace",
+       "target": true,
+       "flees": true,
+       "hooks": 3,
+       "damageScale": 0.7,
+       "accuracy": 9,
+       "hullScale": 1.2
+      },
+      {
+       "key": "escort_a",
+       "shipId": "scrap_raider",
+       "name": "Syndicate Escort",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 13
+      },
+      {
+       "key": "escort_b",
+       "shipId": "scrap_raider",
+       "name": "Syndicate Escort",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 13
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "thrace",
+       "text": "So you're the upstart who robbed Ashgrave. Do try to keep up.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "sable",
+       "text": "Get me on that deck. Thrace won't last long with charges under her.",
+       "trigger": "grappleReady"
+      },
+      {
+       "speaker": "thrace",
+       "text": "You can't catch what you can't reach!",
+       "trigger": "escaping"
+      }
+     ],
+     "teach": [],
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "Thrace's Cutter, Sky Lounge",
+     "crew": [
+      {
+       "id": "thrace",
+       "name": "Lady Thrace",
+       "classId": "corsair",
+       "level": 7,
+       "look": "thrace"
+      },
+      {
+       "id": "deck_a",
+       "name": "Duelist",
+       "classId": "corsair",
+       "level": 5,
+       "hpScale": 0.6,
+       "look": "syndicate_hand"
+      },
+      {
+       "id": "deck_b",
+       "name": "Bombardier",
+       "classId": "bombardier",
+       "level": 6,
+       "look": "syndicate_gunner"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "Charges going below. Keep them busy for five rounds.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Syndicate",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "Lady Thrace",
+     "shipId": "syndicate_cutter",
+     "gold": 360,
+     "officer": "ivo",
+     "module": "gilded_battery",
+     "signature": "",
+     "lines": [
+      {
+       "speaker": "thrace",
+       "text": "Take your cipher, and spare me the speech."
+      }
+     ],
+     "captainLook": "thrace"
+    }
+   ],
+   "cipher": true
+  },
+  {
+   "id": "a2_twins",
+   "act": 2,
+   "title": "The Twin Corsairs",
+   "blurb": "Vex and Vesper hold the last leg of the route, and they hunt as a pair.",
+   "kind": "story",
+   "requires": "",
+   "gold": 460,
+   "xp": 320,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "Two Clippers",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "Twin clippers coming out of the sun. Vex and Vesper. Nothing we've got can catch both."
+      },
+      {
+       "speaker": "vane",
+       "text": "Then I won't catch both. I'll catch one, and use it to catch the other."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "vex",
+       "shipId": "corsair_clipper",
+       "name": "Vex's Clipper",
+       "ai": "corsair",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.6,
+       "accuracy": 10,
+       "standoff": 45,
+       "signatureEvery": 15
+      },
+      {
+       "key": "vesper",
+       "shipId": "corsair_clipper",
+       "name": "Vesper's Clipper",
+       "ai": "corsair",
+       "damageScale": 0.6,
+       "accuracy": 11,
+       "standoff": 45,
+       "signatureEvery": 18
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "vex",
+       "text": "Round and round we go, little brig.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vesper",
+       "text": "Which one of us do you think you can catch?",
+       "trigger": "time",
+       "value": 7
+      },
+      {
+       "speaker": "rook",
+       "text": "Line's on! Vex can't slip that. Get over there!",
+       "trigger": "tethered"
+      }
+     ],
+     "teach": [
+      {
+       "control": "signature",
+       "speaker": "rook",
+       "text": "Use Krag's HARPOON! Snag a clipper, then GRAPPLE straight onto it!",
+       "delay": 4
+      }
+     ],
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "Vex's Clipper, Main Deck",
+     "crew": [
+      {
+       "id": "vex",
+       "name": "Vex",
+       "classId": "twin",
+       "level": 7,
+       "enrageAt": 0.4,
+       "look": "vex"
+      },
+      {
+       "id": "deck_a",
+       "name": "Corsair Hand",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_hand"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "vex",
+       "text": "Vesper! They're on my deck!",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Syndicate",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "story",
+     "title": "Hijack",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Cut the lines. Bring the old ship around behind us. I'm flying this one."
+      },
+      {
+       "speaker": "vesper",
+       "text": "VEX! You stole... you'll burn for that!"
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "vesper",
+       "shipId": "mirage",
+       "name": "The Mirage",
+       "ai": "corsair",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.65,
+       "accuracy": 9,
+       "standoff": 45,
+       "signatureEvery": 12
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Now we're even on speed.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vesper",
+       "text": "That was my brother's ship!",
+       "trigger": "enemyHullBelow",
+       "value": 0.6
+      }
+     ],
+     "teach": [],
+     "ship": "corsair_clipper",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "Vesper's Clipper, Main Deck",
+     "crew": [
+      {
+       "id": "vesper",
+       "name": "Vesper",
+       "classId": "twin",
+       "level": 8,
+       "enrageAt": 0.4,
+       "look": "vesper"
+      },
+      {
+       "id": "deck_a",
+       "name": "Corsair Hand",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_hand"
+      }
+     ],
+     "party": "boarding",
+     "lines": [],
+     "boardOnly": true,
+     "healBefore": 0.3,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Syndicate",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "Vesper",
+     "shipId": "mirage",
+     "gold": 460,
+     "officer": "",
+     "module": "twin_turbine",
+     "signature": "afterburner",
+     "lines": [
+      {
+       "speaker": "vesper",
+       "text": "The Mirage is the fastest thing in the sky. It always was. Do what you're going to do."
+      }
+     ],
+     "captainLook": "vesper"
+    }
+   ]
+  },
+  {
+   "id": "a3_tartarus",
+   "act": 3,
+   "title": "Tartarus Aloft",
+   "blurb": "Three ciphers. One flying prison. Cassian is in the high-security brig.",
+   "kind": "story",
+   "requires": "",
+   "gold": 500,
+   "xp": 340,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Cirrus Citadel",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "There. Above the cirrus. Tartarus Aloft, right where the ciphers said it would be."
+      },
+      {
+       "speaker": "vane",
+       "text": "Hold on, Cassian. I'm nearly there."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "citadel",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "tartarus",
+       "shipId": "tartarus",
+       "name": "Tartarus Aloft",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.65,
+       "accuracy": 9,
+       "hullScale": 0.8
+      },
+      {
+       "key": "guard",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 12
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "armada",
+       "text": "Unidentified vessel, you will be fired upon.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "rook",
+       "text": "She's huge but she's slow. Stay out of her broadside.",
+       "trigger": "time",
+       "value": 10
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "Tartarus Aloft, Upper Deck",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 9,
+       "look": "warden_guard"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 9,
+       "look": "warden_guard"
+      },
+      {
+       "id": "officer",
+       "name": "Deck Officer",
+       "classId": "armada_officer",
+       "level": 8,
+       "hpScale": 0.7,
+       "look": "armada_officer"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "Stairs to the cell block are aft. Move.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Warden"
+    },
+    {
+     "kind": "deck",
+     "location": "Tartarus Aloft, Cell Block",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Jailer",
+       "classId": "bruiser",
+       "level": 9,
+       "hpScale": 0.75,
+       "look": "scrap_bruiser"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 9,
+       "look": "warden_guard"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "It's dark down here. Keep together.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "below": true,
+     "healBefore": 0.25,
+     "arena": "SM_Env_CellBlock",
+     "arenaFaction": "Warden"
+    },
+    {
+     "kind": "story",
+     "title": "The War Room",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "This is the high-security brig? Maps. Wine. A feather bed."
+      },
+      {
+       "speaker": "admiral",
+       "text": "You always did have good timing, Vane. Sit down. You've come a long way for nothing."
+      },
+      {
+       "speaker": "vane",
+       "text": "They told me you were in irons."
+      },
+      {
+       "speaker": "admiral",
+       "text": "I told them to tell you that. The age of free pirates is over. I sold them the crew and the Gale for a pardon and an admiral's coat. Morrow only did as I said."
+      },
+      {
+       "speaker": "vane",
+       "text": "You raised me."
+      },
+      {
+       "speaker": "admiral",
+       "text": "And I'm sorry you lived. Warden, see to it."
+      }
+     ],
+     "arena": "SM_Env_WarRoom",
+     "arenaFaction": "Gilded",
+     "weather": "below",
+     "actors": [
+      {
+       "speaker": "admiral",
+       "look": "admiral",
+       "mark": "cassian_mark",
+       "clip": "Talk",
+       "yaw": 0
+      },
+      {
+       "speaker": "vane",
+       "look": "vane",
+       "mark": "party_slot_1",
+       "clip": "Idle",
+       "yaw": 125
+      },
+      {
+       "speaker": "armada",
+       "look": "warden_guard",
+       "mark": "enemy_slot_1",
+       "clip": "Idle",
+       "yaw": -125
+      },
+      {
+       "speaker": "armada",
+       "look": "warden_guard",
+       "mark": "enemy_slot_3",
+       "clip": "Idle",
+       "yaw": -125
+      }
+     ],
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "deck",
+     "location": "Tartarus Aloft, War Room",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Warden Guard",
+       "classId": "armada_guard",
+       "level": 7,
+       "hpScale": 0.85,
+       "look": "warden_guard"
+      },
+      {
+       "id": "guard_b",
+       "name": "Warden Guard",
+       "classId": "armada_guard",
+       "level": 7,
+       "hpScale": 0.85,
+       "look": "warden_guard"
+      },
+      {
+       "id": "captain",
+       "name": "Guard Captain",
+       "classId": "armada_officer",
+       "level": 6,
+       "hpScale": 0.7,
+       "look": "armada_officer"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "admiral",
+       "text": "Do try to make it quick. I've a fleet to run.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vane",
+       "text": "Cassian! Come back here!",
+       "trigger": "enemyLow"
+      }
+     ],
+     "boardOnly": true,
+     "healBefore": 0.6,
+     "arena": "SM_Env_WarRoom",
+     "arenaFaction": "Gilded",
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "story",
+     "title": "Thorne",
+     "lines": [
+      {
+       "speaker": "thorne",
+       "text": "You! The one who just got sentenced to death! I'm the Chief Engineer of this prison, and I've had enough of it."
+      },
+      {
+       "speaker": "thorne",
+       "text": "I can overdrive any Lift-Core you've got and patch a hull under fire. Get me off this barge."
+      }
+     ]
+    }
+   ],
+   "recruits": [
+    "thorne"
+   ],
+   "recruitLevel": 6,
+   "mechanics": [
+    "patch",
+    "overdrive",
+    "mortar"
+   ]
+  },
+  {
+   "id": "a3_gliders",
+   "act": 3,
+   "title": "Assault Gliders",
+   "blurb": "They're not sinking you. They're coming aboard.",
+   "kind": "story",
+   "requires": "",
+   "gold": 460,
+   "xp": 320,
+   "phases": [
+    {
+     "kind": "assign",
+     "title": "Repel Boarders",
+     "minDefenders": 1,
+     "lines": [
+      {
+       "speaker": "thorne",
+       "text": "Assault gliders launching! They'll land on our deck and take the helm!"
+      },
+      {
+       "speaker": "vane",
+       "text": "Choose who stays to hold the helm. Whatever gets past our guns lands on them."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "citadel",
+     "objective": "repel",
+     "enemies": [
+      {
+       "key": "carrier",
+       "shipId": "armada_frigate",
+       "name": "Glider Carrier",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "damageScale": 0.5,
+       "accuracy": 12,
+       "hullScale": 1.1
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Gliders inbound! Load FLAK and knock them out of the sky!",
+       "trigger": "start"
+      },
+      {
+       "speaker": "thorne",
+       "text": "Boarders on the stern! The defenders will have to hold!",
+       "trigger": "boarder"
+      },
+      {
+       "speaker": "rook",
+       "text": "That's one less on our deck!",
+       "trigger": "enemyDown"
+      }
+     ],
+     "teach": [
+      {
+       "control": "patch",
+       "speaker": "thorne",
+       "text": "Hull taking a beating? Tap PATCH. I can do it once per fight.",
+       "delay": 16
+      },
+      {
+       "control": "overdrive",
+       "speaker": "thorne",
+       "text": "Tap OVERDRIVE to redline the Lift-Core. Faster guns, faster ship.",
+       "delay": 8
+      }
+     ],
+     "gliders": 5,
+     "gliderEvery": 7
+    },
+    {
+     "kind": "deck",
+     "location": "Your Own Deck",
+     "crew": [
+      {
+       "id": "boarder_a",
+       "name": "Boarder",
+       "classId": "armada_guard",
+       "level": 9,
+       "hpScale": 0.62,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "boarder_b",
+       "name": "Boarder",
+       "classId": "armada_guard",
+       "level": 9,
+       "hpScale": 0.62,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "boarder_c",
+       "name": "Boarder",
+       "classId": "brigand",
+       "level": 9,
+       "hpScale": 0.62,
+       "look": "scrap_hand"
+      },
+      {
+       "id": "boarder_d",
+       "name": "Boarder",
+       "classId": "armada_guard",
+       "level": 8,
+       "hpScale": 0.62,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "defending",
+     "lines": [
+      {
+       "speaker": "thorne",
+       "text": "They're on the deck! Defend the helm!",
+       "trigger": "start"
+      }
+     ],
+     "scalesWithBoarders": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": ""
+    },
+    {
+     "kind": "story",
+     "title": "Clear Decks",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "That's the first time anyone's boarded me. I didn't care for it."
+      },
+      {
+       "speaker": "rook",
+       "text": "The blockade's still up. Warden Malakor's Ironclad holds the only gap, and it's the only ship left that can break it."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "a3_malakor",
+   "act": 3,
+   "title": "The Warden",
+   "blurb": "Steal the Ironclad and punch through the blockade, while they try to take your ship.",
+   "kind": "story",
+   "requires": "",
+   "gold": 620,
+   "xp": 420,
+   "phases": [
+    {
+     "kind": "assign",
+     "title": "Two Fronts",
+     "minDefenders": 1,
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "They'll come for our deck while we go for theirs. Who holds the helm, and who goes across?"
+      },
+      {
+       "speaker": "sable",
+       "text": "Whoever goes needs to be quick. I'll go. That Ironclad has a Lift-Core like anyone else's."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "citadel",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "bastion",
+       "shipId": "bastion",
+       "name": "The Bastion",
+       "ai": "warden",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.65,
+       "accuracy": 9,
+       "hullScale": 0.75,
+       "signatureEvery": 18,
+       "standoff": 80
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "malakor",
+       "text": "No one escapes my custody. Launch everything.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "rook",
+       "text": "That armor shrugs off round shot. Try MORTAR. It arcs over the plate at any altitude.",
+       "trigger": "time",
+       "value": 6
+      },
+      {
+       "speaker": "malakor",
+       "text": "Engines? No! Get those hooks off!",
+       "trigger": "enginesOut"
+      }
+     ],
+     "teach": [
+      {
+       "control": "ammo",
+       "speaker": "rook",
+       "text": "Tap AMMO until it reads MORTAR.",
+       "delay": 4
+      }
+     ],
+     "gliders": 3,
+     "gliderEvery": 11,
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "Your Own Deck",
+     "crew": [
+      {
+       "id": "boarder_a",
+       "name": "Boarder",
+       "classId": "armada_guard",
+       "level": 10,
+       "hpScale": 0.8,
+       "look": "warden_guard"
+      },
+      {
+       "id": "boarder_b",
+       "name": "Boarder",
+       "classId": "armada_guard",
+       "level": 10,
+       "hpScale": 0.8,
+       "look": "warden_guard"
+      },
+      {
+       "id": "boarder_c",
+       "name": "Boarder",
+       "classId": "armada_guard",
+       "level": 10,
+       "hpScale": 0.8,
+       "look": "warden_guard"
+      }
+     ],
+     "party": "defending",
+     "lines": [
+      {
+       "speaker": "thorne",
+       "text": "Gliders landed! We hold here while they board!",
+       "trigger": "start"
+      }
+     ],
+     "scalesWithBoarders": true,
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "The Bastion, Gun Deck",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 10,
+       "look": "warden_guard"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 10,
+       "look": "warden_guard"
+      },
+      {
+       "id": "gunner",
+       "name": "Bombardier",
+       "classId": "bombardier",
+       "level": 10,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [],
+     "boardOnly": true,
+     "healBefore": 0.2,
+     "arena": "SM_Env_GunDeck",
+     "arenaFaction": "Warden",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "The Bastion, Warden's Hold",
+     "crew": [
+      {
+       "id": "malakor",
+       "name": "Warden Malakor",
+       "classId": "warden",
+       "level": 11,
+       "hpScale": 1.3,
+       "enrageAt": 0.5,
+       "look": "malakor"
+      },
+      {
+       "id": "jailer",
+       "name": "Jailer",
+       "classId": "armada_guard",
+       "level": 10,
+       "look": "warden_guard"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "malakor",
+       "text": "I've broken harder prisoners than you.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "malakor",
+       "text": "Impossible. This ship cannot be taken!",
+       "trigger": "enemyLow"
+      }
+     ],
+     "boardOnly": true,
+     "below": true,
+     "healBefore": 0.3,
+     "arena": "SM_Env_CellBlock",
+     "arenaFaction": "Warden",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "Warden Malakor",
+     "shipId": "bastion",
+     "gold": 620,
+     "officer": "",
+     "module": "ironclad_ribs",
+     "signature": "ramming_prow",
+     "lines": [
+      {
+       "speaker": "malakor",
+       "text": "The Bastion answers to no prisoner. Well. It never did before."
+      }
+     ],
+     "captainLook": "malakor"
+    }
+   ]
+  },
+  {
+   "id": "a4_coalition",
+   "act": 4,
+   "title": "Eye of the Maelstrom",
+   "blurb": "The Armada is coming for the free havens. Show the pirates it can be beaten.",
+   "kind": "story",
+   "requires": "",
+   "gold": 560,
+   "xp": 420,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "Free Skies",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "A storm that never ends. That's where Cassian's staging. Nobody goes in there."
+      },
+      {
+       "speaker": "vane",
+       "text": "Then that's where we'll break his fleet. If the free captains see it can be done, they'll follow."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "storm",
+     "objective": "sink_all",
+     "enemies": [
+      {
+       "key": "corvette_a",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.6,
+       "accuracy": 10
+      },
+      {
+       "key": "corvette_b",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.6,
+       "accuracy": 10
+      },
+      {
+       "key": "frigate",
+       "shipId": "armada_frigate",
+       "name": "Armada Frigate",
+       "ai": "raider",
+       "damageScale": 0.6,
+       "accuracy": 10,
+       "hullScale": 0.9,
+       "missileEvery": 16,
+       "standoff": 95
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "When the air goes white around you, MOVE. That's lightning looking for a mast.",
+       "trigger": "lightning"
+      },
+      {
+       "speaker": "lyra",
+       "text": "Updrafts here too. They'll throw you upward if you fly through.",
+       "trigger": "time",
+       "value": 12
+      },
+      {
+       "speaker": "rook",
+       "text": "They're breaking! The free captains are watching this, Vane!",
+       "trigger": "enemyDown"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "story",
+     "title": "The Coalition",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "To every free captain listening: the Armada bleeds. Follow me into the storm."
+      },
+      {
+       "speaker": "sable",
+       "text": "One more thing. Morrow's ship's on the far side of the wall, running supply."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "a4_haven",
+   "act": 4,
+   "title": "Defend the Free Haven",
+   "blurb": "The coalition's first test. Hold the haven until the storm-fleet breaks.",
+   "kind": "story",
+   "requires": "",
+   "gold": 640,
+   "xp": 460,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Free Haven",
+     "lines": [
+      {
+       "speaker": "captain_ria",
+       "text": "Captain Ria of the free fleet, flying with you. Say the word, Vane."
+      },
+      {
+       "speaker": "vane",
+       "text": "The Armada is coming for this haven. So we break them here, in front of everyone."
+      }
+     ],
+     "backdrop": "SM_Env_FreeHaven",
+     "weather": "storm"
+    },
+    {
+     "kind": "sky",
+     "weather": "storm",
+     "objective": "escort",
+     "enemies": [
+      {
+       "key": "ria",
+       "shipId": "freedom_runner",
+       "name": "Ria's Runner",
+       "ai": "raider",
+       "ally": true,
+       "target": true,
+       "accuracy": 9,
+       "hullScale": 2.2,
+       "damageScale": 0.75
+      },
+      {
+       "key": "ally_b",
+       "shipId": "syndicate_cutter",
+       "name": "Free Captain",
+       "ai": "raider",
+       "ally": true,
+       "accuracy": 9,
+       "hullScale": 1.5,
+       "damageScale": 0.7
+      },
+      {
+       "key": "corvette_a",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 11
+      },
+      {
+       "key": "corvette_b",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 11
+      },
+      {
+       "key": "frigate_a",
+       "shipId": "armada_frigate",
+       "name": "Armada Frigate",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 10,
+       "hullScale": 0.8,
+       "wave": 1,
+       "missileEvery": 18,
+       "standoff": 95
+      },
+      {
+       "key": "corvette_c",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 11,
+       "wave": 1
+      },
+      {
+       "key": "frigate_b",
+       "shipId": "siege_frigate",
+       "name": "Siege Frigate",
+       "ai": "raider",
+       "damageScale": 0.6,
+       "accuracy": 10,
+       "hullScale": 0.8,
+       "wave": 2,
+       "missileEvery": 14,
+       "standoff": 100
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "captain_ria",
+       "text": "Free fleet, on Vane's wing!",
+       "trigger": "start"
+      },
+      {
+       "speaker": "rook",
+       "text": "Second wave! Frigates, with missiles!",
+       "trigger": "wave"
+      },
+      {
+       "speaker": "lyra",
+       "text": "Missile! Roll out of its path!",
+       "trigger": "missile"
+      },
+      {
+       "speaker": "thorne",
+       "text": "Ria's hull won't take much more of this.",
+       "trigger": "time",
+       "value": 40
+      }
+     ],
+     "teach": [],
+     "seconds": 110
+    },
+    {
+     "kind": "story",
+     "title": "Holding",
+     "lines": [
+      {
+       "speaker": "captain_ria",
+       "text": "They ran. They actually ran! Every free captain in the sky just saw that."
+      }
+     ],
+     "backdrop": "SM_Env_FreeHaven",
+     "weather": "storm"
+    }
+   ],
+   "items": [
+    "charge",
+    "repair_kit"
+   ]
+  },
+  {
+   "id": "a4_morrow",
+   "act": 4,
+   "title": "The Navigator",
+   "blurb": "Morrow is running supply through the storm wall. This is personal.",
+   "kind": "story",
+   "requires": "",
+   "gold": 620,
+   "xp": 440,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "storm",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "morrow",
+       "shipId": "armada_frigate",
+       "name": "Morrow's Frigate",
+       "ai": "raider",
+       "captain": "morrow",
+       "target": true,
+       "flees": true,
+       "hooks": 3,
+       "damageScale": 0.65,
+       "accuracy": 9,
+       "missileEvery": 14,
+       "standoff": 95
+      },
+      {
+       "key": "escort",
+       "shipId": "armada_corvette",
+       "name": "Armada Corvette",
+       "ai": "raider",
+       "damageScale": 0.6,
+       "accuracy": 11
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "morrow",
+       "text": "Vane? You're supposed to be dead. Cassian's going to be so disappointed in me.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "morrow",
+       "text": "Not like this, not like this... full burn!",
+       "trigger": "escaping"
+      }
+     ],
+     "teach": [],
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "deck",
+     "location": "Morrow's Frigate, Chart Room",
+     "crew": [
+      {
+       "id": "morrow",
+       "name": "Morrow",
+       "classId": "armada_officer",
+       "level": 12,
+       "look": "morrow"
+      },
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 11,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 11,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Morrow. You've got some explaining to do.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Gilded",
+     "music": "leviathan_of_the_upper_winds"
+    },
+    {
+     "kind": "choice",
+     "boardOnly": true,
+     "captain": "Morrow",
+     "shipId": "armada_frigate",
+     "gold": 520,
+     "officer": "morrow",
+     "module": "",
+     "signature": "",
+     "lines": [
+      {
+       "speaker": "morrow",
+       "text": "I've got the fleet's radar codes, and I know every weak point on the Gale. Let me make it right."
+      }
+     ],
+     "captainLook": "morrow"
+    }
+   ]
+  },
+  {
+   "id": "a4_hop",
+   "act": 4,
+   "title": "Ship-Hopping",
+   "blurb": "The Gale is too heavily shielded to approach. So take its escorts, one at a time.",
+   "kind": "story",
+   "requires": "",
+   "gold": 760,
+   "xp": 520,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Gauntlet",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Convoy around the Gale. The frigate at the back has siege mortars that could reach her engines."
+      },
+      {
+       "speaker": "vane",
+       "text": "So I jump on the corvette. From the corvette I jump on the frigate. And then I turn its guns around."
+      },
+      {
+       "speaker": "lyra",
+       "text": "That's the worst plan I've ever heard. I'll keep the old ship close."
+      }
+     ]
+    },
+    {
+     "kind": "sky",
+     "weather": "maelstrom",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "corvette",
+       "shipId": "armada_corvette",
+       "name": "Convoy Corvette",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 2,
+       "damageScale": 0.6,
+       "accuracy": 10
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Corvette's ahead. Hooks on, and go!",
+       "trigger": "start"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "Convoy Corvette, Burning Deck",
+     "crew": [
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 12,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 12,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "Quick. This deck won't last.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Gilded"
+    },
+    {
+     "kind": "sky",
+     "weather": "maelstrom",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "frigate",
+       "shipId": "siege_frigate",
+       "name": "Siege Frigate",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 2,
+       "damageScale": 0.65,
+       "accuracy": 10
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "One down. This corvette's on fire, so let's not stay long.",
+       "trigger": "start"
+      }
+     ],
+     "teach": [],
+     "ship": "armada_corvette",
+     "shipHullScale": 0.8
+    },
+    {
+     "kind": "deck",
+     "location": "Siege Frigate, Mortar Deck",
+     "crew": [
+      {
+       "id": "gunner_a",
+       "name": "Bombardier",
+       "classId": "bombardier",
+       "level": 12,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 12,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "officer",
+       "name": "Gunnery Officer",
+       "classId": "armada_officer",
+       "level": 11,
+       "hpScale": 0.7,
+       "look": "armada_officer"
+      }
+     ],
+     "party": "boarding",
+     "lines": [],
+     "boardOnly": true,
+     "healBefore": 0.25,
+     "arena": "SM_Env_GunDeck",
+     "arenaFaction": "Gilded"
+    },
+    {
+     "kind": "sky",
+     "weather": "maelstrom",
+     "objective": "disable_engines",
+     "enemies": [
+      {
+       "key": "gale",
+       "shipId": "sky_killer",
+       "name": "The Sky-Killer",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "damageScale": 0.5,
+       "accuracy": 11,
+       "hullScale": 0.7,
+       "missileEvery": 14,
+       "standoff": 95
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "admiral",
+       "text": "Is that my own frigate shelling me? Oh, Vane. I did teach you well.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vane",
+       "text": "Mortars on her engines. Set your AIM and keep firing.",
+       "trigger": "time",
+       "value": 3
+      },
+      {
+       "speaker": "rook",
+       "text": "Her engines are out! She's dead in the storm! That's your opening!",
+       "trigger": "enginesOut"
+      }
+     ],
+     "teach": [],
+     "ship": "siege_frigate"
+    }
+   ]
+  },
+  {
+   "id": "a4_final",
+   "act": 4,
+   "title": "The Sovereign Gale",
+   "blurb": "Your old home, in the heart of the storm. Finish it.",
+   "kind": "story",
+   "requires": "",
+   "gold": 1200,
+   "xp": 700,
+   "phases": [
+    {
+     "kind": "story",
+     "title": "The Last Approach",
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "Every free captain in the sky is behind you. Every Armada gun is in front."
+      },
+      {
+       "speaker": "vane",
+       "text": "Cassian taught me to take what I want, and that's the Gale."
+      }
+     ],
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "sky",
+     "weather": "maelstrom",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "gale",
+       "shipId": "sky_killer",
+       "name": "The Sky-Killer",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.7,
+       "accuracy": 8,
+       "hullScale": 0.75,
+       "armorBonus": 2,
+       "missileEvery": 11,
+       "signatureEvery": 22,
+       "standoff": 90
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "admiral",
+       "text": "Here we are, then. Come and take her, if you can.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "Lightning's walking the storm wall. Keep moving!",
+       "trigger": "lightning"
+      },
+      {
+       "speaker": "admiral",
+       "text": "My armor! You'd really do this to her?",
+       "trigger": "enemyHullBelow",
+       "value": 0.5
+      },
+      {
+       "speaker": "rook",
+       "text": "Broadside armor's stripped! Hooks, now!",
+       "trigger": "grappleReady"
+      }
+     ],
+     "teach": [],
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "deck",
+     "location": "The Sovereign Gale, Main Deck",
+     "crew": [
+      {
+       "id": "royal_a",
+       "name": "Royal Guard",
+       "classId": "armada_officer",
+       "level": 13,
+       "hpScale": 0.65,
+       "look": "royal_guard"
+      },
+      {
+       "id": "royal_b",
+       "name": "Royal Guard",
+       "classId": "armada_officer",
+       "level": 13,
+       "hpScale": 0.65,
+       "look": "royal_guard"
+      },
+      {
+       "id": "royal_c",
+       "name": "Royal Guard",
+       "classId": "armada_guard",
+       "level": 14,
+       "look": "royal_guard"
+      },
+      {
+       "id": "royal_d",
+       "name": "Royal Bombardier",
+       "classId": "bombardier",
+       "level": 13,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "full",
+     "lines": [
+      {
+       "speaker": "vane",
+       "text": "All of you, with me. This is our deck.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "sable",
+       "text": "They're breaking! Get below, Vane! Cassian's at the Lift-Core!",
+       "trigger": "enemyLow"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_DreadnoughtDeck",
+     "arenaFaction": "Gilded",
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "deck",
+     "location": "The Lift-Core Chamber",
+     "crew": [
+      {
+       "id": "cassian",
+       "name": "Grand Admiral Cassian",
+       "classId": "warlord",
+       "level": 11,
+       "hpScale": 0.66,
+       "enrageAt": 0.5,
+       "look": "admiral"
+      }
+     ],
+     "party": "solo",
+     "lines": [
+      {
+       "speaker": "admiral",
+       "text": "The core's failing. We'll fall together. It's almost fitting.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "admiral",
+       "text": "You were the best thing I ever stole.",
+       "trigger": "enemyLow"
+      },
+      {
+       "speaker": "admiral",
+       "text": "Then we burn together, Vane!",
+       "trigger": "enrage"
+      }
+     ],
+     "boardOnly": true,
+     "below": true,
+     "healBefore": 1,
+     "arena": "SM_Env_LiftCoreChamber",
+     "arenaFaction": "Gilded",
+     "music": "the_sovereign_descends"
+    },
+    {
+     "kind": "story",
+     "title": "Reclaimed",
+     "lines": [
+      {
+       "speaker": "admiral",
+       "text": "Go on, then. She's yours. Freedom always did cost someone else."
+      },
+      {
+       "speaker": "thorne",
+       "text": "Lift-Core's holding! I don't know how, but she's holding!"
+      },
+      {
+       "speaker": "vane",
+       "text": "The Armada's scattering, and Cassian went down with the old core. I've got the helm of the Sovereign Gale, and the whole sky to answer for."
+      },
+      {
+       "speaker": "vane",
+       "text": "Freedom has a price. I know exactly what I paid."
+      }
+     ],
+     "weather": "ending",
+     "ship": "sovereign_gale",
+     "music": "the_sovereign_descends"
+    }
+   ],
+   "ships": [
+    "sovereign_gale"
+   ],
+   "signatures": [
+    "thunder_volley"
+   ]
+  },
+  {
+   "id": "s_rook",
+   "act": 1,
+   "title": "Rook's Debt",
+   "blurb": "The officer who disgraced Rook is running powder through the Scrap-Winds.",
+   "kind": "side",
+   "requires": "",
+   "gold": 260,
+   "xp": 160,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "powder",
+       "shipId": "armada_frigate",
+       "name": "Powder Hauler",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.5,
+       "accuracy": 12,
+       "hullScale": 0.7
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "That's Commodore Hale's ship. Bring me alongside.",
+       "trigger": "start"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "Powder Hauler, Magazine",
+     "crew": [
+      {
+       "id": "hale",
+       "name": "Commodore Hale",
+       "classId": "armada_officer",
+       "level": 5,
+       "hpScale": 0.8,
+       "look": "armada_officer"
+      },
+      {
+       "id": "guard",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 4,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Remember me, Commodore?",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_GunDeck",
+     "arenaFaction": "Gilded"
+    },
+    {
+     "kind": "story",
+     "title": "Incendiary Grapeshot",
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Hale's powder recipe. Packed right, grapeshot catches fire on the way out."
+      },
+      {
+       "speaker": "rook",
+       "text": "Thank you, Vane. Now let's light something up."
+      }
+     ]
+    }
+   ],
+   "loyaltyCrew": "rook",
+   "loyaltyNeeded": 2,
+   "mechanics": [
+    "grapeshot"
+   ]
+  },
+  {
+   "id": "s_lyra",
+   "act": 2,
+   "title": "The Drowned Chart",
+   "blurb": "Lyra's old chart lies on a wreck deep in the storm.",
+   "kind": "side",
+   "requires": "",
+   "gold": 300,
+   "xp": 200,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "cyclone",
+     "objective": "sink_all",
+     "enemies": [
+      {
+       "key": "looter_a",
+       "shipId": "syndicate_cutter",
+       "name": "Wreck Looter",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 12,
+       "hullScale": 0.8
+      },
+      {
+       "key": "looter_b",
+       "shipId": "scrap_raider",
+       "name": "Wreck Looter",
+       "ai": "raider",
+       "damageScale": 0.55,
+       "accuracy": 12
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "Those looters are on my wreck. Ride the current in behind them.",
+       "trigger": "start"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "story",
+     "title": "The Chart",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "My mother's hand. She charted winds nobody believed in."
+      },
+      {
+       "speaker": "lyra",
+       "text": "You could have left me in that cyclone. I won't forget that."
+      }
+     ]
+    }
+   ],
+   "loyaltyCrew": "lyra",
+   "loyaltyNeeded": 2
+  },
+  {
+   "id": "s_hoard",
+   "act": 1,
+   "title": "Krag's Hoard",
+   "blurb": "Krag's salvage caches are still adrift in the Scrap-Winds, and now they're yours.",
+   "kind": "side",
+   "requires": "a1_krag",
+   "gold": 300,
+   "xp": 170,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "scrapwinds",
+     "objective": "collect",
+     "enemies": [
+      {
+       "key": "looter",
+       "shipId": "scrap_raider",
+       "name": "Scrap Looter",
+       "ai": "raider",
+       "damageScale": 0.45,
+       "accuracy": 15,
+       "hullScale": 0.9
+      },
+      {
+       "key": "looter_b",
+       "shipId": "scrap_raider",
+       "name": "Scrap Looter",
+       "ai": "raider",
+       "damageScale": 0.45,
+       "accuracy": 15,
+       "hullScale": 0.9,
+       "wave": 1
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "rook",
+       "text": "Six caches, plenty of mines, and some very upset looters.",
+       "trigger": "start"
+      }
+     ],
+     "teach": [],
+     "pickups": 6,
+     "mines": 14,
+     "pickupModel": "SM_Prop_ScrapPile"
+    }
+   ],
+   "items": [
+    "charge",
+    "rum"
+   ]
+  },
+  {
+   "id": "s_currents",
+   "act": 2,
+   "title": "Lyra's Currents",
+   "blurb": "Lyra wants to chart the fast winds, and needs someone mad enough to fly them.",
+   "kind": "side",
+   "requires": "",
+   "gold": 300,
+   "xp": 190,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "collect",
+     "enemies": [],
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "Six chart beacons. Ride the currents between them, and try to enjoy it.",
+       "trigger": "start"
+      }
+     ],
+     "teach": [],
+     "pickups": 6,
+     "pickupModel": "SM_Prop_CipherKey"
+    }
+   ],
+   "loyaltyCrew": "lyra",
+   "loyaltyNeeded": 1,
+   "items": [
+    "repair_kit"
+   ]
+  },
+  {
+   "id": "s_sable",
+   "act": 2,
+   "title": "Blood Money",
+   "blurb": "Sable's old employer has put a price on her head.",
+   "kind": "side",
+   "requires": "",
+   "gold": 320,
+   "xp": 210,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "jetstream",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "hitship",
+       "shipId": "syndicate_cutter",
+       "name": "Bounty Ship",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 3,
+       "damageScale": 0.6,
+       "accuracy": 11
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "They came for me. You didn't have to come along.",
+       "trigger": "start"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "Bounty Ship, Main Deck",
+     "crew": [
+      {
+       "id": "hunter",
+       "name": "Bounty Hunter",
+       "classId": "corsair",
+       "level": 7,
+       "look": "syndicate_brute"
+      },
+      {
+       "id": "guard",
+       "name": "Brigand",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_hand"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "sable",
+       "text": "My old crew. This won't take long.",
+       "trigger": "start"
+      }
+     ],
+     "boardOnly": true,
+     "arena": "SM_Env_BoardingDeck",
+     "arenaFaction": "Syndicate"
+    }
+   ],
+   "loyaltyCrew": "sable",
+   "loyaltyNeeded": 2
+  },
+  {
+   "id": "s_thorne",
+   "act": 3,
+   "title": "Spare Parts",
+   "blurb": "Dr. Thorne wants the Lift-Core regulator from an Armada tender.",
+   "kind": "side",
+   "requires": "",
+   "gold": 340,
+   "xp": 240,
+   "phases": [
+    {
+     "kind": "sky",
+     "weather": "citadel",
+     "objective": "capture",
+     "enemies": [
+      {
+       "key": "tender",
+       "shipId": "armada_frigate",
+       "name": "Armada Tender",
+       "ai": "raider",
+       "target": true,
+       "unsinkable": true,
+       "hooks": 2,
+       "damageScale": 0.55,
+       "accuracy": 11,
+       "hullScale": 0.75
+      }
+     ],
+     "lines": [
+      {
+       "speaker": "thorne",
+       "text": "Please don't shoot the part I need. It's near the engines. Well, shoot around it.",
+       "trigger": "start"
+      }
+     ],
+     "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "Armada Tender, Engine Room",
+     "crew": [
+      {
+       "id": "engineer",
+       "name": "Armada Officer",
+       "classId": "armada_officer",
+       "level": 9,
+       "hpScale": 0.7,
+       "look": "armada_officer"
+      },
+      {
+       "id": "guard",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 9,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [],
+     "boardOnly": true,
+     "below": true,
+     "arena": "SM_Env_GunDeck",
+     "arenaFaction": "Warden"
+    }
+   ],
+   "loyaltyCrew": "thorne",
+   "loyaltyNeeded": 2
+  }
+ ],
+ "talks": [
+  {
+   "id": "rook1",
+   "crew": "rook",
+   "after": "a1_rook",
+   "activity": "cleaning a cannon",
+   "lines": [
+    {
+     "speaker": "rook",
+     "text": "Armada drills say hit the hull. Armada drills are written by people who've never had to fix one."
+    },
+    {
+     "speaker": "vane",
+     "text": "Is that why they threw you out?"
+    },
+    {
+     "speaker": "rook",
+     "text": "They threw me out because I refused to fire on a hospital barge. The drill book's just an added insult."
+    }
+   ]
+  },
+  {
+   "id": "rook2",
+   "crew": "rook",
+   "after": "a1_krag",
+   "activity": "cleaning a cannon",
+   "lines": [
+    {
+     "speaker": "rook",
+     "text": "Commodore Hale signed my court-martial. He's running powder through here, you know."
+    },
+    {
+     "speaker": "vane",
+     "text": "Want to pay him a visit?"
+    },
+    {
+     "speaker": "rook",
+     "text": "I thought you'd never ask."
+    }
+   ]
+  },
+  {
+   "id": "rook3",
+   "crew": "rook",
+   "after": "a2_twins",
+   "activity": "cleaning a cannon",
+   "lines": [
+    {
+     "speaker": "rook",
+     "text": "I've been firing guns since I was nine. First time anyone's asked me where I think we should aim them."
+    },
+    {
+     "speaker": "vane",
+     "text": "You're good at it."
+    },
+    {
+     "speaker": "rook",
+     "text": "I know. It's still nice to hear."
+    }
+   ]
+  },
+  {
+   "id": "lyra1",
+   "crew": "lyra",
+   "after": "a2_lyra",
+   "activity": "studying a sky-chart",
+   "lines": [
+    {
+     "speaker": "lyra",
+     "text": "Wind has moods. You just have to listen, and not take it personally."
+    },
+    {
+     "speaker": "vane",
+     "text": "Does it ever tell you anything useful?"
+    },
+    {
+     "speaker": "lyra",
+     "text": "It told me you'd come. Then it told me you'd be late."
+    }
+   ]
+  },
+  {
+   "id": "rook4",
+   "crew": "rook",
+   "after": "a3_tartarus",
+   "activity": "cleaning a cannon",
+   "lines": [
+    {
+     "speaker": "rook",
+     "text": "You've gone quiet since that war room."
+    },
+    {
+     "speaker": "vane",
+     "text": "He taught me to shoot, Rook."
+    },
+    {
+     "speaker": "rook",
+     "text": "Then he taught you well. Use it on him."
+    }
+   ]
+  },
+  {
+   "id": "lyra2",
+   "crew": "lyra",
+   "after": "a2_ashgrave",
+   "activity": "studying a sky-chart",
+   "lines": [
+    {
+     "speaker": "lyra",
+     "text": "My mother mapped the deep currents. Her chart's still out there, on the wreck that killed her."
+    },
+    {
+     "speaker": "vane",
+     "text": "Then let's fetch it."
+    },
+    {
+     "speaker": "lyra",
+     "text": "You mean that? Nobody ever means that."
+    }
+   ]
+  },
+  {
+   "id": "lyra3",
+   "crew": "lyra",
+   "after": "a2_twins",
+   "activity": "studying a sky-chart",
+   "lines": [
+    {
+     "speaker": "lyra",
+     "text": "When this is over, where will you go?"
+    },
+    {
+     "speaker": "vane",
+     "text": "Haven't thought that far."
+    },
+    {
+     "speaker": "lyra",
+     "text": "Good. That's the right answer."
+    }
+   ]
+  },
+  {
+   "id": "sable1",
+   "crew": "sable",
+   "after": "a2_sable",
+   "activity": "sharpening her daggers",
+   "lines": [
+    {
+     "speaker": "sable",
+     "text": "You should know I've killed better captains than you."
+    },
+    {
+     "speaker": "vane",
+     "text": "And now you work for me."
+    },
+    {
+     "speaker": "sable",
+     "text": "I'm still deciding who works for whom."
+    }
+   ]
+  },
+  {
+   "id": "sable2",
+   "crew": "sable",
+   "after": "a2_thrace",
+   "activity": "sharpening her daggers",
+   "lines": [
+    {
+     "speaker": "sable",
+     "text": "The Syndicate's put a price on me. It's insultingly low."
+    },
+    {
+     "speaker": "vane",
+     "text": "Want to go and complain?"
+    },
+    {
+     "speaker": "sable",
+     "text": "In person. Yes, I think so."
+    }
+   ]
+  },
+  {
+   "id": "sable3",
+   "crew": "sable",
+   "after": "a3_tartarus",
+   "activity": "sharpening her daggers",
+   "lines": [
+    {
+     "speaker": "sable",
+     "text": "He raised you. Cassian. I know what that's like, when they turn out to be exactly what you feared."
+    },
+    {
+     "speaker": "vane",
+     "text": "Does it stop hurting?"
+    },
+    {
+     "speaker": "sable",
+     "text": "No. But you do get sharper."
+    }
+   ]
+  },
+  {
+   "id": "thorne1",
+   "crew": "thorne",
+   "after": "a3_tartarus",
+   "activity": "tuning the Lift-Core",
+   "lines": [
+    {
+     "speaker": "thorne",
+     "text": "Your Lift-Core is a disgrace. Who's been maintaining it?"
+    },
+    {
+     "speaker": "vane",
+     "text": "Nobody."
+    },
+    {
+     "speaker": "thorne",
+     "text": "That explains the smell."
+    }
+   ]
+  },
+  {
+   "id": "thorne2",
+   "crew": "thorne",
+   "after": "a3_gliders",
+   "activity": "tuning the Lift-Core",
+   "lines": [
+    {
+     "speaker": "thorne",
+     "text": "I built half the Citadel's locks. Told myself it was only engineering."
+    },
+    {
+     "speaker": "vane",
+     "text": "And now?"
+    },
+    {
+     "speaker": "thorne",
+     "text": "Now I'd like one good regulator and a clean conscience, in that order."
+    }
+   ]
+  },
+  {
+   "id": "thorne3",
+   "crew": "thorne",
+   "after": "a3_malakor",
+   "activity": "tuning the Lift-Core",
+   "lines": [
+    {
+     "speaker": "thorne",
+     "text": "Overdrive won't kill her. Probably. I'd stop short of testing that, mind you."
+    },
+    {
+     "speaker": "vane",
+     "text": "You're getting fond of this ship."
+    },
+    {
+     "speaker": "thorne",
+     "text": "Don't be ridiculous. It's a very good ship."
+    }
+   ]
+  },
+  {
+   "id": "morrow1",
+   "crew": "morrow",
+   "after": "a4_morrow",
+   "activity": "marking up a chart",
+   "lines": [
+    {
+     "speaker": "morrow",
+     "text": "I'm not going to ask you to forgive me."
+    },
+    {
+     "speaker": "vane",
+     "text": "Good. Keep marking those weak points."
+    },
+    {
+     "speaker": "morrow",
+     "text": "Aye. I know where every one of them is. I helped install them."
+    }
+   ]
+  }
+ ],
+ "perks": [
+  {
+   "id": "rook_sights",
+   "crew": "rook",
+   "loyalty": 1,
+   "name": "Rook's Sights",
+   "description": "+5% broadside damage",
+   "stat": "broadsideDamage",
+   "amount": 0.05
+  },
+  {
+   "id": "rook_chasers",
+   "crew": "rook",
+   "loyalty": 3,
+   "name": "Rook's Chasers",
+   "description": "+15% bow damage",
+   "stat": "bowDamage",
+   "amount": 0.15
+  },
+  {
+   "id": "lyra_trim",
+   "crew": "lyra",
+   "loyalty": 1,
+   "name": "Lyra's Trim",
+   "description": "+6% speed",
+   "stat": "speed",
+   "amount": 0.06
+  },
+  {
+   "id": "lyra_helm",
+   "crew": "lyra",
+   "loyalty": 3,
+   "name": "Lyra's Helm",
+   "description": "+10% turning",
+   "stat": "turn",
+   "amount": 0.1
+  },
+  {
+   "id": "sable_edge",
+   "crew": "sable",
+   "loyalty": 1,
+   "name": "Sable's Edge",
+   "description": "+5% broadside damage",
+   "stat": "broadsideDamage",
+   "amount": 0.05
+  },
+  {
+   "id": "sable_plan",
+   "crew": "sable",
+   "loyalty": 3,
+   "name": "Sable's Plan",
+   "description": "+8% speed",
+   "stat": "speed",
+   "amount": 0.08
+  },
+  {
+   "id": "thorne_bracing",
+   "crew": "thorne",
+   "loyalty": 1,
+   "name": "Thorne's Bracing",
+   "description": "+8% hull",
+   "stat": "hull",
+   "amount": 0.08
+  },
+  {
+   "id": "thorne_plating",
+   "crew": "thorne",
+   "loyalty": 3,
+   "name": "Thorne's Plating",
+   "description": "+2 armor",
+   "stat": "armor",
+   "amount": 2
+  }
+ ],
+ "ending": "The sky is yours. Free Skies stays open for as long as you want to fly it."
+}

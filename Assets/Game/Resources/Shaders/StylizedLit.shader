@@ -6,6 +6,7 @@ Shader "Airships/StylizedLit"
     Properties
     {
         _BaseMap ("Palette", 2D) = "white" {}
+        _GlowMap ("Glow", 2D) = "black" {}
         _BaseColor ("Tint", Color) = (1, 1, 1, 1)
         _Emission ("Emission", Color) = (0, 0, 0, 0)
         _BandEdge ("Band Edge", Range(-1, 1)) = 0.1
@@ -45,6 +46,8 @@ Shader "Airships/StylizedLit"
             half3 _AirshipsGroundAmbient;
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_GlowMap);
+            SAMPLER(sampler_GlowMap);
 
             struct Attributes
             {
@@ -88,7 +91,8 @@ Shader "Airships/StylizedLit"
 
                 half3 ambient = lerp(_AirshipsGroundAmbient, _AirshipsSkyAmbient, normal.y * 0.5 + 0.5);
                 half3 albedo = input.color.rgb * SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb;
-                half3 color = albedo * (ambient + light.color * band) + _Emission.rgb;
+                half3 glow = SAMPLE_TEXTURE2D(_GlowMap, sampler_GlowMap, input.uv).rgb;
+                half3 color = albedo * (ambient + light.color * band) + _Emission.rgb + glow;
                 color = MixFog(color, input.fog);
                 return half4(color, 1);
             }

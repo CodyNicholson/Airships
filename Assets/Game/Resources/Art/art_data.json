@@ -1,0 +1,906 @@
+{
+    "flipbooks": [
+        {
+            "id": "Fire",
+            "fps": 16.0,
+            "loop": true,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.05999999865889549,
+            "hq": {
+                "file": "T_VFX_Fire_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_Fire_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "SmokeDark",
+            "fps": 12.0,
+            "loop": false,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_SmokeDark_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_SmokeDark_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "SmokeLight",
+            "fps": 16.0,
+            "loop": false,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_SmokeLight_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_SmokeLight_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "GasLeak",
+            "fps": 16.0,
+            "loop": false,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_GasLeak_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_GasLeak_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "ToxicSmog",
+            "fps": 8.0,
+            "loop": false,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_ToxicSmog_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_ToxicSmog_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "Explosion",
+            "fps": 24.0,
+            "loop": false,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_Explosion_HQ.png",
+                "columns": 6,
+                "rows": 6,
+                "frames": 36
+            },
+            "lq": {
+                "file": "T_VFX_Explosion_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "FlakBurst",
+            "fps": 20.0,
+            "loop": false,
+            "blend": "premultiplied",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_FlakBurst_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_FlakBurst_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "MuzzleFlash",
+            "fps": 30.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_MuzzleFlash_HQ.png",
+                "columns": 2,
+                "rows": 2,
+                "frames": 4
+            },
+            "lq": {
+                "file": "T_VFX_MuzzleFlash_LQ.png",
+                "columns": 2,
+                "rows": 2,
+                "frames": 4
+            }
+        },
+        {
+            "id": "Sparks",
+            "fps": 30.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_Sparks_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_Sparks_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "AfterburnerPlume",
+            "fps": 24.0,
+            "loop": true,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.05999999865889549,
+            "hq": {
+                "file": "T_VFX_AfterburnerPlume_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_AfterburnerPlume_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "LiftBurst",
+            "fps": 24.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_LiftBurst_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_LiftBurst_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "Shockwave",
+            "fps": 30.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_Shockwave_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_Shockwave_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "LightningFlash",
+            "fps": 24.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_LightningFlash_HQ.png",
+                "columns": 2,
+                "rows": 2,
+                "frames": 4
+            },
+            "lq": {
+                "file": "T_VFX_LightningFlash_LQ.png",
+                "columns": 2,
+                "rows": 2,
+                "frames": 4
+            }
+        },
+        {
+            "id": "SlashArc",
+            "fps": 40.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_SlashArc_HQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            },
+            "lq": {
+                "file": "T_VFX_SlashArc_LQ.png",
+                "columns": 4,
+                "rows": 4,
+                "frames": 16
+            }
+        },
+        {
+            "id": "Rain",
+            "fps": 0.0,
+            "loop": true,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_Rain_HQ.png",
+                "columns": 1,
+                "rows": 1,
+                "frames": 1
+            },
+            "lq": {
+                "file": "T_VFX_Rain_LQ.png",
+                "columns": 1,
+                "rows": 1,
+                "frames": 1
+            }
+        },
+        {
+            "id": "Ember",
+            "fps": 0.0,
+            "loop": false,
+            "blend": "additive",
+            "anchorX": 0.5,
+            "anchorY": 0.5,
+            "hq": {
+                "file": "T_VFX_Ember_HQ.png",
+                "columns": 1,
+                "rows": 1,
+                "frames": 1
+            },
+            "lq": {
+                "file": "T_VFX_Ember_LQ.png",
+                "columns": 1,
+                "rows": 1,
+                "frames": 1
+            }
+        }
+    ],
+    "presets": [
+        {
+            "id": "HullFire",
+            "flipbook": "Fire",
+            "sockets": [
+                "fire_*",
+                "deck_centre"
+            ],
+            "sizeMeters": 2.4000000953674316,
+            "lifetime": 1.0,
+            "rate": 3.0,
+            "burst": 0,
+            "maxHq": 4,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.30000001192092896,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": "SM_VFX_Flame"
+        },
+        {
+            "id": "DamageSmoke",
+            "flipbook": "SmokeDark",
+            "sockets": [
+                "smoke_vent"
+            ],
+            "sizeMeters": 4.0,
+            "lifetime": 2.5999999046325684,
+            "rate": 3.0,
+            "burst": 0,
+            "maxHq": 8,
+            "maxLq": 3,
+            "velocityX": 0.0,
+            "velocityY": 2.4000000953674316,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": "SM_VFX_SmokePuff"
+        },
+        {
+            "id": "CannonFire",
+            "flipbook": "MuzzleFlash",
+            "sockets": [
+                "muzzle*",
+                "siege_muzzle",
+                "harpoon_muzzle"
+            ],
+            "sizeMeters": 1.7999999523162842,
+            "lifetime": 0.12999999523162842,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 1,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "CannonSmoke",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "CannonSmoke",
+            "flipbook": "SmokeLight",
+            "sockets": [
+                "muzzle*",
+                "siege_muzzle",
+                "harpoon_muzzle"
+            ],
+            "sizeMeters": 1.7999999523162842,
+            "lifetime": 1.0,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 2,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.6000000238418579,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "EnvelopeHit",
+            "flipbook": "GasLeak",
+            "sockets": [
+                "envelope_centre"
+            ],
+            "sizeMeters": 3.200000047683716,
+            "lifetime": 1.0,
+            "rate": 5.0,
+            "burst": 0,
+            "maxHq": 5,
+            "maxLq": 2,
+            "velocityX": 0.0,
+            "velocityY": 1.399999976158142,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "HullImpact",
+            "flipbook": "Sparks",
+            "sockets": [
+                "hit_point"
+            ],
+            "sizeMeters": 2.0,
+            "lifetime": 0.5,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 2,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "ShipExplosion",
+            "flipbook": "Explosion",
+            "sockets": [
+                "lift_core",
+                "deck_centre"
+            ],
+            "sizeMeters": 14.0,
+            "lifetime": 1.5,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 3,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.800000011920929,
+            "velocityZ": 0.0,
+            "depthTest": false,
+            "attached": false,
+            "followUp": "ShipShockwave",
+            "fallbackMesh": "SM_VFX_Fireball"
+        },
+        {
+            "id": "ShipShockwave",
+            "flipbook": "Shockwave",
+            "sockets": [
+                "lift_core",
+                "deck_centre"
+            ],
+            "sizeMeters": 26.0,
+            "lifetime": 0.5299999713897705,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 1,
+            "maxLq": 0,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": false,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": "SM_VFX_ShockRing"
+        },
+        {
+            "id": "FlakBurst",
+            "flipbook": "FlakBurst",
+            "sockets": [
+                "hit_point"
+            ],
+            "sizeMeters": 3.5,
+            "lifetime": 0.800000011920929,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 6,
+            "maxLq": 3,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "MortarImpact",
+            "flipbook": "Explosion",
+            "sockets": [
+                "hit_point"
+            ],
+            "sizeMeters": 6.0,
+            "lifetime": 1.0,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 2,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.5,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": "SM_VFX_Fireball"
+        },
+        {
+            "id": "LiftCoreSabotage",
+            "flipbook": "LiftBurst",
+            "sockets": [
+                "lift_core",
+                "charge_slot",
+                "glow"
+            ],
+            "sizeMeters": 7.0,
+            "lifetime": 0.6700000166893005,
+            "rate": 2.0,
+            "burst": 0,
+            "maxHq": 3,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": false,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "AfterburnerBoost",
+            "flipbook": "AfterburnerPlume",
+            "sockets": [
+                "afterburner_*",
+                "exhaust"
+            ],
+            "sizeMeters": 4.0,
+            "lifetime": 0.6700000166893005,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 1,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": true,
+            "followUp": "",
+            "fallbackMesh": "SM_VFX_Plume"
+        },
+        {
+            "id": "EngineExhaust",
+            "flipbook": "SmokeLight",
+            "sockets": [
+                "propeller_*"
+            ],
+            "sizeMeters": 1.399999976158142,
+            "lifetime": 1.0,
+            "rate": 2.0,
+            "burst": 0,
+            "maxHq": 3,
+            "maxLq": 0,
+            "velocityX": 0.0,
+            "velocityY": 0.30000001192092896,
+            "velocityZ": -2.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "ThrusterTrail",
+            "flipbook": "Fire",
+            "sockets": [
+                "thruster"
+            ],
+            "sizeMeters": 1.100000023841858,
+            "lifetime": 1.0,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 1,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": true,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "SmogVent",
+            "flipbook": "ToxicSmog",
+            "sockets": [
+                "smog_*",
+                "centre"
+            ],
+            "sizeMeters": 9.0,
+            "lifetime": 2.0,
+            "rate": 1.0,
+            "burst": 0,
+            "maxHq": 6,
+            "maxLq": 2,
+            "velocityX": 0.4000000059604645,
+            "velocityY": 1.2000000476837158,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "LightningStrike",
+            "flipbook": "LightningFlash",
+            "sockets": [
+                "lightning_?",
+                "lightning_strike_*",
+                "strike"
+            ],
+            "sizeMeters": 30.0,
+            "lifetime": 0.17000000178813934,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 2,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "HullImpact",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "MeleeSlash",
+            "flipbook": "SlashArc",
+            "sockets": [
+                "trail_tip"
+            ],
+            "sizeMeters": 1.7999999523162842,
+            "lifetime": 0.4000000059604645,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 1,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "BladeClash",
+            "flipbook": "Sparks",
+            "sockets": [
+                "trail_tip",
+                "centre_stage"
+            ],
+            "sizeMeters": 1.100000023841858,
+            "lifetime": 0.5,
+            "rate": 0.0,
+            "burst": 1,
+            "maxHq": 2,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "WinchSparks",
+            "flipbook": "Sparks",
+            "sockets": [
+                "winch",
+                "hook_tether_*",
+                "rope"
+            ],
+            "sizeMeters": 1.600000023841858,
+            "lifetime": 0.5,
+            "rate": 6.0,
+            "burst": 0,
+            "maxHq": 4,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "EmberDrift",
+            "flipbook": "Ember",
+            "sockets": [
+                "fire_*",
+                "rupture_*",
+                "fire"
+            ],
+            "sizeMeters": 0.2199999988079071,
+            "lifetime": 2.200000047683716,
+            "rate": 7.0,
+            "burst": 0,
+            "maxHq": 14,
+            "maxLq": 0,
+            "velocityX": 0.0,
+            "velocityY": 1.600000023841858,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        },
+        {
+            "id": "RainSheet",
+            "flipbook": "Rain",
+            "sockets": [
+                "camera"
+            ],
+            "sizeMeters": 0.0,
+            "lifetime": 0.0,
+            "rate": 0.0,
+            "burst": 0,
+            "maxHq": 1,
+            "maxLq": 1,
+            "velocityX": 0.0,
+            "velocityY": 0.0,
+            "velocityZ": 0.0,
+            "depthTest": true,
+            "attached": false,
+            "followUp": "",
+            "fallbackMesh": ""
+        }
+    ],
+    "skies": [
+        {
+            "id": "CloudBreak",
+            "fileHq": "T_Sky_CloudBreak_HQ.png",
+            "fileLq": "T_Sky_CloudBreak_LQ.png",
+            "sunX": 0.550000011920929,
+            "sunY": 0.3799999952316284,
+            "sunZ": 0.7400000095367432,
+            "sunR": 1.0,
+            "sunG": 0.8600000143051147,
+            "sunB": 0.6200000047683716,
+            "sunIntensity": 2.5999999046325684,
+            "ambientR": 0.6200000047683716,
+            "ambientG": 0.6800000071525574,
+            "ambientB": 0.8199999928474426,
+            "fogR": 0.9599999785423279,
+            "fogG": 0.7599999904632568,
+            "fogB": 0.5799999833106995,
+            "fogStart": 180.0,
+            "fogEnd": 700.0
+        },
+        {
+            "id": "ScrapWinds",
+            "fileHq": "T_Sky_ScrapWinds_HQ.png",
+            "fileLq": "T_Sky_ScrapWinds_LQ.png",
+            "sunX": -0.3499999940395355,
+            "sunY": 0.7200000286102295,
+            "sunZ": 0.6000000238418579,
+            "sunR": 0.949999988079071,
+            "sunG": 0.8999999761581421,
+            "sunB": 0.6200000047683716,
+            "sunIntensity": 1.5,
+            "ambientR": 0.5799999833106995,
+            "ambientG": 0.6000000238418579,
+            "ambientB": 0.41999998688697815,
+            "fogR": 0.5600000023841858,
+            "fogG": 0.5600000023841858,
+            "fogB": 0.3400000035762787,
+            "fogStart": 70.0,
+            "fogEnd": 320.0
+        },
+        {
+            "id": "Jetstream",
+            "fileHq": "T_Sky_Jetstream_HQ.png",
+            "fileLq": "T_Sky_Jetstream_LQ.png",
+            "sunX": 0.30000001192092896,
+            "sunY": 0.8199999928474426,
+            "sunZ": -0.47999998927116394,
+            "sunR": 1.0,
+            "sunG": 0.9800000190734863,
+            "sunB": 0.8999999761581421,
+            "sunIntensity": 2.799999952316284,
+            "ambientR": 0.6000000238418579,
+            "ambientG": 0.7599999904632568,
+            "ambientB": 0.9599999785423279,
+            "fogR": 0.6200000047683716,
+            "fogG": 0.8299999833106995,
+            "fogB": 0.9599999785423279,
+            "fogStart": 220.0,
+            "fogEnd": 900.0
+        },
+        {
+            "id": "CirrusCitadel",
+            "fileHq": "T_Sky_CirrusCitadel_HQ.png",
+            "fileLq": "T_Sky_CirrusCitadel_LQ.png",
+            "sunX": -0.5,
+            "sunY": 0.6200000047683716,
+            "sunZ": 0.6000000238418579,
+            "sunR": 0.7200000286102295,
+            "sunG": 0.800000011920929,
+            "sunB": 1.0,
+            "sunIntensity": 1.2999999523162842,
+            "ambientR": 0.30000001192092896,
+            "ambientG": 0.3199999928474426,
+            "ambientB": 0.5199999809265137,
+            "fogR": 0.20000000298023224,
+            "fogG": 0.20000000298023224,
+            "fogB": 0.3799999952316284,
+            "fogStart": 130.0,
+            "fogEnd": 560.0
+        },
+        {
+            "id": "Maelstrom",
+            "fileHq": "T_Sky_Maelstrom_HQ.png",
+            "fileLq": "T_Sky_Maelstrom_LQ.png",
+            "sunX": 0.0,
+            "sunY": 1.0,
+            "sunZ": 0.0,
+            "sunR": 0.6600000262260437,
+            "sunG": 0.6800000071525574,
+            "sunB": 0.9599999785423279,
+            "sunIntensity": 1.100000023841858,
+            "ambientR": 0.27000001072883606,
+            "ambientG": 0.25,
+            "ambientB": 0.4000000059604645,
+            "fogR": 0.10999999940395355,
+            "fogG": 0.10000000149011612,
+            "fogB": 0.20000000298023224,
+            "fogStart": 90.0,
+            "fogEnd": 420.0
+        },
+        {
+            "id": "QuarterdeckDusk",
+            "fileHq": "T_Sky_QuarterdeckDusk_HQ.png",
+            "fileLq": "T_Sky_QuarterdeckDusk_LQ.png",
+            "sunX": -0.7200000286102295,
+            "sunY": 0.1599999964237213,
+            "sunZ": 0.6700000166893005,
+            "sunR": 1.0,
+            "sunG": 0.6600000262260437,
+            "sunB": 0.41999998688697815,
+            "sunIntensity": 2.0999999046325684,
+            "ambientR": 0.6200000047683716,
+            "ambientG": 0.46000000834465027,
+            "ambientB": 0.6000000238418579,
+            "fogR": 0.8600000143051147,
+            "fogG": 0.47999998927116394,
+            "fogB": 0.41999998688697815,
+            "fogStart": 150.0,
+            "fogEnd": 620.0
+        },
+        {
+            "id": "FreeDawn",
+            "fileHq": "T_Sky_FreeDawn_HQ.png",
+            "fileLq": "T_Sky_FreeDawn_LQ.png",
+            "sunX": 0.6000000238418579,
+            "sunY": 0.23999999463558197,
+            "sunZ": -0.7599999904632568,
+            "sunR": 1.0,
+            "sunG": 0.9200000166893005,
+            "sunB": 0.7799999713897705,
+            "sunIntensity": 2.5,
+            "ambientR": 0.6800000071525574,
+            "ambientG": 0.7200000286102295,
+            "ambientB": 0.8600000143051147,
+            "fogR": 1.0,
+            "fogG": 0.8600000143051147,
+            "fogB": 0.7400000095367432,
+            "fogStart": 240.0,
+            "fogEnd": 1000.0
+        }
+    ]
+}

@@ -109,10 +109,16 @@ MonoBehaviour:
   - {fileID: -777296343502656771, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
   - {fileID: 1705358518000571087, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
   - {fileID: -4669247909627572057, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
+  - {fileID: -6316996661543968562, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
   - {fileID: -5193681874456876713, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
   - {fileID: 8513874004014098567, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
+  - {fileID: 2025402319704000096, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
+  - {fileID: 7800948684081849595, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
+  - {fileID: 6015577108654207987, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
+  - {fileID: -8912999345867134160, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
   - {fileID: -1972327132127149101, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
   - {fileID: -1881101361428871385, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
+  - {fileID: 1022657724240690386, guid: 3a056d96a4bac944d802f267064b6c31, type: 3}
 --- !u!1 &1164408256164881488
 GameObject:
   m_ObjectHideFlags: 0
@@ -428,7 +434,9 @@ Transform:
   m_LocalPosition: {x: -0.00000009452924, y: 0.23151663, z: 0.000000007450581}
   m_LocalScale: {x: 0.99999994, y: 0.99999994, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4361195328634692265}
+  - {fileID: 1226884803816646105}
   m_Father: {fileID: 8140429381038476767}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3863700328135574180
@@ -589,6 +597,37 @@ Transform:
   m_Children:
   - {fileID: 5058034818107912062}
   m_Father: {fileID: 6644044685892760621}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6461977796413275336
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1226884803816646105}
+  m_Layer: 0
+  m_Name: weapon.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1226884803816646105
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6461977796413275336}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.4749763, y: -0.41092563, z: 0.4749765, w: 0.6163886}
+  m_LocalPosition: {x: 0.00000003585592, y: 0.05123484, z: 0.0000000055879354}
+  m_LocalScale: {x: 0.9999999, y: 0.99999994, z: 1.0000001}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7876347665442180475}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6590555327534513148
 GameObject:
@@ -751,6 +790,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2813230722435442648}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8573451468770737296
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4361195328634692265}
+  m_Layer: 0
+  m_Name: gun.L
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4361195328634692265
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8573451468770737296}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00000006500361, y: -0.6264127, z: -0.000000021139057, w: 0.7794916}
+  m_LocalPosition: {x: 0.00000003585592, y: 0.05123484, z: 0.0000000055879354}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7876347665442180475}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8974072716794323365
 GameObject:
   m_ObjectHideFlags: 0
@@ -908,6 +978,8 @@ SkinnedMeshRenderer:
   - {fileID: 380685759306871462}
   - {fileID: 8140429381038476767}
   - {fileID: 7876347665442180475}
+  - {fileID: 4361195328634692265}
+  - {fileID: 1226884803816646105}
   - {fileID: 1705761402527748142}
   - {fileID: 3787231681629338105}
   - {fileID: 8279393901162721207}

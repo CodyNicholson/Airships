@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using Airships.Core;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Airships.Game
 {
-    // The party-of-four turn-based battle on the enemy's deck. All rules live in PartyBattle.
+    // The turn-based party battle on a ship's deck. All rules live in PartyBattle.
     public class BoardingScreen : MonoBehaviour
     {
+        const float DangerHealthShare = 0.4f;
         const float CharacterScale = 1.25f;
         const float FrontLineX = 2.6f;
         const float LineSpacingX = 1.35f;
@@ -20,8 +22,12 @@ namespace Airships.Game
 
         public PartyBattle Battle { get; private set; }
         public int ActionsResolved { get; private set; }
+        public TimingPrompt Timing => timing;
 
         GameDirector director;
+        TimingPrompt timing;
+        GameRandom patternRandom;
+        string lastPatternId;
         DeckModel deckModel;
         Transform deck;
         Transform lookTarget;
@@ -41,6 +47,8 @@ namespace Airships.Game
             public Bar EnemyBar;
             public float Flash;
             public bool Fallen;
+            public TextMeshProUGUI NameText;
+            public TextMeshProUGUI IntentText;
         }
 
         readonly List<Fighter> fighters = new List<Fighter>();
@@ -55,15 +63,33 @@ namespace Airships.Game
         Material arrowMaterial;
         Action<BattleAction> pendingChoice;
         Fighter current;
+        CommsBar comms;
+        DeckSetup setup;
+        TextMeshProUGUI sabotageLabel;
+        Bar momentumBar;
+        TextMeshProUGUI momentumLabel;
+        RawImage rain;
+        float lightningTimer = 3f;
+        readonly HashSet<string> saidTriggers = new HashSet<string>();
 
         void Start()
         {
             director = GameDirector.Instance;
-            var party = BattleSetup.BuildParty(director.Content, director.Save);
-            var enemies = BattleSetup.BuildEnemies(director.Content, director.EncounterTier);
-            Battle = new PartyBattle(party, enemies, director.Seed);
+            setup = director.Deck;
+            var party = setup.Party;
+            var enemies = setup.Enemies;
+            Battle = new PartyBattle(party, enemies, director.Seed, director.Content.timing, BattleSetup.MaxFullCrew)
+            {
+                SpareTarget = setup.Spare,
+                SurrenderAfterRound = setup.SurrenderAfterRound,
+            };
+            patternRandom = new GameRandom(director.Seed + 5);
 
-            deckModel = Models.CreateDeck(transform, KitArt.Obsidian);
+            deckModel = Models.CreateDeck(transform, setup.Faction, setup.Arena);
+            if (setup.Below) director.Stage.ApplyWeather(director.Content.Weather("below"));
+            else if (setup.Storm) director.Stage.ApplyWeather(director.Content.Weather("maelstrom"));
+            else if (director.Run != null) director.Stage.ApplyWeather(director.Content.Weather(CampaignLook.WeatherFor(director.Run.Mission)));
+            DressArena();
             deck = deckModel.Root.transform;
             // Three-quarter facing, so faces and silhouettes read from the battle camera.
             BuildFighters(party, "party_slot_", 125f);
@@ -73,8 +99,9 @@ namespace Airships.Game
             cameraRig.SetParent(transform, false);
             lookTarget = new GameObject("Battle Look").transform;
             lookTarget.SetParent(transform, false);
-            lookTarget.position = new Vector3(0f, 0.5f, 0f);
-            director.Stage.FrameTarget(cameraRig, lookTarget, new Vector3(0f, 3.4f, -9.6f), 46f, 0f);
+            GetCamera(setup.Arena, out var cameraOffset, out var lookHeight);
+            lookTarget.position = new Vector3(0f, lookHeight, 0f);
+            director.Stage.FrameTarget(cameraRig, lookTarget, cameraOffset, 46f, 0f);
 
             var arrowKit = new MeshKit();
             arrowKit.Cylinder(new Vector3(0f, 0.55f, 0f), Vector3.zero, 0.3f, 0f, 4, Palette.Accent);
@@ -83,7 +110,102 @@ namespace Airships.Game
             turnArrow.localScale = Vector3.one * 0.6f;
 
             BuildHud();
+            Say("start");
+            if (Battle.SurrenderAfterRound > 0) Say("sabotage");
+            if (setup.Storm) BuildRain();
             StartCoroutine(RunBattle());
+        }
+
+        // Plays any lines waiting on this moment, once each.
+        void Say(string trigger)
+        {
+            if (setup.Lines == null || !saidTriggers.Add(trigger)) return;
+            foreach (var line in setup.Lines)
+            {
+                if (line.trigger == trigger) comms.Say(line);
+            }
+        }
+
+        // Interiors have low ceilings, so the camera sits lower. The chamber is large, so it sits further back.
+        static void GetCamera(string arena, out Vector3 offset, out float lookHeight)
+        {
+            switch (arena)
+            {
+                case "SM_Env_GunDeck":
+                    offset = new Vector3(0f, 1.9f, -7.6f);
+                    lookHeight = 1f;
+                    break;
+                case "SM_Env_CellBlock":
+                case "SM_Env_WarRoom":
+                    offset = new Vector3(0f, 2.3f, -8.4f);
+                    lookHeight = 1f;
+                    break;
+                case "SM_Env_LiftCoreChamber":
+                    offset = new Vector3(0f, 3f, -15.5f);
+                    lookHeight = 1.5f;
+                    break;
+                default:
+                    offset = new Vector3(0f, 3.4f, -9.6f);
+                    lookHeight = 0.5f;
+                    break;
+            }
+        }
+
+        void Dress(string asset, string faction, string socket, Vector3 offset)
+        {
+            var mark = KitArt.Socket(deckModel.Kit, socket);
+            if (mark == null) return;
+            var prop = Models.CreateProp(asset, faction, deckModel.Root.transform);
+            prop.transform.position = mark.position + offset;
+        }
+
+        // Set pieces each arena's story calls for.
+        void DressArena()
+        {
+            if (setup.Arena == "SM_Env_LiftCoreChamber")
+            {
+                foreach (var ember in Effects.AttachAll("EmberDrift", deckModel.Kit, 2f)) ember.Active = true;
+            }
+            switch (setup.Arena)
+            {
+                case "SM_Env_ScrapDeck":
+                    Dress("SM_Prop_WinchControls", "Scrap", "winch_controls", Vector3.zero);
+                    Dress("SM_Prop_HarpoonWinch", "Scrap", "winch_controls", new Vector3(-2f, 0f, 0.4f));
+                    Dress("SM_Prop_KragAnchor", "Scrap", "bay_edge", new Vector3(-1f, 0f, -2.4f));
+                    Dress("SM_Prop_ScrapPile", "Scrap", "centre_stage", new Vector3(-5f, 0f, 2.4f));
+                    break;
+                case "SM_Env_CellBlock":
+                    for (var i = 0; i < 5; i++) Dress("SM_Prop_CellDoor", "Warden", "cell_" + i, Vector3.zero);
+                    break;
+                case "SM_Env_GunDeck":
+                    Dress("SM_Prop_DeckMortar", setup.Faction, "floor_breach", new Vector3(0f, 0f, 1.4f));
+                    Dress("SM_Prop_SiegeCannon", setup.Faction, "ladder_up", new Vector3(-3.4f, 0f, 0.2f));
+                    Dress("SM_Prop_MortarShell", setup.Faction, "ladder_up", new Vector3(2f, 0f, 0.6f));
+                    break;
+                case "SM_Env_WarRoom":
+                    Dress("SM_Prop_ArmadaBanner", "Gilded", "cassian_mark", new Vector3(-2.6f, 0f, -0.4f));
+                    Dress("SM_Prop_ArmadaBanner", "Gilded", "cassian_mark", new Vector3(2.6f, 0f, -0.4f));
+                    break;
+                case "SM_Env_DreadnoughtDeck":
+                    Dress("SM_Prop_ArmadaBanner", "Gilded", "hatch", new Vector3(-3.4f, 0f, -1.6f));
+                    Dress("SM_Prop_ArmadaBanner", "Gilded", "hatch", new Vector3(3.4f, 0f, -1.6f));
+                    Dress("SM_Prop_FlakGun", "Gilded", "hatch", new Vector3(6f, 0f, -1.6f));
+                    break;
+            }
+        }
+
+        void CheckBattleBarks()
+        {
+            var anyEnemyLow = false;
+            foreach (var enemy in Battle.Enemies)
+            {
+                if (enemy.Alive && enemy != Battle.SpareTarget && enemy.Hp < enemy.Stats.hp * 0.45f) anyEnemyLow = true;
+            }
+            if (anyEnemyLow) Say("enemyLow");
+            foreach (var member in Battle.Party)
+            {
+                if (member.Alive && member.Hp < member.Stats.hp * 0.3f) Say("partyLow");
+            }
         }
 
         void BuildFighters(List<Combatant> combatants, string slotPrefix, float yaw)
@@ -91,13 +213,18 @@ namespace Airships.Game
             for (var i = 0; i < combatants.Count; i++)
             {
                 var combatant = combatants[i];
-                var model = Models.CreateCharacter(combatant.Name, combatant.ClassId, deck);
+                var model = Models.CreateCharacter(combatant.Name, string.IsNullOrEmpty(combatant.Look) ? combatant.ClassId : combatant.Look, deck);
 
                 // Enemy leaders are tall, so they stand at the back. The kit's slots set each fighter's
                 // depth, and a diagonal line across the deck keeps everyone visible from this camera.
                 var slot = yaw < 0f ? combatants.Count - 1 - i : i;
-                var home = deckModel.Spot($"{slotPrefix}{slot + 1}");
-                home.x = Mathf.Sign(home.x) * (FrontLineX + slot * LineSpacingX);
+                var home = deckModel.Spot($"{slotPrefix}{Mathf.Min(slot + 1, 3)}");
+                var spacing = combatants.Count > 3 ? LineSpacingX * 3f / combatants.Count : LineSpacingX;
+                home.x = Mathf.Sign(home.x) * (FrontLineX + slot * spacing);
+                if (slot >= 3) home.z += (slot - 2) * 0.6f;
+
+                // The chamber's Lift-Core fills the middle of the room, so the fight is in front of it.
+                if (setup.Arena == "SM_Env_LiftCoreChamber") home = new Vector3(Mathf.Sign(home.x) * (3.4f + slot * spacing), home.y, -6.6f - slot * 0.5f);
                 var rotation = Quaternion.Euler(0f, yaw, 0f);
                 model.Root.transform.localPosition = home;
                 model.Root.transform.localRotation = rotation;
@@ -109,12 +236,29 @@ namespace Airships.Game
             }
         }
 
+        // The music tightens when the crew is in trouble, a boss is raging or the charges are about to blow.
+        void UpdateMusicDanger()
+        {
+            var health = 0f;
+            var maximum = 0f;
+            foreach (var member in Battle.Party)
+            {
+                health += member.Hp;
+                maximum += member.Stats.hp;
+            }
+            var raging = false;
+            foreach (var enemy in Battle.Enemies) raging |= enemy.Enraged && enemy.Hp > 0;
+            AudioBank.SetDanger(raging || health < maximum * DangerHealthShare ? 1f : 0f);
+        }
+
         void Update()
         {
+            UpdateMusicDanger();
             time += Time.deltaTime;
+            UpdateWeather();
 
-            // The deck rocks gently.
-            deck.localRotation = Quaternion.Euler(Mathf.Sin(time * 0.6f) * 0.8f, 0f, Mathf.Sin(time * 0.45f) * 1.2f);
+            // The deck rocks gently, except on the arenas built into a ship's insides.
+            if (!setup.Below) deck.localRotation = Quaternion.Euler(Mathf.Sin(time * 0.6f) * 0.8f, 0f, Mathf.Sin(time * 0.45f) * 1.2f);
             cameraRig.position = new Vector3(Mathf.Sin(time * 0.2f) * 0.4f, 0f, 0f);
 
             foreach (var fighter in fighters)
@@ -136,11 +280,73 @@ namespace Airships.Game
             }
         }
 
+        void BuildRain()
+        {
+            rain = new GameObject("Rain", typeof(RectTransform)).AddComponent<RawImage>();
+            rain.transform.SetParent(canvas.transform, false);
+            rain.transform.SetAsFirstSibling();
+            rain.raycastTarget = false;
+            rain.texture = Resources.Load<Texture2D>($"Art/Vfx/T_VFX_Rain_{KitArt.Quality}");
+            rain.color = new Color(1f, 1f, 1f, 0.22f);
+            UIKit.Fill(rain.rectTransform);
+        }
+
+        void UpdateWeather()
+        {
+            if (rain == null) return;
+            rain.uvRect = new Rect(Time.time * 0.05f, Time.time * 1.2f, rain.rectTransform.rect.width / 512f, rain.rectTransform.rect.height / 512f);
+            lightningTimer -= Time.deltaTime;
+            if (lightningTimer > 0f) return;
+            lightningTimer = UnityEngine.Random.Range(4f, 8f);
+            var strikes = KitArt.MatchSockets(deckModel.Kit, new[] { "lightning_strike_*" });
+            if (strikes.Count == 0) return;
+            Effects.Play("LightningStrike", strikes[UnityEngine.Random.Range(0, strikes.Count)].position, 0.35f);
+            director.ScreenFx.Flash(Palette.Cloud, 0.25f, 0.15f);
+            AudioBank.Play(Sfx.Explosion, 0.35f);
+        }
+
+        // The boarding party swings in on grapple lines, and bosses greet them with a taunt.
+        IEnumerator Entrance()
+        {
+            foreach (var fighter in fighters)
+            {
+                if (fighter.Combatant.IsPlayer && setup.Boarded) fighter.Model.Animation.Loop("Grapple");
+                else if (!fighter.Combatant.IsPlayer && fighter.Combatant.EnrageAt > 0f) fighter.Model.Animation.PlayThenReturn("Taunt");
+            }
+            if (setup.Boarded)
+            {
+                var starts = new Dictionary<Fighter, Vector3>();
+                foreach (var fighter in fighters)
+                {
+                    if (fighter.Combatant.IsPlayer) starts[fighter] = fighter.Home + new Vector3(-7f, 3.5f, -2f);
+                }
+                yield return Ease.Tween(0.85f, t =>
+                {
+                    foreach (var pair in starts)
+                    {
+                        var at = Vector3.Lerp(pair.Value, pair.Key.Home, t);
+                        at.y += Mathf.Sin(t * Mathf.PI) * 1.2f;
+                        pair.Key.Model.Root.transform.localPosition = at;
+                    }
+                }, Ease.OutCubic, false);
+                foreach (var fighter in starts.Keys) fighter.Model.Animation.Loop("Idle", fighter.Combatant.Slot * 0.37f);
+                Fx.Burst(deck.position + Vector3.up, Palette.Smoke, 8, 2f, 0.6f, 0.5f);
+            }
+            yield return new WaitForSeconds(0.5f);
+        }
+
         IEnumerator RunBattle()
         {
-            yield return new WaitForSeconds(0.7f);
+            yield return Entrance();
             while (Battle.Outcome == BattleOutcome.Ongoing)
             {
+                var opening = Battle.TakeTurnStartEvents();
+                if (opening.Count > 0)
+                {
+                    yield return ApplyResults(opening);
+                    if (Battle.Outcome != BattleOutcome.Ongoing) break;
+                }
+                RefreshIntents();
                 var actor = Battle.Current;
                 current = byCombatant[actor];
                 turnLabel.text = $"{actor.Name}'s turn";
@@ -161,26 +367,39 @@ namespace Airships.Game
                 }
                 else
                 {
-                    yield return new WaitForSeconds(0.45f);
+                    yield return new WaitForSeconds(0.2f);
                     action = actor.IsPlayer ? ChooseAutoAction(actor) : Battle.ChooseEnemyAction(actor);
                 }
 
                 yield return PlayAction(actor, action);
                 ActionsResolved++;
-                yield return new WaitForSeconds(0.22f);
+                CheckBattleBarks();
+                RefreshSabotage();
+                RefreshMomentum();
+                yield return new WaitForSeconds(0.12f);
             }
+            var closing = Battle.TakeTurnStartEvents();
+            if (closing.Count > 0) yield return ApplyResults(closing);
 
             current = null;
             var won = Battle.Outcome == BattleOutcome.Victory;
             turnLabel.text = "";
-            director.ScreenFx.Milestone(won ? "VICTORY!" : "DEFEATED", won ? Palette.Accent : Palette.Danger);
+            director.ScreenFx.Milestone(Battle.Surrendered ? "THEY SURRENDER!" : won ? "VICTORY!" : "DEFEATED", won ? Palette.Accent : Palette.Danger);
             foreach (var fighter in fighters)
             {
-                if (!fighter.Fallen && fighter.Combatant.Alive) fighter.Model.Animation.Loop("Victory");
+                if (fighter.Fallen || !fighter.Combatant.Alive) continue;
+                if (fighter.Combatant.IsPlayer == won) fighter.Model.Animation.Loop("Victory");
+                else fighter.Model.Animation.Play("Surrender");
             }
-            if (won) RevealPlunder();
+            if (Battle.Surrendered)
+            {
+                Effects.Play("LiftCoreSabotage", deck.position + Vector3.up * 2f, 0.7f);
+                var flag = UIKit.Icon("Surrender", safe, "Story_Surrender");
+                UIKit.Place(flag.rectTransform, new Vector2(0.5f, 0.3f), Vector2.one * 0.5f, Vector2.zero, Vector2.one * 180f);
+            }
+            if (won && !setup.Below) RevealPlunder();
             yield return new WaitForSeconds(2.4f);
-            director.OnBattleFinished(won);
+            director.OnBattleFinished(won, Battle);
         }
 
         void RevealPlunder()
@@ -200,30 +419,45 @@ namespace Airships.Game
         // A plain policy for automated runs: heal when hurt, otherwise use the strongest attack.
         BattleAction ChooseAutoAction(Combatant actor)
         {
+            if (Battle.RushReady) return new BattleAction { Kind = BattleActionKind.Rush };
             var allies = Battle.Party;
             Combatant weakest = null;
+            foreach (var ally in allies)
+            {
+                if (ally.Alive) continue;
+                foreach (var skill in actor.Skills)
+                {
+                    if (skill.revive && PartyBattle.CanUse(actor, skill)) return new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = ally };
+                }
+            }
             foreach (var ally in allies)
             {
                 if (ally.Alive && (weakest == null || ally.Hp / ally.Stats.hp < weakest.Hp / weakest.Stats.hp)) weakest = ally;
             }
             foreach (var skill in actor.Skills)
             {
-                if (skill.Kind == SkillKind.Heal && PartyBattle.CanUse(actor, skill) && weakest.Hp < weakest.Stats.hp * 0.5f)
+                if (skill.Kind == SkillKind.Heal && skill.status == null && PartyBattle.CanUse(actor, skill) && weakest.Hp < weakest.Stats.hp * 0.5f)
                 {
                     return new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = weakest };
                 }
             }
-            var target = Battle.Enemies[0];
+            Combatant target = null;
             foreach (var enemy in Battle.Enemies)
             {
-                if (enemy.Alive && (!target.Alive || enemy.Hp < target.Hp)) target = enemy;
+                if (!enemy.Alive || enemy == Battle.SpareTarget) continue;
+                if (target == null || enemy.Hp < target.Hp) target = enemy;
+            }
+            var foes = 0;
+            foreach (var enemy in Battle.Enemies)
+            {
+                if (enemy.Alive && enemy != Battle.SpareTarget) foes++;
             }
             foreach (var skill in actor.Skills)
             {
-                if (skill.Kind != SkillKind.Heal && PartyBattle.CanUse(actor, skill) && actor.Mp > skill.mpCost * 2)
-                {
-                    return new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target };
-                }
+                // A sweep only earns its cost against a crowd.
+                var sweeps = skill.Target == SkillTarget.AllEnemies;
+                if (skill.Kind == SkillKind.Heal || (sweeps && foes < 2) || !PartyBattle.CanUse(actor, skill)) continue;
+                return new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target };
             }
             return new BattleAction { Kind = BattleActionKind.Attack, Target = target };
         }
@@ -233,42 +467,114 @@ namespace Airships.Game
             var fighter = byCombatant[actor];
             var isMagic = action.Kind == BattleActionKind.Skill && action.Skill.Kind == SkillKind.Magic;
             var isHeal = action.Kind == BattleActionKind.Skill && action.Skill.Kind == SkillKind.Heal;
-            var isRanged = actor.ClassId == "gunner" || actor.ClassId == "bombardier";
-            var label = action.Kind == BattleActionKind.Skill ? action.Skill.name : action.Kind == BattleActionKind.Guard ? "Guard" : "Attack";
+            var isRanged = director.Content.Class(actor.ClassId).ranged;
+            var label = action.Kind == BattleActionKind.Skill ? action.Skill.name : action.Kind == BattleActionKind.Guard ? "Guard" : action.Kind == BattleActionKind.Rush ? "Boarding Rush" : action.Kind == BattleActionKind.Item ? action.Item.name : "Attack";
             actionLabel.text = label;
             StartCoroutine(HideActionLabel());
 
-            var results = Battle.Submit(action);
+            if (action.Kind == BattleActionKind.Rush)
+            {
+                yield return PlayRush(action);
+                yield break;
+            }
+            if (action.Kind == BattleActionKind.Item)
+            {
+                var used = Battle.Submit(action);
+                director.Save.AddItem(action.Item.id, -1);
+                director.SaveGame();
+                AudioBank.Play(action.Item.kind == "heal" ? Sfx.Heal : Sfx.HeavyCannon, 0.8f);
+                if (action.Item.kind != "heal") Effects.Play("MortarImpact", deck.position + new Vector3(4f, 1.2f, 0f));
+                fighter.Model.Animation.PlayThenReturn(action.Item.kind == "heal" ? "Work" : "AttackRanged");
+                yield return ApplyResults(used);
+                yield return new WaitForSeconds(0.3f);
+                yield break;
+            }
 
             if (action.Kind == BattleActionKind.Guard)
             {
+                var guarded = Battle.Submit(action);
                 Fx.Puff(fighter.Model.Root.transform.position + Vector3.up * 1.5f, Palette.Mana);
                 AudioBank.Play(Sfx.Confirm, 0.6f);
                 ShowFloating(fighter, "GUARD", Palette.Mana, 40f);
                 fighter.Model.Animation.PlayThenReturn("Block");
                 yield return new WaitForSeconds(BlockMoment);
+                yield return ApplyResults(guarded);
+                yield break;
             }
-            else if (isHeal || isMagic || isRanged)
+
+            // The pattern's last target lands on the attack's strike frame, so reading the swing helps.
+            var pattern = ShowTimingPrompt(actor, action, isHeal, isMagic);
+            var lead = Mathf.Max(0f, pattern.Length - StrikeMoment);
+            if (lead > 0f) yield return new WaitForSeconds(lead);
+
+            if (isHeal || isMagic || isRanged)
             {
                 yield return CastOrShoot(fighter, action, isMagic, isHeal);
             }
             else
             {
-                var target = action.Target ?? FirstTarget(results);
-                yield return Lunge(fighter, target != null ? byCombatant[target] : null, results);
-                yield break;
+                var target = action.Target ?? Battle.Opponents(actor).Find(c => c.Alive);
+                yield return Lunge(fighter, target != null ? byCombatant[target] : null, action);
             }
-
-            yield return ApplyResults(results);
         }
 
-        static Combatant FirstTarget(List<BattleEvent> results)
+        // The whole crew charges on one prompt.
+        IEnumerator PlayRush(BattleAction action)
         {
-            foreach (var result in results)
+            director.ScreenFx.Milestone("BOARDING RUSH!", Palette.Accent);
+            var pattern = TimingSequence.Pick(director.Content.timing, director.EncounterTier, true, patternRandom, lastPatternId);
+            lastPatternId = pattern.id;
+            timing.Begin(pattern, "ALL HANDS!", Palette.PlayerPaint);
+            var lead = Mathf.Max(0f, pattern.Length - StrikeMoment);
+            if (lead > 0f) yield return new WaitForSeconds(lead);
+            foreach (var fighter in fighters)
             {
-                if (result.Kind == BattleEventKind.Damage) return result.Target;
+                if (fighter.Combatant.IsPlayer && fighter.Combatant.Alive) fighter.Model.Animation.PlayThenReturn("AttackMelee");
             }
-            return null;
+            yield return new WaitForSeconds(StrikeMoment);
+            yield return ResolveStrike(action);
+            AudioBank.Play(Sfx.Slash, 1f, 0f);
+            director.Stage.Shake(0.6f);
+            yield return ApplyResults(strikeResults);
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        // The tip of what someone's holding, or their chest if it has none.
+        static Vector3 WeaponPoint(Fighter fighter, string socket)
+        {
+            foreach (var held in fighter.Model.Held)
+            {
+                var point = KitArt.Socket(held, socket);
+                if (point != null) return point.position;
+            }
+            var chest = KitArt.Socket(fighter.Model.Root, "chest_centre");
+            return chest != null ? chest.position : fighter.Model.Root.transform.position + Vector3.up * 1.4f;
+        }
+
+        TimingPattern ShowTimingPrompt(Combatant actor, BattleAction action, bool isHeal, bool isMagic)
+        {
+            var pattern = TimingSequence.Pick(director.Content.timing, director.EncounterTier, actor.IsPlayer, patternRandom, lastPatternId);
+            lastPatternId = pattern.id;
+            if (actor.IsPlayer)
+            {
+                timing.Begin(pattern, isHeal ? "FOCUS!" : isMagic ? "CAST!" : "STRIKE!", isHeal ? Palette.Heal : Palette.PlayerPaint);
+                return pattern;
+            }
+
+            timing.Begin(pattern, "BLOCK!", Palette.Mana);
+            var hitsEveryone = action.Kind == BattleActionKind.Skill && action.Skill.Target == SkillTarget.AllEnemies;
+            turnLabel.text = hitsEveryone || action.Target == null ? "Targeting everyone!" : $"Targeting {action.Target.Name}!";
+            return pattern;
+        }
+
+        // Waits for the prompt's grade, then resolves the action with it.
+        List<BattleEvent> strikeResults;
+
+        IEnumerator ResolveStrike(BattleAction action)
+        {
+            while (!timing.Done) yield return null;
+            action.Timing = timing.Grade;
+            strikeResults = Battle.Submit(action);
         }
 
         IEnumerator HideActionLabel()
@@ -291,6 +597,7 @@ namespace Airships.Game
             if (action.Target != null) Face(fighter, byCombatant[action.Target]);
             fighter.Model.Animation.PlayThenReturn("AttackRanged");
             yield return new WaitForSeconds(StrikeMoment);
+            yield return ResolveStrike(action);
 
             var origin = fighter.Model.Root.transform.position + Vector3.up * 1.6f;
             if (isHeal)
@@ -302,9 +609,11 @@ namespace Airships.Game
             {
                 AudioBank.Play(isMagic ? Sfx.HeavyCannon : Sfx.Cannon, isMagic ? 0.55f : 0.7f);
                 var color = isMagic ? Palette.Storm : Palette.Spark;
-                Fx.Burst(origin + fighter.Model.Root.transform.forward * 1.5f, color, 12, 4f, 0.8f, 0.3f);
-                yield return ShootProjectile(origin, action, color);
+                var muzzle = WeaponPoint(fighter, "muzzle");
+                Effects.Play(isMagic ? "LiftCoreSabotage" : "CannonFire", muzzle, isMagic ? 0.25f : 0.5f);
+                yield return ShootProjectile(muzzle, action, color);
             }
+            yield return ApplyResults(strikeResults);
             fighter.Model.Root.transform.localRotation = fighter.HomeRotation;
         }
 
@@ -321,7 +630,7 @@ namespace Airships.Game
             }
         }
 
-        IEnumerator Lunge(Fighter fighter, Fighter target, List<BattleEvent> results)
+        IEnumerator Lunge(Fighter fighter, Fighter target, BattleAction action)
         {
             var root = fighter.Model.Root.transform;
             var home = fighter.Home;
@@ -332,10 +641,15 @@ namespace Airships.Game
             Face(fighter, target);
             fighter.Model.Animation.PlayThenReturn("AttackMelee");
             yield return Ease.Tween(StrikeMoment, t => root.localPosition = Vector3.LerpUnclamped(home, strikePoint, t), Ease.OutCubic, false);
+            yield return ResolveStrike(action);
             AudioBank.Play(Sfx.Slash, 0.9f);
-            yield return ApplyResults(results);
+            Effects.Play("MeleeSlash", WeaponPoint(fighter, "trail_tip"));
+            yield return ApplyResults(strikeResults);
+            if (fighter.Combatant.Alive) fighter.Model.Animation.Loop("Run");
+            root.localRotation = Quaternion.LookRotation(home - strikePoint == Vector3.zero ? Vector3.forward : home - strikePoint);
             yield return Ease.Tween(0.28f, t => root.localPosition = Vector3.LerpUnclamped(strikePoint, home, t), Ease.OutCubic, false);
             root.localRotation = fighter.HomeRotation;
+            if (fighter.Combatant.Alive) fighter.Model.Animation.Loop("Idle", fighter.Combatant.Slot * 0.37f);
         }
 
         IEnumerator ApplyResults(List<BattleEvent> results)
@@ -357,6 +671,44 @@ namespace Airships.Game
                         anyDefeated = true;
                         Fall(byCombatant[result.Target]);
                         break;
+                    case BattleEventKind.Status:
+                        ShowFloating(byCombatant[result.Target], result.Label.ToUpperInvariant() + "!", Palette.Accent, 44f);
+                        break;
+                    case BattleEventKind.Burned:
+                        var burned = byCombatant[result.Target];
+                        burned.Flash = 1f;
+                        ShowFloating(burned, result.Amount.ToString(), Palette.Danger, 50f);
+                        Effects.Play("HullFire", burned.Model.Root.transform.position, 0.6f);
+                        AudioBank.Play(Sfx.Hit, 0.5f);
+                        break;
+                    case BattleEventKind.Stunned:
+                        var stunned = byCombatant[result.Target];
+                        ShowFloating(stunned, "STUNNED", Palette.Storm, 50f);
+                        stunned.Model.Animation.PlayThenReturn("Hit");
+                        break;
+                    case BattleEventKind.Counter:
+                        var countered = byCombatant[result.Target];
+                        countered.Flash = 1f;
+                        byCombatant[result.Source].Model.Animation.PlayThenReturn("AttackMelee");
+                        Effects.Play("BladeClash", countered.Model.Root.transform.position + Vector3.up * 1.4f, 1.5f);
+                        ShowFloating(countered, $"COUNTER {result.Amount}", Palette.Accent, 56f);
+                        AudioBank.Play(Sfx.Slash, 1f);
+                        break;
+                    case BattleEventKind.Enraged:
+                        var enraged = byCombatant[result.Target];
+                        enraged.Model.Animation.PlayThenReturn("Taunt");
+                        enraged.Model.SetEmission(Palette.Danger * 0.4f);
+                        Effects.Play("BladeClash", enraged.Model.Root.transform.position + Vector3.up * 1.5f, 2.5f);
+                        director.ScreenFx.Milestone($"{enraged.Combatant.Name.ToUpperInvariant()} RAGES!", Palette.Danger);
+                        Say("enrage");
+                        break;
+                    case BattleEventKind.Revived:
+                        var revived = byCombatant[result.Target];
+                        revived.Fallen = false;
+                        revived.Model.Animation.Loop("Idle", 0f);
+                        ShowFloating(revived, "BACK ON DECK", Palette.Heal, 50f);
+                        Fx.Burst(revived.Model.Root.transform.position + Vector3.up, Palette.Heal, 18, 2f, 0.5f, 0.8f, 2f);
+                        break;
                 }
             }
             RefreshBars();
@@ -368,12 +720,23 @@ namespace Airships.Game
             var fighter = byCombatant[result.Target];
             fighter.Flash = 1f;
             var position = fighter.Model.Root.transform.position + Vector3.up * 1.6f;
-            Fx.DeckHit(position, result.Critical);
+            Effects.Play("HullImpact", position, result.Critical ? 0.8f : 0.5f);
             AudioBank.Play(result.Critical ? Sfx.HeavyHit : Sfx.Hit, 0.85f);
-            ShowFloating(fighter, result.Critical ? $"{result.Amount}!" : result.Amount.ToString(), result.Critical ? Palette.Accent : Palette.TextLight, result.Critical ? 76f : 58f);
-            if (fighter.Combatant.Alive) fighter.Model.Animation.PlayThenReturn("Hit");
-            director.Stage.Shake(result.Critical ? 0.28f : 0.12f);
-            if (result.Critical) GameTime.HitStop(0.05f);
+
+            // Timing shows in the number's color and size, so a good tap reads as a bigger hit or a
+            // smaller wound. A blocked hit plays the guard pose instead of the flinch.
+            var perfect = result.Timing == TimingGrade.Perfect;
+            var timed = result.Timing != TimingGrade.Miss;
+            var blocked = timed && fighter.Combatant.IsPlayer;
+            if (blocked) Effects.Play("BladeClash", position);
+            var woundedByMiss = !timed && fighter.Combatant.IsPlayer;
+            var weakenedByMiss = !timed && !fighter.Combatant.IsPlayer;
+            var color = woundedByMiss ? Palette.Danger : weakenedByMiss ? Palette.TextMuted : blocked ? Palette.Mana : perfect || result.Critical ? Palette.Accent : Palette.TextLight;
+            var size = woundedByMiss || (!blocked && (perfect || result.Critical)) ? 76f : blocked || weakenedByMiss ? 46f : 58f;
+            ShowFloating(fighter, result.Critical ? $"{result.Amount}!" : result.Amount.ToString(), color, size);
+            if (fighter.Combatant.Alive) fighter.Model.Animation.PlayThenReturn(blocked ? "Block" : "Hit");
+            director.Stage.Shake(result.Critical || (perfect && !blocked) ? 0.28f : blocked ? 0.05f : 0.12f);
+            if (result.Critical || perfect) GameTime.HitStop(0.05f);
         }
 
         void ShowFloating(Fighter fighter, string value, Color color, float size)
@@ -406,21 +769,115 @@ namespace Airships.Game
 
             BuildPartyPanel();
             BuildEnemyPanel();
+            if (!string.IsNullOrEmpty(setup.Location))
+            {
+                var location = UIKit.Text("Location", safe, setup.Location, 28f, Palette.TextLight, TextAlignmentOptions.Left);
+                location.outlineWidth = 0.2f;
+                location.outlineColor = Palette.Ink;
+                UIKit.Place(location.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(32f, -24f), new Vector2(620f, 40f));
+            }
+            sabotageLabel = UIKit.Text("Sabotage", safe, "", 32f, Palette.Danger, TextAlignmentOptions.Left);
+            sabotageLabel.outlineWidth = 0.2f;
+            sabotageLabel.outlineColor = Palette.Ink;
+            UIKit.Place(sabotageLabel.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(92f, -68f), new Vector2(620f, 44f));
+            if (Battle.SurrenderAfterRound > 0)
+            {
+                var timer = UIKit.Icon("Timer", safe, "Hud_Timer");
+                UIKit.Place(timer.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(32f, -62f), Vector2.one * 54f);
+                var charge = UIKit.Icon("Sable", safe, "Ability_SableSabotage");
+                UIKit.Place(charge.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(690f, -62f), Vector2.one * 54f);
+            }
+            RefreshSabotage();
             menuRoot = UIKit.Node("Menu", safe);
             UIKit.Place(menuRoot, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-28f, 28f), new Vector2(620f, 500f));
+            BuildMomentum();
+            timing = TimingPrompt.Create(safe, director.Content.timing);
+            comms = CommsBar.Create(safe, director.Content.campaign, -108f);
+        }
+
+        void BuildMomentum()
+        {
+            var panel = UIKit.Panel("Momentum", safe, Palette.WithAlpha(Palette.Panel, 0.9f));
+            var y = 28f + 24f + Battle.Party.Count * 69f + 8f;
+            UIKit.Place(panel.rectTransform, Vector2.zero, Vector2.zero, new Vector2(28f, y), new Vector2(520f, 58f));
+            momentumLabel = UIKit.Text("Label", panel.transform, "MOMENTUM", 24f, Palette.TextLight, TextAlignmentOptions.Left);
+            UIKit.Place(momentumLabel.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(16f, 0f), new Vector2(190f, 40f));
+            momentumBar = UIKit.Bar("Bar", panel.transform, Palette.Accent);
+            UIKit.Place((RectTransform)momentumBar.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(210f, 0f), new Vector2(295f, 34f));
+            momentumBar.Set(0f, true);
+        }
+
+        void RefreshMomentum()
+        {
+            momentumBar.Set(Battle.Momentum / (float)PartyBattle.MaxMomentum);
+            momentumLabel.text = Battle.RushReady ? "RUSH READY!" : "MOMENTUM";
+            momentumLabel.color = Battle.RushReady ? Palette.Accent : Palette.TextLight;
+        }
+
+        // Enemies announce their turn, so the player can guard the target or strike first.
+        void RefreshIntents()
+        {
+            foreach (var fighter in fighters)
+            {
+                var combatant = fighter.Combatant;
+                var tags = StatusTags(combatant);
+                if (fighter.NameText != null)
+                {
+                    var name = combatant == Battle.SpareTarget ? $"{combatant.Name} (SPARE)" : combatant.Name;
+                    fighter.NameText.text = tags.Length > 0 ? $"{name} <size=70%><color=#F2B134>{tags}</color></size>" : name;
+                }
+                if (fighter.IntentText == null) continue;
+                if (!combatant.Alive)
+                {
+                    fighter.IntentText.text = "";
+                }
+                else if (combatant.StunTurns > 0)
+                {
+                    fighter.IntentText.text = "Stunned";
+                }
+                else if (Battle.TryGetIntent(combatant, out var intent))
+                {
+                    var hitsAll = intent.Kind == BattleActionKind.Skill && intent.Skill.Target == SkillTarget.AllEnemies;
+                    var heals = intent.Kind == BattleActionKind.Skill && intent.Skill.Kind == SkillKind.Heal;
+                    var label = intent.Kind == BattleActionKind.Skill ? intent.Skill.name : "Attack";
+                    fighter.IntentText.text = heals ? $"{label}: {intent.Target?.Name}" : hitsAll ? $"{label}: everyone" : $"{label}: {intent.Target?.Name}";
+                    fighter.IntentText.color = hitsAll ? Palette.Danger : Palette.Accent;
+                }
+            }
+        }
+
+        static string StatusTags(Combatant combatant)
+        {
+            var tags = "";
+            if (combatant.BurnTurns > 0) tags += " BURN";
+            if (combatant.StunTurns > 0) tags += " STUN";
+            if (combatant.ExposedTurns > 0) tags += " EXPOSED";
+            if (combatant.HasteTurns > 0) tags += " HASTE";
+            return tags;
+        }
+
+        void RefreshSabotage()
+        {
+            if (Battle.SurrenderAfterRound <= 0) return;
+            var left = Mathf.Max(0, Battle.SurrenderAfterRound - Battle.Round + 1);
+            sabotageLabel.text = $"LIFT-CORE CHARGES: {left} ROUND{(left == 1 ? "" : "S")}";
         }
 
         void BuildPartyPanel()
         {
             var panel = UIKit.Panel("Party", safe, Palette.WithAlpha(Palette.Panel, 0.9f));
-            UIKit.Place(panel.rectTransform, Vector2.zero, Vector2.zero, new Vector2(28f, 28f), new Vector2(860f, 300f));
+            UIKit.Place(panel.rectTransform, Vector2.zero, Vector2.zero, new Vector2(28f, 28f), new Vector2(860f, 24f + Battle.Party.Count * 69f));
 
             for (var i = 0; i < Battle.Party.Count; i++)
             {
                 var fighter = byCombatant[Battle.Party[i]];
                 var y = -18f - i * 69f;
                 var name = UIKit.Text("Name", panel.transform, fighter.Combatant.Name, 30f, Palette.TextLight, TextAlignmentOptions.Left);
+                name.enableAutoSizing = true;
+                name.fontSizeMin = 16f;
+                name.fontSizeMax = 30f;
                 UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(22f, y), new Vector2(250f, 56f));
+                fighter.NameText = name;
 
                 fighter.HpBar = UIKit.Bar("HP", panel.transform, Palette.Heal);
                 UIKit.Place((RectTransform)fighter.HpBar.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(278f, y - 8f), new Vector2(330f, 40f));
@@ -448,10 +905,18 @@ namespace Airships.Game
             {
                 var fighter = byCombatant[Battle.Enemies[i]];
                 var y = -12f - i * 68f;
-                var name = UIKit.Text("Name", panel.transform, fighter.Combatant.Name, 26f, Palette.TextLight, TextAlignmentOptions.Left);
-                UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(270f, 56f));
+                var isSpare = fighter.Combatant == Battle.SpareTarget;
+                var name = UIKit.Text("Name", panel.transform, isSpare ? $"{fighter.Combatant.Name} (SPARE)" : fighter.Combatant.Name, 26f, isSpare ? Palette.Accent : Palette.TextLight, TextAlignmentOptions.Left);
+                name.enableAutoSizing = true;
+                name.fontSizeMin = 16f;
+                name.fontSizeMax = 26f;
+                UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(270f, 34f));
+                fighter.NameText = name;
                 fighter.EnemyBar = UIKit.Bar("HP", panel.transform, Palette.Danger);
-                UIKit.Place((RectTransform)fighter.EnemyBar.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, y - 10f), new Vector2(250f, 34f));
+                UIKit.Place((RectTransform)fighter.EnemyBar.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, y - 6f), new Vector2(250f, 26f));
+                fighter.IntentText = UIKit.Text("Intent", panel.transform, "", 21f, Palette.Accent, TextAlignmentOptions.Left, false);
+                fighter.IntentText.characterSpacing = 0f;
+                UIKit.Place(fighter.IntentText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y - 32f), new Vector2(530f, 28f));
             }
             RefreshBars(true);
         }
@@ -480,10 +945,49 @@ namespace Airships.Game
         void ShowCommandMenu(Combatant actor)
         {
             ClearMenu();
-            AddMenuButton(2, "ATTACK", Palette.PlayerPaint, () => ShowEnemyTargets(actor, target =>
+            var row = 3;
+            if (Battle.RushReady) AddMenuButton(4, "BOARDING RUSH!", Palette.Accent, () => pendingChoice(new BattleAction { Kind = BattleActionKind.Rush }));
+            AddMenuButton(row--, "ATTACK", Palette.PlayerPaint, () => ShowEnemyTargets(actor, target =>
                 pendingChoice(new BattleAction { Kind = BattleActionKind.Attack, Target = target })));
-            AddMenuButton(1, "SKILLS", Palette.PanelLight, () => ShowSkillMenu(actor));
-            AddMenuButton(0, "GUARD", Palette.PanelLight, () => pendingChoice(new BattleAction { Kind = BattleActionKind.Guard }));
+            AddMenuButton(row--, "SKILLS", Palette.PanelLight, () => ShowSkillMenu(actor));
+            var items = AddMenuButton(row--, "ITEMS", Palette.PanelLight, () => ShowItemMenu(actor));
+            items.Interactable = HasBattleItems();
+            var guard = AddMenuButton(row, "GUARD", Palette.PanelLight, () => pendingChoice(new BattleAction { Kind = BattleActionKind.Guard }));
+            AddIcon(guard, "Hud_Defend");
+        }
+
+        bool HasBattleItems()
+        {
+            foreach (var item in director.Content.items)
+            {
+                if (item.kind != "patch" && director.Save.ItemCount(item.id) > 0) return true;
+            }
+            return false;
+        }
+
+        static void AddIcon(GameButton button, string icon)
+        {
+            var image = UIKit.Icon("Icon", button.transform, icon);
+            UIKit.Place(image.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), Vector2.one * 68f);
+        }
+
+        void ShowItemMenu(Combatant actor)
+        {
+            ClearMenu();
+            var row = 1;
+            foreach (var definition in director.Content.items)
+            {
+                if (definition.kind == "patch" || director.Save.ItemCount(definition.id) <= 0) continue;
+                var item = definition;
+                var button = AddMenuButton(row++, $"{item.name}  x{director.Save.ItemCount(item.id)}", Palette.PanelLight, () =>
+                {
+                    if (item.kind == "heal") ShowAllyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Item, Item = item, Target = target }));
+                    else pendingChoice(new BattleAction { Kind = BattleActionKind.Item, Item = item });
+                });
+                button.Label.fontSize = 34f;
+                AddIcon(button, item.icon);
+            }
+            AddMenuButton(0, "BACK", Palette.Panel, () => ShowCommandMenu(actor));
         }
 
         void ShowSkillMenu(Combatant actor)
@@ -508,7 +1012,7 @@ namespace Airships.Game
                     ShowEnemyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target }));
                     break;
                 case SkillTarget.Ally:
-                    ShowAllyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target }));
+                    ShowAllyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target }), skill.revive);
                     break;
                 default:
                     pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill });
@@ -518,25 +1022,25 @@ namespace Airships.Game
 
         void ShowEnemyTargets(Combatant actor, Action<Combatant> picked)
         {
-            ShowTargetList(actor, Battle.Enemies, picked, c => $"{c.Name}  ({Mathf.RoundToInt(100f * c.Hp / c.Stats.hp)}%)");
+            ShowTargetList(actor, Battle.Enemies, picked, c => c == Battle.SpareTarget ? $"{c.Name}  (SPARE!)" : $"{c.Name}  ({Mathf.RoundToInt(100f * c.Hp / c.Stats.hp)}%)");
         }
 
-        void ShowAllyTargets(Combatant actor, Action<Combatant> picked)
+        void ShowAllyTargets(Combatant actor, Action<Combatant> picked, bool includeFallen = false)
         {
-            ShowTargetList(actor, Battle.Party, picked, c => $"{c.Name}  ({c.Hp} HP)");
+            ShowTargetList(actor, Battle.Party, picked, c => c.Alive ? $"{c.Name}  ({c.Hp} HP)" : $"{c.Name}  (DOWN)", includeFallen);
         }
 
-        void ShowTargetList(Combatant actor, IReadOnlyList<Combatant> options, Action<Combatant> picked, Func<Combatant, string> describe)
+        void ShowTargetList(Combatant actor, IReadOnlyList<Combatant> options, Action<Combatant> picked, Func<Combatant, string> describe, bool includeFallen = false)
         {
             ClearMenu();
             var row = 0;
             foreach (var option in options)
             {
-                if (option.Alive) row++;
+                if (option.Alive || includeFallen) row++;
             }
             foreach (var option in options)
             {
-                if (!option.Alive) continue;
+                if (!option.Alive && !includeFallen) continue;
                 var target = option;
                 var button = AddMenuButton(row--, describe(option), Palette.PanelLight, () => picked(target));
                 button.Label.fontSize = 34f;

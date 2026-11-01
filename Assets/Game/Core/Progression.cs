@@ -19,6 +19,13 @@ namespace Airships.Core
     }
 
     [Serializable]
+    public class ItemStack
+    {
+        public string id;
+        public int count;
+    }
+
+    [Serializable]
     public class PlayerSettingsData
     {
         public bool highDefinition = true;
@@ -30,20 +37,80 @@ namespace Airships.Core
     [Serializable]
     public class SaveData
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public int version = CurrentVersion;
         public int gold;
         public int encountersWon;
         public List<CrewProgress> crew = new List<CrewProgress>();
+        public List<string> party = new List<string>(); // Crew who board, in order. The captain always leads.
         public List<UpgradeProgress> upgrades = new List<UpgradeProgress>();
         public PlayerSettingsData settings = new PlayerSettingsData();
+        public List<ShipProgress> fleet = new List<ShipProgress>();
+        public string activeShip = "";
+        public CampaignProgress campaign = new CampaignProgress();
+        public List<ItemStack> items = new List<ItemStack>();
 
+        // A new game has one crew member and no ship of their own. The prologue changes both.
         public static SaveData NewGame(GameContent content)
         {
             var save = new SaveData { gold = content.economy.startingGold };
-            foreach (var member in content.crew) save.crew.Add(new CrewProgress { id = member.id });
+            save.crew.Add(new CrewProgress { id = Campaign.Protagonist });
+            Campaign.Begin(save, content);
+            save.EnsureValidParty();
             return save;
+        }
+
+        // Keeps the party valid for saves from before party choice, and after crew changes.
+        public void EnsureValidParty(bool fill = true)
+        {
+            party.RemoveAll(id => crew.Find(c => c.id == id) == null);
+            if (crew.Count == 0) return;
+
+            var captain = crew[0].id;
+            party.Remove(captain);
+            party.Insert(0, captain);
+            foreach (var member in crew)
+            {
+                if (!fill || party.Count >= BattleSetup.MaxPartySize) break;
+                if (!party.Contains(member.id)) party.Add(member.id);
+            }
+            if (party.Count > BattleSetup.MaxPartySize) party.RemoveRange(BattleSetup.MaxPartySize, party.Count - BattleSetup.MaxPartySize);
+        }
+
+        public bool IsInParty(string id) => party.Contains(id);
+
+        public int ItemCount(string id) => items.Find(i => i.id == id)?.count ?? 0;
+
+        public void AddItem(string id, int amount = 1)
+        {
+            var stack = items.Find(i => i.id == id);
+            if (stack == null)
+            {
+                stack = new ItemStack { id = id };
+                items.Add(stack);
+            }
+            stack.count = Math.Max(0, stack.count + amount);
+        }
+
+        public bool BuyItem(ItemDef item)
+        {
+            if (gold < item.cost) return false;
+            gold -= item.cost;
+            AddItem(item.id);
+            return true;
+        }
+
+        // Sends a party member to the reserve and brings in the first crew member waiting there.
+        // The captain can't be swapped out. Returns whether anything changed.
+        public bool SwapOut(string id)
+        {
+            var slot = party.IndexOf(id);
+            if (slot <= 0) return false;
+            var reserve = crew.Find(c => !party.Contains(c.id));
+            if (reserve == null) return false;
+            party[slot] = reserve.id;
+            return true;
         }
 
         public int UpgradeLevel(string id)
@@ -171,6 +238,7 @@ namespace Airships.Core
         public static ShipLoadout PlayerLoadout(GameContent content, SaveData save, string shipId)
         {
             var ship = content.Ship(shipId);
+            var signature = !string.IsNullOrEmpty(save.campaign.equippedSignature) ? save.campaign.equippedSignature : ship.signature;
             var loadout = new ShipLoadout
             {
                 Hull = ship.hull,
@@ -182,22 +250,30 @@ namespace Airships.Core
                 Broadside = content.Cannon(ship.broadsideCannon),
                 BowDamageScale = 1f,
                 BroadsideDamageScale = 1f,
+                Signature = !string.IsNullOrEmpty(signature) ? content.Signature(signature) : null,
             };
-            foreach (var upgrade in content.upgrades)
+            foreach (var upgrade in content.upgrades) ApplyStat(loadout, upgrade.stat, upgrade.perLevel * save.UpgradeLevel(upgrade.id));
+            foreach (var id in save.campaign.modules)
             {
-                var amount = upgrade.perLevel * save.UpgradeLevel(upgrade.id);
-                switch (upgrade.stat)
-                {
-                    case "hull": loadout.Hull *= 1f + amount; break;
-                    case "armor": loadout.Armor += amount; break;
-                    case "speed": loadout.Speed *= 1f + amount; break;
-                    case "turn": loadout.TurnDegrees *= 1f + amount; break;
-                    case "bowDamage": loadout.BowDamageScale += amount; break;
-                    case "broadsideDamage": loadout.BroadsideDamageScale += amount; break;
-                    default: throw new InvalidOperationException($"Unknown upgrade stat '{upgrade.stat}'");
-                }
+                var module = content.Module(id);
+                ApplyStat(loadout, module.stat, module.amount);
             }
+            foreach (var perk in Campaign.ActivePerks(save, content)) ApplyStat(loadout, perk.stat, perk.amount);
             return loadout;
+        }
+
+        static void ApplyStat(ShipLoadout loadout, string stat, float amount)
+        {
+            switch (stat)
+            {
+                case "hull": loadout.Hull *= 1f + amount; break;
+                case "armor": loadout.Armor += amount; break;
+                case "speed": loadout.Speed *= 1f + amount; break;
+                case "turn": loadout.TurnDegrees *= 1f + amount; break;
+                case "bowDamage": loadout.BowDamageScale += amount; break;
+                case "broadsideDamage": loadout.BroadsideDamageScale += amount; break;
+                default: throw new InvalidOperationException($"Unknown upgrade stat '{stat}'");
+            }
         }
 
         public static ShipLoadout EnemyLoadout(GameContent content, string shipId, int tier)

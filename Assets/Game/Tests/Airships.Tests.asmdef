@@ -3,6 +3,7 @@
     "rootNamespace": "Airships.Tests",
     "references": [
         "Airships.Core",
+        "Airships.Game",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

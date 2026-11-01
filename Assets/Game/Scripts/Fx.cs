@@ -102,4 +102,26 @@ namespace Airships.Game
             Burst(position, color, 10, 3.2f, 0.55f, 0.55f, 1.4f);
         }
     }
+
+    // A piece of wreckage falling away, then gone.
+    public class FallingChunk : MonoBehaviour
+    {
+        const float Gravity = 14f;
+        const float LifeSeconds = 5f;
+
+        public Vector3 Velocity;
+        Vector3 spin;
+        float life;
+
+        void Start() => spin = Random.onUnitSphere * 120f;
+
+        void Update()
+        {
+            Velocity += Vector3.down * Gravity * Time.deltaTime;
+            transform.position += Velocity * Time.deltaTime;
+            transform.Rotate(spin * Time.deltaTime, Space.Self);
+            life += Time.deltaTime;
+            if (life > LifeSeconds) Destroy(gameObject);
+        }
+    }
 }
