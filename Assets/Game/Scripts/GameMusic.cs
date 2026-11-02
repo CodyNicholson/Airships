@@ -7,13 +7,19 @@ namespace Airships.Game
     {
         public const string Adventure = "skyward_regatta";
         public const string Harbor = "harbor_of_lanterns";
-        public const string SkyBattle = "broadsides_at_dawn";
+        public const string Tempest = "wings_of_the_tempest";
+        public const string Thunderheads = "gauntlet_of_thunderheads";
         public const string DeckBattle = "cannons_over_cumulus";
         public const string Boss = "leviathan_of_the_upper_winds";
         public const string Finale = "the_sovereign_descends";
         public const string Victory = "victory_fanfare";
+        public const string Defeat = "defeat_lament";
 
-        public static readonly string[] Songs = { Adventure, Harbor, SkyBattle, DeckBattle, Boss, Finale };
+        public static readonly string[] Songs = { Adventure, Harbor, Tempest, Thunderheads, DeckBattle, Boss, Finale };
+
+        // Ordinary dogfights take turns, so a run of them doesn't wear out one theme.
+        static readonly string[] SkyBattles = { Tempest, Thunderheads };
+        static int nextSkyBattle;
 
         const float VictoryGapSeconds = 45f;
 
@@ -32,7 +38,7 @@ namespace Airships.Game
                 case GameState.Port:
                     return Harbor;
                 case GameState.Dogfight:
-                    return SkyBattle;
+                    return SkyBattles[nextSkyBattle++ % SkyBattles.Length];
                 case GameState.Battle:
                     return DeckBattle;
                 default:
@@ -45,5 +51,7 @@ namespace Airships.Game
         {
             if (AudioBank.SecondsSinceJingle > VictoryGapSeconds) AudioBank.PlayJingle(Victory);
         }
+
+        public static void PlayDefeat() => AudioBank.PlayJingle(Defeat, true);
     }
 }

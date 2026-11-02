@@ -12,6 +12,7 @@ namespace Airships.Core
         public string name;
         public string classId;
         public string look;
+        public string portrait; // A painted portrait of their own, when their look doesn't have one.
     }
 
     // One line of dialogue. In flight, Trigger says when it plays. In a story phase it's ignored.
@@ -50,7 +51,7 @@ namespace Airships.Core
         public bool target; // The ship the phase's objective is about.
         public bool unsinkable;
         public bool flees;
-        public bool easyToBoard;
+        public float startHullShare; // Above zero, how much hull it enters the fight with.
         public int hooks;
         public float harpoonAfter;
         public bool ally; // Flies on the player's side.
@@ -173,6 +174,8 @@ namespace Airships.Core
     public class PhaseDef
     {
         public string kind; // story, sky, deck, assign or choice.
+        public bool nemesisWelcome; // A rival from this sector can join this fight.
+        public int whales; // Sky whales in this fight.
         public string music; // A song from GameMusic, instead of the default for this kind of phase.
         public ShotDef[] shots; // A story phase with shots plays as a cutscene.
         public string title;

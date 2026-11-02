@@ -27,6 +27,7 @@ namespace Airships.Core
         public float OrbitRate;
 
         public float Heading; // Radians, for models that face the way they move.
+        public float SwimSpeed; // Jellyfish only: meters per second at the average of its pulse.
     }
 
     public enum WhaleMode { Roaming, Stalking, Lunging, Resting }
@@ -48,6 +49,20 @@ namespace Airships.Core
         public float WaypointZ;
 
         public bool MouthOpen => Mode == WhaleMode.Stalking || Mode == WhaleMode.Lunging;
+
+        const float StalkingGape = 0.15f; // Parted while it hunts, as a warning.
+        const float LungingGape = 0.45f;
+        const float WideOpenDistance = 35f;
+        const float StartsOpeningDistance = 150f;
+
+        // How far its jaws are open, 0 to 1, for how far it is from its prey: wider the closer it gets.
+        public float Gape(float distanceToPrey)
+        {
+            if (!MouthOpen) return 0f;
+            var near = Math.Max(0f, Math.Min(1f, (StartsOpeningDistance - distanceToPrey) / (StartsOpeningDistance - WideOpenDistance)));
+            var start = Mode == WhaleMode.Lunging ? LungingGape : StalkingGape;
+            return start + (1f - start) * near;
+        }
     }
 
     // Rocks, debris and flying sea life for one dogfight. Deterministic from its seed, like the rest of
@@ -64,6 +79,16 @@ namespace Airships.Core
         const float LeadSeconds = 0.35f;
         const float WhaleAvoidRange = 75f;
         const float WhaleAvoidTurnRate = 9f;
+        const float PackFirstHunt = 8f; // A pack of whales starts early, one after another.
+        const float PackStaggerSeconds = 8f;
+        const float PackSpawnDistance = 0.9f; // Share of the arena's radius, and just inside it.
+        const float JellySwimMin = 8f;
+        const float JellySwimMax = 15f;
+        const float JellyBob = 16f;
+        const float JellyWander = 0.3f; // Radians per second at its widest curve.
+        const float JellyTurnBack = 1.2f;
+        const float PulseRate = 2.2f; // Matches the bell's pulse in the view, so they push as they squeeze.
+        const float MineBob = 9f;
 
         readonly HazardDef def;
         readonly GameRandom random;
@@ -72,7 +97,9 @@ namespace Airships.Core
         float time;
 
         public IReadOnlyList<HazardState> Hazards => hazards;
-        public WhaleState Whale { get; private set; }
+        readonly List<WhaleState> whales = new List<WhaleState>();
+        public IReadOnlyList<WhaleState> Whales => whales;
+        public WhaleState Whale => whales.Count > 0 ? whales[0] : null;
 
         public HazardField(HazardDef def, int tier, int seed, IReadOnlyList<ShipState> ships)
         {
@@ -82,7 +109,7 @@ namespace Airships.Core
             AddMany(HazardKind.Debris, def.debrisCount, def.debrisMinRadius, def.debrisMaxRadius, def.debrisDamagePerMeter, ships);
             AddMany(HazardKind.Jellyfish, def.jellyfishCount, def.jellyfishMinRadius, def.jellyfishMaxRadius, def.jellyfishDamagePerMeter, ships);
             AddMany(HazardKind.FishSchool, def.fishCount, def.fishRadius, def.fishRadius, def.fishDamagePerMeter, ships);
-            if (tier >= def.whaleMinTier) AddWhale();
+            if (tier >= def.whaleMinTier) AddWhales(1);
         }
 
         void AddMany(HazardKind kind, int count, float minRadius, float maxRadius, float damagePerMeter, IReadOnlyList<ShipState> ships)
@@ -110,8 +137,10 @@ namespace Airships.Core
                         hazard.Heading = angle;
                         break;
                     case HazardKind.Jellyfish:
-                        hazard.BaseY = hazard.Y;
+                        hazard.BaseY = Math.Max(DogfightSim.MinAltitude + JellyBob, Math.Min(DogfightSim.MaxAltitude - JellyBob, hazard.Y));
                         hazard.BobPhase = random.Range(0f, (float)Math.PI * 2f);
+                        hazard.Heading = random.Range(0f, (float)Math.PI * 2f);
+                        hazard.SwimSpeed = random.Range(JellySwimMin, JellySwimMax);
                         break;
                     case HazardKind.FishSchool:
                         hazard.OrbitRadius = random.Range(90f, DogfightSim.ArenaRadius - 30f);
@@ -146,21 +175,27 @@ namespace Airships.Core
             }
         }
 
-        void AddWhale()
+        // Several whales come in from different sides, and take turns starting their first hunts.
+        public void AddWhales(int count)
         {
-            var angle = random.Range(0f, (float)Math.PI * 2f);
-            var distance = DogfightSim.ArenaRadius * 1.2f;
-            Whale = new WhaleState
+            var start = random.Range(0f, (float)Math.PI * 2f);
+            for (var i = 0; i < count; i++)
             {
-                Mode = WhaleMode.Resting,
-                X = (float)Math.Sin(angle) * distance,
-                Z = (float)Math.Cos(angle) * distance,
-                Y = random.Range(DogfightSim.MinAltitude, DogfightSim.MaxAltitude),
-                DirX = -(float)Math.Sin(angle),
-                DirZ = -(float)Math.Cos(angle),
-                Timer = random.Range(def.whaleFirstDelayMin, def.whaleFirstDelayMax),
-            };
-            PickWaypoint();
+                var angle = start + i * (float)Math.PI * 2f / count;
+                var distance = DogfightSim.ArenaRadius * (count > 1 ? PackSpawnDistance : 1.2f);
+                var whale = new WhaleState
+                {
+                    Mode = WhaleMode.Resting,
+                    X = (float)Math.Sin(angle) * distance,
+                    Z = (float)Math.Cos(angle) * distance,
+                    Y = random.Range(DogfightSim.MinAltitude, DogfightSim.MaxAltitude),
+                    DirX = -(float)Math.Sin(angle),
+                    DirZ = -(float)Math.Cos(angle),
+                    Timer = count > 1 ? PackFirstHunt + i * PackStaggerSeconds : random.Range(def.whaleFirstDelayMin, def.whaleFirstDelayMax),
+                };
+                PickWaypoint(whale);
+                whales.Add(whale);
+            }
         }
 
         // Drifting Lift-Stone mines. One touch or a few shots sets them off, and the blast hurts everyone near.
@@ -202,7 +237,7 @@ namespace Airships.Core
             {
                 if (hazard.Alive) Move(hazard);
             }
-            if (Whale != null) StepWhale(ships, events);
+            foreach (var whale in whales) StepWhale(whale, ships, events);
             foreach (var ship in ships)
             {
                 if (ship.Alive) Collide(ship, events);
@@ -218,8 +253,10 @@ namespace Airships.Core
                     hazard.Z += hazard.DriftZ * DogfightSim.TickSeconds;
                     break;
                 case HazardKind.Jellyfish:
+                    Swim(hazard);
+                    break;
                 case HazardKind.Mine:
-                    hazard.Y = hazard.BaseY + (float)Math.Sin(time * 0.6f + hazard.BobPhase) * 9f;
+                    hazard.Y = hazard.BaseY + (float)Math.Sin(time * 0.6f + hazard.BobPhase) * MineBob;
                     break;
                 case HazardKind.FishSchool:
                     hazard.OrbitAngle += hazard.OrbitRate * DogfightSim.TickSeconds;
@@ -229,6 +266,21 @@ namespace Airships.Core
                     hazard.Heading = hazard.OrbitAngle + (float)Math.PI * 0.5f * Math.Sign(hazard.OrbitRate);
                     break;
             }
+        }
+
+        // Jellyfish wander around the sky in curves, pushing forward with each pulse of the bell.
+        void Swim(HazardState jelly)
+        {
+            jelly.Heading += (float)Math.Sin(time * 0.4f + jelly.BobPhase) * JellyWander * DogfightSim.TickSeconds;
+            if (jelly.X * jelly.X + jelly.Z * jelly.Z > DogfightSim.ArenaRadius * HazardSpread * DogfightSim.ArenaRadius * HazardSpread)
+            {
+                var home = (float)Math.Atan2(-jelly.X, -jelly.Z);
+                jelly.Heading += DogfightSim.WrapAngle(home - jelly.Heading) * Math.Min(1f, JellyTurnBack * DogfightSim.TickSeconds);
+            }
+            var push = 0.4f + 1.2f * Math.Max(0f, (float)Math.Sin(time * PulseRate + jelly.BobPhase));
+            jelly.X += (float)Math.Sin(jelly.Heading) * jelly.SwimSpeed * push * DogfightSim.TickSeconds;
+            jelly.Z += (float)Math.Cos(jelly.Heading) * jelly.SwimSpeed * push * DogfightSim.TickSeconds;
+            jelly.Y = DogfightSim.ClampAltitude(jelly.BaseY + (float)Math.Sin(time * 0.6f + jelly.BobPhase) * JellyBob);
         }
 
         void Collide(ShipState ship, List<DogfightEvent> events)
@@ -318,9 +370,8 @@ namespace Airships.Core
             return false;
         }
 
-        void StepWhale(IReadOnlyList<ShipState> ships, List<DogfightEvent> events)
+        void StepWhale(WhaleState whale, IReadOnlyList<ShipState> ships, List<DogfightEvent> events)
         {
-            var whale = Whale;
             whale.Timer -= DogfightSim.TickSeconds;
             float speed;
             switch (whale.Mode)
@@ -328,28 +379,28 @@ namespace Airships.Core
                 case WhaleMode.Stalking:
                     speed = def.whaleCruiseSpeed * 0.5f;
                     var target = ships[whale.TargetId];
-                    if (target.Alive) SteerWhale(target.X, target.Y, target.Z, StalkTurnRate);
-                    if (whale.Timer <= 0f) BeginLunge(target, events);
+                    if (target.Alive) SteerWhale(whale, target.X, target.Y, target.Z, StalkTurnRate);
+                    if (whale.Timer <= 0f) BeginLunge(whale, target, events);
                     break;
                 case WhaleMode.Lunging:
                     speed = def.whaleLungeSpeed;
-                    if (whale.Timer <= 0f) Rest();
+                    if (whale.Timer <= 0f) Rest(whale);
                     break;
                 case WhaleMode.Roaming:
                     speed = def.whaleCruiseSpeed;
-                    SteerWhale(whale.WaypointX, whale.WaypointY, whale.WaypointZ, RoamTurnRate);
-                    if (Distance(whale.X, whale.Y, whale.Z, whale.WaypointX, whale.WaypointY, whale.WaypointZ) < 40f) PickWaypoint();
-                    if (whale.Timer <= 0f) TryStalk(ships, events);
+                    SteerWhale(whale, whale.WaypointX, whale.WaypointY, whale.WaypointZ, RoamTurnRate);
+                    if (Distance(whale.X, whale.Y, whale.Z, whale.WaypointX, whale.WaypointY, whale.WaypointZ) < 40f) PickWaypoint(whale);
+                    if (whale.Timer <= 0f && !AnyWhaleHunting) TryStalk(whale, ships, events);
                     break;
                 default:
                     speed = def.whaleCruiseSpeed;
-                    SteerWhale(whale.WaypointX, whale.WaypointY, whale.WaypointZ, RoamTurnRate);
-                    if (Distance(whale.X, whale.Y, whale.Z, whale.WaypointX, whale.WaypointY, whale.WaypointZ) < 40f) PickWaypoint();
+                    SteerWhale(whale, whale.WaypointX, whale.WaypointY, whale.WaypointZ, RoamTurnRate);
+                    if (Distance(whale.X, whale.Y, whale.Z, whale.WaypointX, whale.WaypointY, whale.WaypointZ) < 40f) PickWaypoint(whale);
                     if (whale.Timer <= 0f) whale.Mode = WhaleMode.Roaming;
                     break;
             }
 
-            SteerAroundUnhuntedShips(ships);
+            SteerAroundUnhuntedShips(whale, ships);
             whale.X += whale.DirX * speed * DogfightSim.TickSeconds;
             whale.Y += whale.DirY * speed * DogfightSim.TickSeconds;
             whale.Z += whale.DirZ * speed * DogfightSim.TickSeconds;
@@ -357,40 +408,52 @@ namespace Airships.Core
             if (!whale.MouthOpen) return;
             foreach (var ship in ships)
             {
-                if (!ship.Alive || !ship.HuntedByWhale) continue;
+                if (!ship.Alive || !ship.HuntedByWhale || ship.ImmuneTimer > 0f) continue;
                 var reach = def.whaleMouthRadius + ship.Loadout.Radius * ShipCollisionShare;
                 if (Distance(whale.X, whale.Y, whale.Z, ship.X, ship.Y, ship.Z) > reach) continue;
                 ship.Hull = 0f;
                 ship.Eaten = true;
                 events.Add(new DogfightEvent { Kind = DogfightEventKind.Eaten, ShipId = ship.Id, X = whale.X, Y = whale.Y, Z = whale.Z });
-                Rest();
+                Rest(whale);
                 return;
             }
         }
 
-        void TryStalk(IReadOnlyList<ShipState> ships, List<DogfightEvent> events)
+        // Only one whale hunts at a time, so a player can always read which one to dodge.
+        bool AnyWhaleHunting
+        {
+            get
+            {
+                foreach (var whale in whales)
+                {
+                    if (whale.MouthOpen) return true;
+                }
+                return false;
+            }
+        }
+
+        void TryStalk(WhaleState whale, IReadOnlyList<ShipState> ships, List<DogfightEvent> events)
         {
             ShipState nearest = null;
             var nearestDistance = def.whaleSenseRange;
             foreach (var ship in ships)
             {
                 if (!ship.Alive || !ship.HuntedByWhale) continue;
-                var distance = Distance(Whale.X, Whale.Y, Whale.Z, ship.X, ship.Y, ship.Z);
+                var distance = Distance(whale.X, whale.Y, whale.Z, ship.X, ship.Y, ship.Z);
                 if (distance >= nearestDistance) continue;
                 nearest = ship;
                 nearestDistance = distance;
             }
             if (nearest == null) return;
-            Whale.Mode = WhaleMode.Stalking;
-            Whale.TargetId = nearest.Id;
-            Whale.Timer = def.whaleAlertSeconds;
-            events.Add(new DogfightEvent { Kind = DogfightEventKind.WhaleAlert, ShipId = nearest.Id, X = Whale.X, Y = Whale.Y, Z = Whale.Z });
+            whale.Mode = WhaleMode.Stalking;
+            whale.TargetId = nearest.Id;
+            whale.Timer = def.whaleAlertSeconds;
+            events.Add(new DogfightEvent { Kind = DogfightEventKind.WhaleAlert, ShipId = nearest.Id, X = whale.X, Y = whale.Y, Z = whale.Z });
         }
 
         // The whale commits to a line here, so turning or changing altitude escapes it.
-        void BeginLunge(ShipState target, List<DogfightEvent> events)
+        void BeginLunge(WhaleState whale, ShipState target, List<DogfightEvent> events)
         {
-            var whale = Whale;
             whale.Mode = WhaleMode.Lunging;
             whale.Timer = def.whaleLungeSeconds;
             var aimX = target.X + target.ForwardX * target.Speed * LeadSeconds - whale.X;
@@ -404,9 +467,8 @@ namespace Airships.Core
         }
 
         // Turns the whale away from ships it doesn't hunt, more sharply the closer they are.
-        void SteerAroundUnhuntedShips(IReadOnlyList<ShipState> ships)
+        void SteerAroundUnhuntedShips(WhaleState whale, IReadOnlyList<ShipState> ships)
         {
-            var whale = Whale;
             foreach (var ship in ships)
             {
                 if (!ship.Alive || ship.HuntedByWhale) continue;
@@ -435,26 +497,25 @@ namespace Airships.Core
             }
         }
 
-        void Rest()
+        void Rest(WhaleState whale)
         {
-            Whale.Mode = WhaleMode.Resting;
-            Whale.TargetId = -1;
-            Whale.Timer = random.Range(def.whaleRestMin, def.whaleRestMax);
-            PickWaypoint();
+            whale.Mode = WhaleMode.Resting;
+            whale.TargetId = -1;
+            whale.Timer = random.Range(def.whaleRestMin, def.whaleRestMax);
+            PickWaypoint(whale);
         }
 
-        void PickWaypoint()
+        void PickWaypoint(WhaleState whale)
         {
             var angle = random.Range(0f, (float)Math.PI * 2f);
             var distance = random.Range(40f, DogfightSim.ArenaRadius);
-            Whale.WaypointX = (float)Math.Sin(angle) * distance;
-            Whale.WaypointZ = (float)Math.Cos(angle) * distance;
-            Whale.WaypointY = random.Range(DogfightSim.MinAltitude, DogfightSim.MaxAltitude);
+            whale.WaypointX = (float)Math.Sin(angle) * distance;
+            whale.WaypointZ = (float)Math.Cos(angle) * distance;
+            whale.WaypointY = random.Range(DogfightSim.MinAltitude, DogfightSim.MaxAltitude);
         }
 
-        void SteerWhale(float x, float y, float z, float rate)
+        void SteerWhale(WhaleState whale, float x, float y, float z, float rate)
         {
-            var whale = Whale;
             var toX = x - whale.X;
             var toY = y - whale.Y;
             var toZ = z - whale.Z;

@@ -157,13 +157,15 @@
    "id": "runner",
    "name": "Haven Runner",
    "classId": "gunner",
-   "look": "syndicate_gunner"
+   "look": "syndicate_gunner",
+   "portrait": "Runner"
   },
   {
    "id": "captain_ria",
    "name": "Captain Ria",
    "classId": "buccaneer",
-   "look": "brill"
+   "look": "brill",
+   "portrait": "CaptainRia"
   }
  ],
  "acts": [
@@ -1272,7 +1274,7 @@
      ],
      "ship": "sovereign_gale",
      "shipHullScale": 1.5,
-     "music": "broadsides_at_dawn"
+     "music": "wings_of_the_tempest"
     },
     {
      "kind": "story",
@@ -1887,7 +1889,7 @@
     {
      "kind": "sky",
      "weather": "heist",
-     "objective": "sink_all",
+     "objective": "capture",
      "enemies": [
       {
        "key": "scout",
@@ -1897,8 +1899,8 @@
        "damageScale": 0.2,
        "accuracy": 20,
        "unsinkable": true,
-       "easyToBoard": true,
-       "target": true
+       "target": true,
+       "startHullShare": 0.2
       }
      ],
      "lines": [
@@ -2257,16 +2259,18 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
-     "objective": "sink_all",
+     "objective": "capture",
      "enemies": [
       {
        "key": "raider_a",
        "shipId": "scrap_raider",
-       "name": "Scrap Raider",
+       "name": "Scrap Boss",
        "ai": "raider",
        "damageScale": 0.5,
-       "accuracy": 15
+       "accuracy": 15,
+       "target": true
       },
       {
        "key": "raider_b",
@@ -2286,6 +2290,11 @@
       },
       {
        "speaker": "vane",
+       "text": "And there's a sky whale in these winds. If it opens its mouth at you, get off its line.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "vane",
        "text": "Sunk. And there goes everything they were carrying.",
        "trigger": "enemyDown"
       },
@@ -2299,9 +2308,54 @@
        "speaker": "vane",
        "text": "Their guns glow before they fire. Tap BOOST and roll clear.",
        "trigger": "volley"
+      },
+      {
+       "speaker": "vane",
+       "text": "She's wallowing! Get close and throw the hook!",
+       "trigger": "grappleReady"
       }
      ],
-     "teach": []
+     "teach": [
+      {
+       "control": "grapple",
+       "speaker": "vane",
+       "text": "Only the Boss's ship is worth a boarding. Beat it under a quarter hull, get close, then GRAPPLE.",
+       "delay": 6
+      }
+     ],
+     "nemesisWelcome": true
+    },
+    {
+     "kind": "deck",
+     "location": "Scrap Boss's Deck",
+     "crew": [
+      {
+       "id": "hand_a",
+       "name": "Scrapper",
+       "classId": "brigand",
+       "level": 1,
+       "hpScale": 0.7,
+       "look": "scrap_hand"
+      },
+      {
+       "id": "hand_b",
+       "name": "Scrapper",
+       "classId": "brigand",
+       "level": 1,
+       "hpScale": 0.7,
+       "look": "scrap_hand"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "scav",
+       "text": "You came aboard? You really are mad!",
+       "trigger": "start"
+      }
+     ],
+     "arena": "SM_Env_ScrapDeck",
+     "arenaFaction": "Scrap"
     },
     {
      "kind": "story",
@@ -2309,7 +2363,7 @@
      "lines": [
       {
        "speaker": "vane",
-       "text": "Barely worth the powder. Sink a ship and you get scrap. If I want real prizes, I need its deck, not its wreckage."
+       "text": "Barely worth the powder. Sink a ship and you get scrap. If I want real prizes, I need a better deck than that one."
       },
       {
        "speaker": "vane",
@@ -2331,6 +2385,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
      "objective": "capture",
      "enemies": [
@@ -2457,6 +2512,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
      "objective": "collect",
      "enemies": [
@@ -2521,6 +2577,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
      "objective": "capture",
      "enemies": [
@@ -2545,7 +2602,7 @@
       },
       {
        "speaker": "rook",
-       "text": "Engines are gone! She's dead in the air. Get your hooks on her!",
+       "text": "Engines are gone! She can't run. Get her under a quarter hull, then hooks on!",
        "trigger": "enginesOut"
       },
       {
@@ -2648,6 +2705,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
      "objective": "capture",
      "enemies": [
@@ -2678,7 +2736,7 @@
       },
       {
        "speaker": "rook",
-       "text": "We're being dragged down! Hit GRAPPLE, ride the line onto his deck!",
+       "text": "We're being dragged down! Pour it on! Under a quarter hull, hit GRAPPLE and ride the line onto his deck!",
        "trigger": "tethered"
       },
       {
@@ -2821,6 +2879,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "cyclone",
      "objective": "survive",
      "enemies": [
@@ -2927,6 +2986,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "escort",
      "enemies": [
@@ -3021,6 +3081,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "capture",
      "enemies": [
@@ -3164,6 +3225,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "capture",
      "enemies": [
@@ -3279,6 +3341,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "capture",
      "enemies": [
@@ -3418,6 +3481,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "capture",
      "enemies": [
@@ -3459,7 +3523,7 @@
       },
       {
        "speaker": "rook",
-       "text": "Line's on! Vex can't slip that. Get over there!",
+       "text": "Line's on! Vex can't slip that. Keep firing till she's under a quarter hull!",
        "trigger": "tethered"
       }
      ],
@@ -3467,7 +3531,7 @@
       {
        "control": "signature",
        "speaker": "rook",
-       "text": "Use Krag's HARPOON! Snag a clipper, then GRAPPLE straight onto it!",
+       "text": "Use Krag's HARPOON! Snag Vex's clipper, batter it under a quarter hull, then GRAPPLE up the line!",
        "delay": 4
       }
      ],
@@ -3522,6 +3586,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "capture",
      "enemies": [
@@ -3629,6 +3694,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "citadel",
      "objective": "capture",
      "enemies": [
@@ -3905,6 +3971,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "citadel",
      "objective": "repel",
      "enemies": [
@@ -4046,6 +4113,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "citadel",
      "objective": "capture",
      "enemies": [
@@ -4059,7 +4127,7 @@
        "hooks": 3,
        "damageScale": 0.65,
        "accuracy": 9,
-       "hullScale": 0.75,
+       "hullScale": 0.55,
        "signatureEvery": 18,
        "standoff": 80
       }
@@ -4257,8 +4325,9 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "storm",
-     "objective": "sink_all",
+     "objective": "capture",
      "enemies": [
       {
        "key": "corvette_a",
@@ -4279,13 +4348,15 @@
       {
        "key": "frigate",
        "shipId": "armada_frigate",
-       "name": "Armada Frigate",
+       "name": "Armada Flagship",
        "ai": "raider",
        "damageScale": 0.6,
        "accuracy": 10,
        "hullScale": 0.9,
        "missileEvery": 16,
-       "standoff": 95
+       "standoff": 95,
+       "target": true,
+       "hooks": 2
       }
      ],
      "lines": [
@@ -4304,9 +4375,52 @@
        "speaker": "rook",
        "text": "They're breaking! The free captains are watching this, Vane!",
        "trigger": "enemyDown"
+      },
+      {
+       "speaker": "rook",
+       "text": "Flagship's breaking up! Take her deck and the whole sky sees it!",
+       "trigger": "grappleReady"
       }
      ],
-     "teach": []
+     "teach": [],
+     "nemesisWelcome": true
+    },
+    {
+     "kind": "deck",
+     "location": "Armada Flagship, Gun Deck",
+     "crew": [
+      {
+       "id": "officer",
+       "name": "Armada Officer",
+       "classId": "armada_officer",
+       "level": 12,
+       "look": "armada_officer"
+      },
+      {
+       "id": "guard_a",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 11,
+       "look": "armada_soldier"
+      },
+      {
+       "id": "guard_b",
+       "name": "Armada Guard",
+       "classId": "armada_guard",
+       "level": 11,
+       "look": "armada_soldier"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "armada",
+       "text": "Repel boarders! Not one pirate lives to tell it!",
+       "trigger": "start"
+      }
+     ],
+     "arena": "SM_Env_GunDeck",
+     "arenaFaction": "Gilded"
     },
     {
      "kind": "story",
@@ -4352,6 +4466,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "storm",
      "objective": "escort",
      "enemies": [
@@ -4482,6 +4597,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "storm",
      "objective": "capture",
      "enemies": [
@@ -4611,6 +4727,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "maelstrom",
      "objective": "capture",
      "enemies": [
@@ -4629,7 +4746,7 @@
      "lines": [
       {
        "speaker": "rook",
-       "text": "Corvette's ahead. Hooks on, and go!",
+       "text": "Corvette's ahead. Shell her under a quarter hull, then hooks on, and go!",
        "trigger": "start"
       }
      ],
@@ -4668,6 +4785,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "maelstrom",
      "objective": "capture",
      "enemies": [
@@ -4730,6 +4848,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "maelstrom",
      "objective": "disable_engines",
      "enemies": [
@@ -4797,6 +4916,7 @@
     },
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "maelstrom",
      "objective": "capture",
      "enemies": [
@@ -4980,6 +5100,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
      "objective": "capture",
      "enemies": [
@@ -5070,17 +5191,20 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "cyclone",
-     "objective": "sink_all",
+     "objective": "capture",
      "enemies": [
       {
        "key": "looter_a",
        "shipId": "syndicate_cutter",
-       "name": "Wreck Looter",
+       "name": "Looter Captain",
        "ai": "raider",
        "damageScale": 0.55,
        "accuracy": 12,
-       "hullScale": 0.8
+       "hullScale": 0.8,
+       "target": true,
+       "hooks": 2
       },
       {
        "key": "looter_b",
@@ -5096,9 +5220,44 @@
        "speaker": "lyra",
        "text": "Those looters are on my wreck. Ride the current in behind them.",
        "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "That captain took my chart aboard. Beat them down and let me at that deck!",
+       "trigger": "grappleReady"
       }
      ],
      "teach": []
+    },
+    {
+     "kind": "deck",
+     "location": "The Looter's Deck",
+     "crew": [
+      {
+       "id": "hand_a",
+       "name": "Wreck Looter",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_hand"
+      },
+      {
+       "id": "hand_b",
+       "name": "Wreck Looter",
+       "classId": "brigand",
+       "level": 6,
+       "look": "syndicate_gunner"
+      }
+     ],
+     "party": "boarding",
+     "lines": [
+      {
+       "speaker": "lyra",
+       "text": "Give me back what you pulled off that wreck!",
+       "trigger": "start"
+      }
+     ],
+     "arena": "SM_Env_ScrapDeck",
+     "arenaFaction": "Obsidian"
     },
     {
      "kind": "story",
@@ -5130,6 +5289,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "scrapwinds",
      "objective": "collect",
      "enemies": [
@@ -5183,6 +5343,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 3,
      "weather": "jetstream",
      "objective": "collect",
      "enemies": [],
@@ -5190,6 +5351,11 @@
       {
        "speaker": "lyra",
        "text": "Six chart beacons. Ride the currents between them, and try to enjoy it.",
+       "trigger": "start"
+      },
+      {
+       "speaker": "lyra",
+       "text": "Three sky whales feed up here. When one opens its mouth, turn hard or roll.",
        "trigger": "start"
       }
      ],
@@ -5216,6 +5382,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "jetstream",
      "objective": "capture",
      "enemies": [
@@ -5287,6 +5454,7 @@
    "phases": [
     {
      "kind": "sky",
+     "whales": 1,
      "weather": "citadel",
      "objective": "capture",
      "enemies": [
@@ -5640,8 +5808,8 @@
    "id": "rook_chasers",
    "crew": "rook",
    "loyalty": 3,
-   "name": "Rook's Chasers",
-   "description": "+15% bow damage",
+   "name": "Rook's Warheads",
+   "description": "+15% torpedo damage",
    "stat": "bowDamage",
    "amount": 0.15
   },

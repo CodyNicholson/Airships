@@ -522,7 +522,7 @@ namespace Airships.Core
             }
 
             var nemesis = Mission.kind == "bounty" || phase.script == "betrayal" ? null : Campaign.NemesisInSector(save, Mission.act);
-            if (nemesis != null && Mission.IsStory && config.Objective == "sink_all" && config.Enemies.Find(e => e.captain == nemesis.id) == null)
+            if (nemesis != null && Mission.IsStory && (config.Objective == "sink_all" || phase.nemesisWelcome) && config.Enemies.Find(e => e.captain == nemesis.id) == null)
             {
                 config.Enemies.Add(Campaign.NemesisSpawn(content, nemesis, false));
                 config.ExtraLines.Add(new CommsLine { speaker = "nemesis", text = $"{nemesis.name} here. Remember me? My armor remembers you.", trigger = "start" });
@@ -562,11 +562,6 @@ namespace Airships.Core
             {
                 TargetLost = true;
                 if (!string.IsNullOrEmpty(target.Spawn.captain)) Campaign.RecordNemesis(save, target.Spawn.captain, target.Spawn.name, target.Spawn.shipId, Mission.act);
-            }
-            else if (encounter.Outcome == SkyOutcome.TargetSunk)
-            {
-                TargetLost = true;
-                if (target != null && !string.IsNullOrEmpty(target.Spawn.captain)) Campaign.ClearNemesis(save, target.Spawn.captain);
             }
             else if (encounter.Outcome == SkyOutcome.Boarded && encounter.BoardedEnemy != null && !string.IsNullOrEmpty(encounter.BoardedEnemy.Spawn.captain))
             {

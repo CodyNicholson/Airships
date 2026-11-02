@@ -10,7 +10,12 @@ namespace Airships.Game
     {
         static readonly string[] DebrisProps = { "SM_Prop_Crate", "SM_Prop_Barrel", "SM_Prop_Cannon", "SM_Prop_WreckChunk", "SM_Prop_ScrapPile" };
         const int RockVariants = 3;
-        const float JawOpenDegrees = 38f;
+        const float JawOpenDegrees = 55f;
+        const float JawOpenRate = 3.5f;
+        const float JawCloseRate = 2.2f;
+        const float NotHeld = -1f;
+        const float JawLength = 17f; // From the hinge to the front teeth.
+        const float GapeLift = 14f; // The head tips back as the jaw drops.
 
         // Meshes are shared across dogfights, because they never change after being built.
         static readonly Mesh[] RockMeshes = new Mesh[RockVariants];
@@ -33,14 +38,55 @@ namespace Airships.Game
         readonly Dictionary<int, View> byId = new Dictionary<int, View>();
         readonly Transform root;
         readonly HazardField field;
-        Transform whale;
-        Transform whaleJaw;
-        Transform whaleTail;
-        Vector3 whalePrevious;
-        float mouth;
+        class WhaleView
+        {
+            public WhaleState State;
+            public Transform Body;
+            public Transform Jaw;
+            public Transform Tail;
+            public Vector3 Previous;
+            public float Mouth;
+            public float HeldMouth = NotHeld; // A swallow takes over the jaw from the hunt.
+            public float HeldRate;
+            public float Bulge;
+            public Vector3 Glide;
+        }
+
+        readonly List<WhaleView> whales = new List<WhaleView>();
         float time;
 
-        public Transform WhaleTransform => whale;
+        // The whale nearest a point, such as the one that just swallowed a ship.
+        WhaleView ViewOf(Transform body) => whales.Find(view => view.Body == body);
+
+        // Sets the jaw directly: 0 shut, 1 wide open.
+        public void HoldMouth(Transform body, float open, float rate)
+        {
+            var view = ViewOf(body);
+            view.HeldMouth = open;
+            view.HeldRate = rate;
+        }
+
+        // A swallow pushing through the body, and the whale swimming off afterward.
+        public void Gulp(Transform body, float bulge, Vector3 glide)
+        {
+            var view = ViewOf(body);
+            view.Bulge = bulge;
+            view.Glide = glide;
+        }
+
+        public Transform WhaleNearest(Vector3 point)
+        {
+            Transform nearest = null;
+            var best = float.MaxValue;
+            foreach (var view in whales)
+            {
+                var distance = (view.Body.position - point).sqrMagnitude;
+                if (distance >= best) continue;
+                best = distance;
+                nearest = view.Body;
+            }
+            return nearest;
+        }
 
         public HazardViews(HazardField field, Transform parent)
         {
@@ -65,16 +111,11 @@ namespace Airships.Game
                 byId[hazard.Id] = view;
             }
 
-            if (field.Whale != null)
-            {
-                BuildWhale(seaMaterial);
-                whalePrevious = WhalePosition();
-                whale.position = whalePrevious;
-            }
+            foreach (var state in field.Whales) BuildWhale(state, seaMaterial);
         }
 
         static Vector3 Position(HazardState hazard) => new Vector3(hazard.X, hazard.Y, hazard.Z);
-        Vector3 WhalePosition() => new Vector3(field.Whale.X, field.Whale.Y, field.Whale.Z);
+        static Vector3 Position(WhaleState whale) => new Vector3(whale.X, whale.Y, whale.Z);
 
         Transform Build(HazardState hazard, Material sea, Material rock, Material debris)
         {
@@ -169,7 +210,7 @@ namespace Airships.Game
             return kit.Build("Fish School");
         }
 
-        void BuildWhale(Material material)
+        void BuildWhale(WhaleState state, Material material)
         {
             var slate = Color.Lerp(Palette.Coat, Palette.DarkSmoke, 0.5f);
             var belly = Palette.Medic;
@@ -181,6 +222,7 @@ namespace Airships.Game
 
                 // The upper jaw, with teeth along the opening.
                 kit.Blob(new Vector3(0f, 3f, -5f), new Vector3(13f, 7f, 12f), slate, 1);
+                kit.Blob(new Vector3(0f, -1f, -12f), new Vector3(11f, 5f, 12f), Palette.Ink, 1); // The throat, seen when it gapes.
                 for (var i = -3; i <= 3; i++)
                 {
                     var at = new Vector3(i * 3.2f, -1.5f, 3f - Mathf.Abs(i) * 1.5f);
@@ -198,11 +240,11 @@ namespace Airships.Game
                 whaleBodyMesh = kit.Build("Whale Body");
 
                 var jaw = new MeshKit();
-                jaw.Blob(new Vector3(0f, -3f, -7f), new Vector3(12f, 3.5f, 14f), belly, 1);
-                jaw.Blob(new Vector3(0f, -1.2f, -7f), new Vector3(9.5f, 1.4f, 11f), Palette.Danger, 1);
+                jaw.Blob(new Vector3(0f, -3f, 7f), new Vector3(12f, 3.5f, 14f), belly, 1);
+                jaw.Blob(new Vector3(0f, -1.2f, 7f), new Vector3(9.5f, 1.4f, 11f), Palette.Danger, 1);
                 for (var i = -3; i <= 3; i++)
                 {
-                    var at = new Vector3(i * 2.8f, -1f, 3f - Mathf.Abs(i) * 1.5f);
+                    var at = new Vector3(i * 2.8f, -1f, JawLength - Mathf.Abs(i) * 1.5f);
                     jaw.Cylinder(at + Vector3.down * 1f, at + Vector3.up * 1.8f, 0.7f, 0f, 4, Palette.Canvas);
                 }
                 whaleJawMesh = jaw.Build("Whale Jaw");
@@ -214,18 +256,21 @@ namespace Airships.Game
                 whaleTailMesh = tail.Build("Whale Tail");
             }
 
-            whale = Models.Attach("Sky Whale", root, whaleBodyMesh, material, false).transform;
-            whaleJaw = Models.Attach("Jaw", whale, whaleJawMesh, material, false).transform;
-            whaleJaw.localPosition = new Vector3(0f, -1f, -10f);
-            whaleTail = Models.Attach("Tail", whale, whaleTailMesh, material, false).transform;
-            whaleTail.localPosition = new Vector3(0f, 2f, -60f);
+            var body = Models.Attach("Sky Whale", root, whaleBodyMesh, material, false).transform;
+            var mouthJaw = Models.Attach("Jaw", body, whaleJawMesh, material, false).transform;
+            mouthJaw.localPosition = new Vector3(0f, -1f, -24f);
+            var tailFin = Models.Attach("Tail", body, whaleTailMesh, material, false).transform;
+            tailFin.localPosition = new Vector3(0f, 2f, -60f);
+            var previous = Position(state);
+            body.position = previous;
+            whales.Add(new WhaleView { State = state, Body = body, Jaw = mouthJaw, Tail = tailFin, Previous = previous });
         }
 
         // Call after each simulation step, so drawing can blend between steps.
         public void CapturePrevious()
         {
             foreach (var view in views) view.Previous = Position(view.State);
-            if (field.Whale != null) whalePrevious = WhalePosition();
+            foreach (var whale in whales) whale.Previous = Position(whale.State);
         }
 
         public void Hide(int hazardId)
@@ -233,7 +278,7 @@ namespace Airships.Game
             if (byId.TryGetValue(hazardId, out var view)) view.Transform.gameObject.SetActive(false);
         }
 
-        public void Update(float alpha)
+        public void Update(float alpha, Vector3 prey)
         {
             time += Time.deltaTime;
             foreach (var view in views)
@@ -250,7 +295,7 @@ namespace Airships.Game
                         view.Transform.Rotate(0f, 14f * Time.deltaTime, 0f, Space.World);
                         break;
                     case HazardKind.Jellyfish:
-                        var pulse = 1f + Mathf.Sin(time * 2.2f + hazard.BobPhase) * 0.07f;
+                        var pulse = 1f + Mathf.Sin(time * 2.2f + hazard.BobPhase) * 0.14f;
                         view.Transform.localScale = new Vector3(pulse, 2f - pulse, pulse) * hazard.Radius;
                         break;
                     default:
@@ -259,21 +304,52 @@ namespace Airships.Game
                 }
             }
 
-            if (whale == null) return;
-            var state = field.Whale;
-            whale.position = Vector3.Lerp(whalePrevious, WhalePosition(), alpha);
-            var direction = new Vector3(state.DirX, state.DirY, state.DirZ);
-            if (direction.sqrMagnitude > 0.001f) whale.rotation = Quaternion.Slerp(whale.rotation, Quaternion.LookRotation(direction), 1f - Mathf.Exp(-6f * Time.deltaTime));
-            mouth = Mathf.MoveTowards(mouth, state.MouthOpen ? 1f : 0f, Time.deltaTime * 2.2f);
-            whaleJaw.localRotation = Quaternion.Euler(mouth * JawOpenDegrees, 0f, 0f);
-            whaleTail.localRotation = Quaternion.Euler(Mathf.Sin(time * (state.Mode == WhaleMode.Lunging ? 7f : 1.6f)) * 16f, 0f, 0f);
+            foreach (var whale in whales)
+            {
+                var state = whale.State;
+                var at = Vector3.Lerp(whale.Previous, Position(state), alpha);
+                whale.Body.position = at + whale.Glide;
+                whale.Body.localScale = new Vector3(1f + whale.Bulge, 1f + whale.Bulge, 1f - whale.Bulge * 0.4f);
+                var direction = new Vector3(state.DirX, state.DirY, state.DirZ);
+                if (direction.sqrMagnitude > 0.001f) whale.Body.rotation = Quaternion.Slerp(whale.Body.rotation, Quaternion.LookRotation(direction) * Quaternion.Euler(-whale.Mouth * GapeLift, 0f, 0f), 1f - Mathf.Exp(-6f * Time.unscaledDeltaTime));
+                if (whale.HeldMouth != NotHeld)
+                {
+                    whale.Mouth = Mathf.MoveTowards(whale.Mouth, whale.HeldMouth, Time.unscaledDeltaTime * whale.HeldRate);
+                }
+                else
+                {
+                    var gape = state.Gape(Vector3.Distance(at, prey));
+                    whale.Mouth = Mathf.MoveTowards(whale.Mouth, gape, Time.deltaTime * (gape > whale.Mouth ? JawOpenRate : JawCloseRate));
+                }
+                whale.Jaw.localRotation = Quaternion.Euler(whale.Mouth * JawOpenDegrees, 0f, 0f);
+                whale.Tail.localRotation = Quaternion.Euler(Mathf.Sin(time * (state.Mode == WhaleMode.Lunging ? 7f : 1.6f)) * 16f, 0f, 0f);
+            }
         }
     }
 
-    // Draws cloud banks, wind currents, updrafts, toxic smog and lightning with the kit's hazard models.
+    // Draws cloud banks, wind tunnels, updrafts, toxic smog and lightning with the kit's hazard models.
     public class SkyZoneViews
     {
         const float BoltSeconds = 0.22f;
+        const int TunnelHoops = 4;
+        const float HoopFlowSpeed = 45f;
+        const float StrandSpinDegrees = 50f;
+        const float MouthFlare = 1.12f;
+
+        static Mesh hoopMesh;
+        static Mesh mouthMesh;
+        static Mesh strandsMesh;
+
+        class Tunnel
+        {
+            public SkyZone Zone;
+            public Transform Strands;
+            public Transform[] Hoops;
+            public float Flow;
+        }
+
+        readonly List<Tunnel> tunnels = new List<Tunnel>();
+        Material tunnelMaterial;
 
         readonly SkyWeather weather;
         readonly Transform root;
@@ -282,7 +358,7 @@ namespace Airships.Game
         GameObject bolt;
         float boltTimer;
 
-        public SkyZoneViews(SkyWeather weather, Transform parent, bool showWind, bool stormy)
+        public SkyZoneViews(SkyWeather weather, Transform parent, bool stormy)
         {
             this.weather = weather;
             root = new GameObject("Sky Zones").transform;
@@ -302,7 +378,7 @@ namespace Airships.Game
                         if (smog != null) Effects.Attach("SmogVent", smog, 2.4f).Active = true;
                         break;
                     case SkyZoneKind.Wind:
-                        if (showWind) PlaceWind(zone);
+                        PlaceTunnel(zone);
                         break;
                     case SkyZoneKind.Updraft:
                         var column = Place("SM_Env_UpdraftColumn", zone, zone.Radius / 9.5f, -50f);
@@ -322,13 +398,78 @@ namespace Airships.Game
             return kit;
         }
 
-        // A ribbon along the current, once Lyra has shown the player where they run.
-        void PlaceWind(SkyZone zone)
+        // A ring of the given thickness, radius 1, facing along Z.
+        static void AddHoop(MeshKit kit, float z, float thickness, Color color)
         {
-            var kit = Place("SM_Env_WindCurrent", zone, 1f, 0f);
-            kit.transform.localScale = new Vector3(zone.Radius / 8.5f, 1.6f, zone.Radius * 2f / 60f);
-            kit.transform.rotation = Quaternion.Euler(0f, zone.Heading * Mathf.Rad2Deg, 0f);
-            kit.transform.position = new Vector3(zone.X, 2f, zone.Z);
+            const int Segments = 24;
+            for (var i = 0; i < Segments; i++)
+            {
+                var from = i / (float)Segments * Mathf.PI * 2f;
+                var to = (i + 1) / (float)Segments * Mathf.PI * 2f;
+                kit.Cylinder(new Vector3(Mathf.Cos(from), Mathf.Sin(from), z), new Vector3(Mathf.Cos(to), Mathf.Sin(to), z), thickness, thickness, 5, color);
+            }
+        }
+
+        // Spiral strands running the tube's length, radius 1 and length 1 centered on the origin.
+        static Mesh BuildStrands()
+        {
+            const int Strands = 6;
+            const int Steps = 28;
+            var kit = new MeshKit();
+            for (var strand = 0; strand < Strands; strand++)
+            {
+                var start = strand / (float)Strands * Mathf.PI * 2f;
+                for (var step = 0; step < Steps; step++)
+                {
+                    var a = step / (float)Steps;
+                    var b = (step + 1) / (float)Steps;
+                    var from = new Vector3(Mathf.Cos(start + a * Mathf.PI), Mathf.Sin(start + a * Mathf.PI), a - 0.5f);
+                    var to = new Vector3(Mathf.Cos(start + b * Mathf.PI), Mathf.Sin(start + b * Mathf.PI), b - 0.5f);
+                    kit.Cylinder(from, to, 0.016f, 0.016f, 4, Color.Lerp(Palette.Storm, Palette.Cloud, 0.6f));
+                }
+            }
+            return kit.Build("Wind Tunnel Strands");
+        }
+
+        // A round tube of hoops and spiral strands at the tunnel's height, flowing the way it blows.
+        void PlaceTunnel(SkyZone zone)
+        {
+            if (hoopMesh == null)
+            {
+                var hoop = new MeshKit();
+                AddHoop(hoop, 0f, 0.022f, Palette.Storm);
+                hoopMesh = hoop.Build("Wind Tunnel Hoop");
+                var mouth = new MeshKit();
+                AddHoop(mouth, 0f, 0.05f, Palette.Cloud);
+                mouthMesh = mouth.Build("Wind Tunnel Mouth");
+                strandsMesh = BuildStrands();
+            }
+            if (tunnelMaterial == null) tunnelMaterial = Models.NewLitMaterial("Wind Tunnel", -0.6f, 0.3f);
+
+            var body = new GameObject("Wind Tunnel").transform;
+            body.SetParent(root, false);
+            body.SetPositionAndRotation(new Vector3(zone.X, zone.Y, zone.Z), Quaternion.Euler(0f, zone.Heading * Mathf.Rad2Deg, 0f));
+
+            Transform Part(string name, Mesh mesh, float z, Vector3 scale)
+            {
+                var part = Models.Attach(name, body, mesh, tunnelMaterial, false).transform;
+                part.localPosition = new Vector3(0f, 0f, z);
+                part.localScale = scale;
+                foreach (var renderer in part.GetComponentsInChildren<Renderer>()) renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                return part;
+            }
+
+            var ring = Vector3.one * zone.Radius;
+            Part("Entry", mouthMesh, -zone.Length * 0.5f, ring * MouthFlare);
+            Part("Exit", mouthMesh, zone.Length * 0.5f, ring * MouthFlare);
+            var tunnel = new Tunnel
+            {
+                Zone = zone,
+                Strands = Part("Strands", strandsMesh, 0f, new Vector3(zone.Radius, zone.Radius, zone.Length)),
+                Hoops = new Transform[TunnelHoops],
+            };
+            for (var i = 0; i < TunnelHoops; i++) tunnel.Hoops[i] = Part("Hoop", hoopMesh, 0f, ring);
+            tunnels.Add(tunnel);
         }
 
         public void ShowWarning(Vector3 position, float radius)
@@ -360,6 +501,16 @@ namespace Airships.Game
         public void Update(ShipState player)
         {
             foreach (var column in updrafts) column.Rotate(0f, 40f * Time.deltaTime, 0f, Space.World);
+            foreach (var tunnel in tunnels)
+            {
+                tunnel.Strands.Rotate(0f, 0f, StrandSpinDegrees * Time.deltaTime, Space.Self);
+                tunnel.Flow = Mathf.Repeat(tunnel.Flow + HoopFlowSpeed * Time.deltaTime, tunnel.Zone.Length);
+                for (var i = 0; i < tunnel.Hoops.Length; i++)
+                {
+                    var along = Mathf.Repeat(tunnel.Flow + i * tunnel.Zone.Length / tunnel.Hoops.Length, tunnel.Zone.Length);
+                    tunnel.Hoops[i].localPosition = new Vector3(0f, 0f, along - tunnel.Zone.Length * 0.5f);
+                }
+            }
             if (bolt == null || boltTimer <= 0f) return;
             boltTimer -= Time.deltaTime;
             if (boltTimer <= 0f) bolt.SetActive(false);

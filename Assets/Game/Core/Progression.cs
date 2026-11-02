@@ -235,6 +235,8 @@ namespace Airships.Core
         }
 
         // Applies the player's purchased upgrades to their ship definition.
+        public const string PlayerBowCannon = "torpedo_tube"; // Every ship the player flies mounts one. Enemies keep their ship's guns.
+
         public static ShipLoadout PlayerLoadout(GameContent content, SaveData save, string shipId)
         {
             var ship = content.Ship(shipId);
@@ -246,7 +248,7 @@ namespace Airships.Core
                 Speed = ship.speed,
                 TurnDegrees = ship.turnDegrees,
                 Radius = ship.radius,
-                Bow = content.Cannon(ship.bowCannon),
+                Bow = content.Cannon(PlayerBowCannon),
                 Broadside = content.Cannon(ship.broadsideCannon),
                 BowDamageScale = 1f,
                 BroadsideDamageScale = 1f,

@@ -90,7 +90,7 @@ namespace Airships.Game
             // The kit paints the story's main cast. Everyone else gets a head shot of their model.
             var lookId = speaker != null ? speaker.look : null;
             var look = !string.IsNullOrEmpty(lookId) ? GameDirector.Instance.Content.Look(lookId) : null;
-            var painted = look != null ? KitArt.Portrait(look.portrait) : null;
+            var painted = !string.IsNullOrEmpty(speaker?.portrait) ? KitArt.Portrait(speaker.portrait) : look != null ? KitArt.Portrait(look.portrait) : null;
             bust.sprite = painted;
             bust.enabled = painted != null;
             var texture = painted == null && speaker != null ? Portraits.Get(!string.IsNullOrEmpty(lookId) ? lookId : speaker.classId) : null;
@@ -100,8 +100,9 @@ namespace Airships.Game
         }
     }
 
-    // Live crew and enemy barks across the top of the screen, so the story plays during the action.
-    public class CommsBar : MonoBehaviour
+    // Crew and enemy barks across the top of the screen, so the story plays during the action. In a live
+    // dogfight they time out, because both thumbs are busy. Everywhere else each line waits for a tap on the bar.
+    public class CommsBar : MonoBehaviour, IPointerClickHandler
     {
         const float SecondsPerCharacter = 0.05f;
         const float MinimumSeconds = 2.4f;
@@ -112,16 +113,19 @@ namespace Airships.Game
         PortraitView portrait;
         TextMeshProUGUI speaker;
         TextMeshProUGUI line;
+        TextMeshProUGUI tapHint;
+        bool waitsForTap;
         float showing;
         float slide;
         Vector2 restPosition;
 
-        public static CommsBar Create(RectTransform safe, CampaignDef campaign, float y)
+        public static CommsBar Create(RectTransform safe, CampaignDef campaign, float y, bool tapToAdvance = true)
         {
-            var image = UIKit.Panel("Comms", safe, Palette.WithAlpha(Palette.Panel, 0.98f));
+            var image = UIKit.Panel("Comms", safe, Palette.WithAlpha(Palette.Panel, 0.98f), tapToAdvance);
             UIKit.Place(image.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(960f, 128f));
             var bar = image.gameObject.AddComponent<CommsBar>();
             bar.campaign = campaign;
+            bar.waitsForTap = tapToAdvance && !GameDirector.Autoplay;
             bar.panel = image.rectTransform;
             bar.restPosition = image.rectTransform.anchoredPosition;
             bar.portrait = PortraitView.Create(image.transform, 108f);
@@ -134,20 +138,23 @@ namespace Airships.Game
             bar.line.textWrappingMode = TextWrappingModes.Normal;
             bar.line.characterSpacing = 0f;
             UIKit.Place(bar.line.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(134f, -42f), new Vector2(812f, 82f));
+            bar.tapHint = UIKit.Text("Tap Hint", image.transform, "TAP", 20f, Palette.Accent, TextAlignmentOptions.Right);
+            UIKit.Place(bar.tapHint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-10f, 4f), new Vector2(80f, 26f));
+            bar.tapHint.enabled = bar.waitsForTap;
             image.rectTransform.anchoredPosition = bar.restPosition + Vector2.up * 260f;
             return bar;
         }
 
         public void Say(CommsLine next)
         {
-            if (next != null && queue.Count < 4) queue.Enqueue(next);
+            if (next != null && (waitsForTap || queue.Count < 4)) queue.Enqueue(next);
         }
 
         void Update()
         {
             if (showing > 0f)
             {
-                showing -= Time.unscaledDeltaTime;
+                if (!waitsForTap) showing -= Time.unscaledDeltaTime;
             }
             else if (queue.Count > 0)
             {
@@ -156,6 +163,13 @@ namespace Airships.Game
             var target = showing > 0f ? 1f : 0f;
             slide = Mathf.MoveTowards(slide, target, Time.unscaledDeltaTime * 5f);
             panel.anchoredPosition = restPosition + Vector2.up * (260f * (1f - Ease.OutCubic(slide)));
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!waitsForTap || showing <= 0f) return;
+            showing = 0f;
+            AudioBank.Play(Sfx.Click);
         }
 
         void Present(CommsLine next)
@@ -645,11 +659,17 @@ namespace Airships.Game
     // The main menu is the deck of the ship you command. Crew stand around it and can be talked to.
     public class QuarterdeckScreen : MonoBehaviour
     {
-        const float CrewRowDepth = 1.6f;
-        const float CrewCenterX = -1.2f; // Left of center, because the mission card covers the right.
         const int MaxCrewOnDeck = 7;
         static readonly Vector3 HelmStep = new Vector3(-1.3f, 0f, -0.4f); // Beside the wheel, not hidden behind it.
-        const float MenuColumnStart = 0.74f; // Where the menu buttons begin, as a share of the screen's width.
+        static readonly Vector3 MorrowStep = new Vector3(1.8f, 0f, 0f); // Out from in front of Sable.
+        static readonly Vector3 ThorneStep = new Vector3(1f, 0f, 0f); // Thorne and Rook stand a little apart.
+        static readonly Vector3 RookStep = new Vector3(-1f, 0f, 0f);
+        const float CardWidth = 760f;
+        const float CardMargin = 28f;
+        const float ClearMargin = 40f; // Between the crew and the screen's edge or the card.
+        const float PersonHeight = 2.2f;
+        const float PersonHalfWidth = 0.7f;
+        const float HubFov = 46f;
         const float TagStagger = 44f; // Neighbors' name tags sit at different heights, so they never overlap.
 
         GameDirector director;
@@ -664,6 +684,7 @@ namespace Airships.Game
         bool dressed;
         float time;
         Transform cameraRig;
+        Transform cameraLook;
 
         void Start()
         {
@@ -674,10 +695,8 @@ namespace Airships.Game
             deck = Models.CreateDeck(transform, string.IsNullOrEmpty(shipDef.faction) ? KitArt.Crimson : shipDef.faction, "SM_Env_QuarterdeckHub");
             cameraRig = new GameObject("Hub Camera Rig").transform;
             cameraRig.SetParent(transform, false);
-            var look = new GameObject("Hub Look").transform;
-            look.SetParent(transform, false);
-            look.position = new Vector3(3f, 0.9f, 0f);
-            director.Stage.FrameTarget(cameraRig, look, new Vector3(0f, 3f, -10f), 46f, 0f);
+            cameraLook = new GameObject("Hub Look").transform;
+            cameraLook.SetParent(transform, false);
 
             canvas = UIKit.CreateCanvas("Quarterdeck", transform, 10);
             safe = UIKit.SafeArea(canvas.transform);
@@ -838,6 +857,9 @@ namespace Airships.Game
                 var spot = station != null ? station : spare;
                 model.Root.transform.position = spot != null ? spot.position : deck.Root.transform.position;
                 if (crew[i].id == Campaign.Protagonist) model.Root.transform.position += HelmStep;
+                if (crew[i].id == "morrow") model.Root.transform.position += MorrowStep;
+                if (crew[i].id == "thorne") model.Root.transform.position += ThorneStep;
+                if (crew[i].id == "rook") model.Root.transform.position += RookStep;
                 var toCamera = new Vector3(0f, 0f, -12f) - model.Root.transform.position;
                 toCamera.y = 0f;
                 model.Root.transform.rotation = Quaternion.LookRotation(toCamera.sqrMagnitude > 0.01f ? toCamera : Vector3.back);
@@ -846,6 +868,7 @@ namespace Airships.Game
                 modelByCrew[crew[i].id] = model;
             }
             AddSetDressing();
+            FrameCrew(models);
             yield return null;
             yield return null;
 
@@ -867,11 +890,33 @@ namespace Airships.Game
                 var width = Mathf.Clamp(label.Length * 15f + 40f, 120f, 220f);
                 rect.anchorMin = Vector2.zero;
                 rect.anchorMax = Vector2.zero;
-                rect.anchoredPosition = new Vector2(screen.x * scale, screen.y * scale - 34f - (i % 2) * TagStagger);
+                var tagX = Mathf.Clamp(screen.x * scale, ClearLeftEdge(scale) + width * 0.5f, ClearRightEdge(scale) - width * 0.5f);
+                rect.anchoredPosition = new Vector2(tagX, screen.y * scale - 34f - (i % 2) * TagStagger);
                 rect.sizeDelta = new Vector2(width, 58f);
                 tags.Add(tag.gameObject);
-                if (screen.x > Screen.width * MenuColumnStart) tag.gameObject.SetActive(false);
             }
+        }
+
+        // Canvas units from the left of the screen. The menu column fills everything right of the card's edge.
+        static float ClearLeftEdge(float scale) => Screen.safeArea.xMin * scale + ClearMargin;
+        static float ClearRightEdge(float scale) => Screen.safeArea.xMax * scale - CardMargin - CardWidth - ClearMargin;
+
+        // Fits everyone on deck into the part of this phone's screen the menus leave clear.
+        void FrameCrew(List<CharacterModel> models)
+        {
+            var points = new List<HubPoint>();
+            foreach (var model in models)
+            {
+                var at = model.Root.transform.position;
+                points.Add(new HubPoint(at.x - PersonHalfWidth, at.y, at.z));
+                points.Add(new HubPoint(at.x + PersonHalfWidth, at.y + PersonHeight, at.z));
+            }
+            var scale = UIKit.ReferenceHeight / Mathf.Max(1f, Screen.height);
+            var canvasWidth = Screen.width * scale;
+            var area = new HubClearArea(ClearLeftEdge(scale) / canvasWidth, ClearRightEdge(scale) / canvasWidth, HubFraming.ClearBottom, HubFraming.ClearTop);
+            var frame = HubFraming.Fit(points, Screen.width / Mathf.Max(1f, (float)Screen.height), HubFov, area);
+            cameraLook.position = new Vector3(frame.LookX, frame.LookY, frame.LookZ);
+            director.Stage.FrameTarget(cameraRig, cameraLook, new Vector3(frame.CameraX, frame.CameraY, frame.CameraZ), HubFov, 0f);
         }
 
         void AddSetDressing()

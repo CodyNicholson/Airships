@@ -302,6 +302,7 @@ namespace Airships.Game
         void ShowFailure(string title, List<string> lines)
         {
             AudioBank.PlayMusic(null);
+            GameMusic.PlayDefeat();
             Go(GameState.Results, root =>
             {
                 var screen = root.gameObject.AddComponent<ResultsScreen>();
@@ -469,6 +470,7 @@ namespace Airships.Game
             else
             {
                 AudioBank.PlayMusic(null);
+                GameMusic.PlayDefeat();
             }
             var hadLevelUp = levelUps.Count > 0;
             Go(GameState.Results, root =>

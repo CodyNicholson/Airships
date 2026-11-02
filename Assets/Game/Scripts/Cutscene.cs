@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace Airships.Game
 {
     // A story beat told in film shots: moving cameras, ships and people, with captions between letterbox bars.
-    // Every shot comes from the campaign content. Tapping moves on, and SKIP ends the whole scene.
+    // Every shot comes from the campaign content. A shot with words waits for a tap, and SKIP ends the whole scene.
     public class Cutscene : MonoBehaviour, IPointerClickHandler
     {
         const float BarHeight = 150f;
@@ -46,6 +46,7 @@ namespace Airships.Game
         TextMeshProUGUI subtitle;
         TextMeshProUGUI speaker;
         TextMeshProUGUI line;
+        TextMeshProUGUI tapHint;
         PortraitView portrait;
         float revealed;
         bool advance;
@@ -101,6 +102,10 @@ namespace Airships.Game
             line.textWrappingMode = TextWrappingModes.Normal;
             line.characterSpacing = 0f;
             UIKit.Place(line.rectTransform, Vector2.zero, Vector2.zero, new Vector2(250f, 14f), new Vector2(1480f, 144f));
+
+            tapHint = UIKit.Text("Tap Hint", safe, "TAP TO CONTINUE", 26f, Palette.Accent, TextAlignmentOptions.Right);
+            UIKit.Place(tapHint.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-28f, 6f), new Vector2(420f, 36f));
+            tapHint.enabled = false;
 
             var skip = UIKit.Button("Skip", safe, "SKIP", 32f, Palette.PanelLight, Finish);
             UIKit.Place((RectTransform)skip.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-28f, -24f), new Vector2(180f, 90f));
@@ -166,12 +171,16 @@ namespace Airships.Game
             var text = shot.line ?? "";
             var seconds = Mathf.Max(shot.seconds, text.Length / ReadingCharactersPerSecond + ReadingPadSeconds);
             if (GameDirector.Autoplay) seconds = AutoplaySeconds;
-            for (var t = 0f; t < seconds && !advance && !done; t += Time.unscaledDeltaTime)
+
+            // Only a shot with nothing to read moves on by itself. The camera finishes its move and holds.
+            var waitsForTap = !GameDirector.Autoplay && HasWords(shot);
+            for (var t = 0f; (t < seconds || waitsForTap) && !advance && !done; t += Time.unscaledDeltaTime)
             {
-                ShotProgress = t / seconds;
+                ShotProgress = Mathf.Clamp01(t / seconds);
                 MoveShot(shot, ShotProgress);
                 revealed += RevealCharactersPerSecond * Time.unscaledDeltaTime;
                 line.maxVisibleCharacters = (int)revealed;
+                tapHint.enabled = waitsForTap && revealed >= text.Length;
                 if (card.gameObject.activeSelf)
                 {
                     var slide = Mathf.Clamp01(t / CardSlideSeconds);
@@ -179,7 +188,10 @@ namespace Airships.Game
                 }
                 yield return null;
             }
+            tapHint.enabled = false;
         }
+
+        static bool HasWords(ShotDef shot) => !string.IsNullOrEmpty(shot.line) || !string.IsNullOrEmpty(shot.title) || !string.IsNullOrEmpty(shot.subtitle) || !string.IsNullOrEmpty(shot.cardName);
 
         void OnTap()
         {

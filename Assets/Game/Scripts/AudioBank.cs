@@ -3,14 +3,29 @@ using UnityEngine;
 
 namespace Airships.Game
 {
-    public enum Sfx { Click, Confirm, Cannon, HeavyCannon, Hit, HeavyHit, Explosion, Sting, Heal, Slash, Denied, WhaleCall }
+    public enum Sfx
+    {
+        Click, Confirm, Cannon, HeavyCannon, Hit, HeavyHit, Explosion, Sting, Heal, Slash, Denied, WhaleCall,
 
-    // Sound effects are synthesized at startup, and songs come from Resources/Music. Volumes go through this
+        // From here on, each sound is a clip in Resources/Sfx with the same name, rendered by the music project.
+        ShipRoll, BoostIgnite, NearMiss, ShotWhiz, FlakBurst, MortarBurst, TimberBreak, JellyPop, Raked, WarHorn, DangerSting,
+        HullCreak, ShipFlyby, GliderLaunch, HookThrow, HookLand, RopeSnap, ChainTaut, MissileLaunch, Overdrive, SignatureFire,
+        Pickup, WhaleGulp, ThunderRumble, LightningCrack, ThunderDistant, VolleyWarning, HullAlarm, Pistol, MagicCast, GuardUp,
+        BladeClash, BodyFall, Burn, StatusHit, Stunned, BossRoar, Revive, GrappleSwing, Plunder, CoinPurchase, AmmoLoad, LevelUp,
+    }
+
+    // The basic sound effects are synthesized at startup, the rest come from Resources/Sfx, and songs come from Resources/Music. Volumes go through this
     // one gain layer. Unity has no scripting API for creating an AudioMixer, so that upgrade needs the Editor UI.
     public class AudioBank : MonoBehaviour
     {
         const int SampleRate = 22050;
-        const int VoiceCount = 10;
+        const int VoiceCount = 16;
+        const float SameSoundGapSeconds = 0.04f; // Two copies of a clip in the same instant only sound like a louder, phasey one.
+        const float EngineLevel = 0.3f;
+        const float EngineFadeSeconds = 0.5f;
+        const float JingleFadeSeconds = 0.4f;
+        public const Sfx FirstClipSound = Sfx.ShipRoll;
+        public const string EngineLoopClip = "EngineLoop";
         const float MusicLevel = 0.6f;
         const float SongFadeSeconds = 0.6f;
         const float DangerFadeSeconds = 1.5f;
@@ -20,6 +35,10 @@ namespace Airships.Game
         AudioClip[] clips;
         AudioSource[] voices;
         AudioSource wind;
+        AudioSource engine;
+        float[] lastPlayed;
+        float engineGain;
+        float engineTarget;
 
         // A song is an intro and a loop, each with an optional danger layer, all sample-locked together.
         AudioSource baseIntro;
@@ -33,6 +52,8 @@ namespace Airships.Game
         float danger;
         float dangerTarget;
         float lastJingleTime = float.NegativeInfinity;
+        bool jingleGivesWay;
+        float jingleGain = 1f;
         int nextVoice;
         float sfxVolume = 1f;
         float musicVolume = 1f;
@@ -62,6 +83,15 @@ namespace Airships.Game
             clips[(int)Sfx.Denied] = Tones("Denied", new[] { 196f, 165f }, 0.09f, 0.4f);
             clips[(int)Sfx.WhaleCall] = WhaleCall();
 
+            foreach (Sfx sound in Enum.GetValues(typeof(Sfx)))
+            {
+                if (sound < FirstClipSound) continue;
+                clips[(int)sound] = Resources.Load<AudioClip>("Sfx/" + sound);
+                if (clips[(int)sound] == null) Debug.LogError($"Missing sound effect '{sound}'");
+            }
+            lastPlayed = new float[clips.Length];
+            for (var i = 0; i < lastPlayed.Length; i++) lastPlayed[i] = float.NegativeInfinity;
+
             voices = new AudioSource[VoiceCount];
             for (var i = 0; i < VoiceCount; i++)
             {
@@ -75,6 +105,14 @@ namespace Airships.Game
             wind.loop = true;
             wind.playOnAwake = false;
             wind.Play();
+
+            engine = gameObject.AddComponent<AudioSource>();
+            engine.clip = Resources.Load<AudioClip>("Sfx/" + EngineLoopClip);
+            engine.loop = true;
+            engine.playOnAwake = false;
+            engine.spatialBlend = 0f;
+            if (engine.clip != null) engine.Play();
+            else Debug.LogError($"Missing sound effect '{EngineLoopClip}'");
 
             baseIntro = MusicSource(false);
             baseLoop = MusicSource(true);
@@ -99,19 +137,28 @@ namespace Airships.Game
             baseLoop.volume = level;
             dangerIntro.volume = level * danger;
             dangerLoop.volume = level * danger;
-            jingle.volume = musicVolume * MusicLevel;
+            jingle.volume = musicVolume * MusicLevel * jingleGain;
             wind.volume = sfxVolume * 0.22f;
+            engine.volume = sfxVolume * EngineLevel * engineGain;
         }
 
         public static void Play(Sfx sfx, float volume = 1f, float pitchVariance = 0.06f)
         {
             if (instance == null) return;
+            if (Time.unscaledTime - instance.lastPlayed[(int)sfx] < SameSoundGapSeconds) return;
+            instance.lastPlayed[(int)sfx] = Time.unscaledTime;
             var voice = instance.voices[instance.nextVoice];
             instance.nextVoice = (instance.nextVoice + 1) % VoiceCount;
             voice.clip = instance.clips[(int)sfx];
             voice.volume = volume * instance.sfxVolume;
             voice.pitch = 1f + UnityEngine.Random.Range(-pitchVariance, pitchVariance);
             voice.Play();
+        }
+
+        // How hard the ship's engines are working, from 0 (silent, off the battlefield) to 1 (full throttle).
+        public static void SetEngine(float level)
+        {
+            if (instance != null) instance.engineTarget = level;
         }
 
         // Starts a song, after fading out the last one and after any jingle ends. Null fades to silence.
@@ -127,7 +174,8 @@ namespace Airships.Game
         }
 
         // Plays a one-shot over silence. The song underneath fades out first and returns afterwards.
-        public static void PlayJingle(string name)
+        // A jingle that gives way fades out as soon as a new song is asked for, so a quick retry isn't held up.
+        public static void PlayJingle(string name, bool givesWay = false)
         {
             if (instance == null) return;
             var clip = Resources.Load<AudioClip>("Music/" + name);
@@ -137,8 +185,10 @@ namespace Airships.Game
                 return;
             }
             instance.jingle.clip = clip;
+            instance.jingleGivesWay = givesWay;
+            instance.jingleGain = 1f;
             instance.jingle.Play();
-            instance.lastJingleTime = Time.unscaledTime;
+            if (!givesWay) instance.lastJingleTime = Time.unscaledTime;
         }
 
         public static float SecondsSinceJingle => instance != null ? Time.unscaledTime - instance.lastJingleTime : float.PositiveInfinity;
@@ -155,6 +205,12 @@ namespace Airships.Game
 
         void Update()
         {
+            if (jingle.isPlaying && jingleGivesWay && wantedSong != null)
+            {
+                jingleGain = Mathf.MoveTowards(jingleGain, 0f, Time.unscaledDeltaTime / JingleFadeSeconds);
+                if (jingleGain <= 0f) jingle.Stop();
+            }
+            engineGain = Mathf.MoveTowards(engineGain, engineTarget, Time.unscaledDeltaTime / EngineFadeSeconds);
             var target = jingle.isPlaying ? null : wantedSong;
             if (target != currentSong)
             {

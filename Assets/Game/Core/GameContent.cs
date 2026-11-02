@@ -121,6 +121,9 @@ namespace Airships.Core
         public float range;
         public float aimAssistDegrees;
         public float elevationDegrees; // How far up or down the guns can angle toward a target.
+        public string ammoId; // Set for a torpedo tube, which fires one big visible round.
+        public float homingTurn; // How hard a torpedo steers toward what it was locked onto.
+        public float hitRadiusBonus;
     }
 
     // The sky hazards in a dogfight. Collision damage is each hazard's radius times its damage per meter.
@@ -259,6 +262,13 @@ namespace Airships.Core
         public float nemesisHullPerStack;
         public float boardingExposure;
         public float exposurePerDefender;
+        public float damagedDriftHullShare;
+        public float damagedDriftGapMin;
+        public float damagedDriftGapMax;
+        public float damagedDriftSecondsMin;
+        public float damagedDriftSecondsMax;
+        public float damagedDriftTurnShare;
+        public float damagedDriftSlip;
         public float evadeSeconds;
         public float evadeSpeed;
         public float evadeCooldown;
@@ -270,6 +280,7 @@ namespace Airships.Core
         public float missileDamage;
         public float missileSpeed;
         public float missileTurn;
+        public float mainBoardHullShare; // A main enemy can be boarded only below this share of its hull.
         public float missileSeconds;
         public float mineBlastRadius;
         public float mineBlastDamage;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Airships.Core
 {
-    public enum SkyOutcome { Ongoing, Won, Boarded, TargetSunk, TargetEscaped, Lost, Eaten }
+    public enum SkyOutcome { Ongoing, Won, Boarded, TargetEscaped, Lost, Eaten }
 
     public class SkyEnemy
     {
@@ -11,6 +11,7 @@ namespace Airships.Core
         public ShipState Ship;
         public DogfightAi Ai;
         public bool Escaping;
+        public bool IsMain; // The chapter's main enemy: it can't sink or get away, and only it can be boarded.
         public float VolleyTimer;
         public float SignatureTimer;
         public float MissileTimer;
@@ -49,7 +50,10 @@ namespace Airships.Core
     // objective. Rules only, so a server or a test can run it without Unity.
     public class SkyEncounter
     {
-        const float SpawnDistance = 110f;
+        const float SpawnDistance = 230f; // From the center, so fights open out of torpedo range.
+        const float LoneEnemyOffset = 100f; // A single enemy isn't dead ahead at the start.
+        const float KragSpawnGap = 220f; // Krag starts close, to show off the harpoon.
+        const float KragSpawnOffset = 40f;
         const float FleeShare = 0.28f;
         const float EscapeDistance = 330f;
         const float ReminderSeconds = 14f;
@@ -63,6 +67,7 @@ namespace Airships.Core
         const float PickupSpread = 200f;
         const float WaveDistance = 240f;
         const float SignatureRange = 110f;
+        const float MainFleeThrottle = 0.7f; // Slow enough for the player to catch.
 
         readonly SkyConfig config;
         readonly List<SkyEnemy> enemies = new List<SkyEnemy>();
@@ -88,6 +93,7 @@ namespace Airships.Core
         public bool VolleyIncoming { get; private set; }
         public SkyOutcome Outcome { get; private set; }
         public SkyEnemy Target { get; private set; }
+        public SkyEnemy Main => enemies.Find(e => e.IsMain);
         public SkyEnemy BoardedEnemy { get; private set; }
         public float Time { get; private set; }
         public string BoardedKey => BoardedEnemy?.Spawn.key;
@@ -106,6 +112,7 @@ namespace Airships.Core
             Player.Ammo = content.Ammo("round");
             Player.PatchesLeft = config.Patches;
             Player.AltitudeLocked = !CanClimb;
+            Player.DriftsWhenHurt = true;
             Player.WeakPoints = config.Mechanics.Contains("weakpoints");
             commands.Add(default);
 
@@ -116,12 +123,14 @@ namespace Airships.Core
             Target = enemies.Find(e => e.Spawn.target) ?? enemies.Find(e => !e.Spawn.ally) ?? (enemies.Count > 0 ? enemies[0] : null);
 
             var weather = content.Weather(config.Weather);
-            var field = Sim.AddHazards(ScaledHazards(content.hazards, weather), weather.whale ? config.Tier : -1, config.Seed + 3);
+            // The campaign says how many whales each fight has. Free Skies leaves it to the weather.
+            var field = Sim.AddHazards(ScaledHazards(content.hazards, weather), config.Phase == null && weather.whale ? config.Tier : -1, config.Seed + 3);
+            if (config.Phase != null && config.Phase.whales > 0) field.AddWhales(config.Phase.whales);
             field.MineBlastRadius = content.skyRules.mineBlastRadius;
             field.MineBlastDamage = content.skyRules.mineBlastDamage;
             if (config.Phase != null && config.Phase.mines > 0) field.AddMines(config.Phase.mines, MineRadius, MineToughness, Sim.Ships);
             if (config.Phase != null && config.Phase.pickups > 0) PlacePickups(config.Phase.pickups);
-            var sky = new SkyWeather(weather, content.skyRules, config.Seed + 7) { LightningTargetId = Player.Id };
+            var sky = new SkyWeather(weather, content.skyRules, config.Seed + 7, !CanClimb) { LightningTargetId = Player.Id };
             Sim.SetWeather(sky);
 
             var phase = config.Phase;
@@ -169,22 +178,30 @@ namespace Airships.Core
             var signature = content.Ship(spawn.shipId).signature;
             if (!string.IsNullOrEmpty(signature)) loadout.Signature = content.Signature(signature);
 
-            var spread = count <= 1 ? 40f : (index - (count - 1) * 0.5f) * 90f;
+            var spread = count <= 1 ? LoneEnemyOffset : (index - (count - 1) * 0.5f) * 90f;
             var ally = spawn.ally;
             var ship = ally
                 ? Sim.AddShip(0, loadout, Player.X + (index % 2 == 0 ? -1f : 1f) * AllyOffset * (1 + index / 2), Player.Z - 20f, 0f)
                 : Sim.AddShip(1, loadout, spread, SpawnDistance, (float)Math.PI);
+            if (spawn.ai == "krag" && !ally)
+            {
+                ship.X = Player.X + KragSpawnOffset;
+                ship.Z = Player.Z + KragSpawnGap;
+            }
             ship.HuntedByWhale = false;
             ship.AltitudeLocked = Player.AltitudeLocked;
-            ship.HullFloor = spawn.unsinkable ? 1f : 0f;
-            ship.EasyToBoard = spawn.easyToBoard;
+            var isMain = config.Phase != null && config.Objective == "capture" && spawn.target && !ally;
+            ship.HullFloor = spawn.unsinkable || isMain ? 1f : 0f;
+            if (config.Phase != null) ship.Boarding = isMain ? BoardingRule.Main : BoardingRule.Never;
             ship.HooksRequired = config.Mechanics.Contains("multihook") ? spawn.Hooks : 1;
             ship.TetherDrags = spawn.ai == "krag";
+            if (spawn.startHullShare > 0f) ship.Hull = loadout.Hull * spawn.startHullShare;
             if (!string.IsNullOrEmpty(spawn.key) && config.HullShares.TryGetValue(spawn.key, out var share)) ship.Hull = Math.Max(1f, loadout.Hull * share);
             enemies.Add(new SkyEnemy
             {
                 Spawn = spawn,
                 Ship = ship,
+                IsMain = isMain,
                 Ai = new DogfightAi(config.Seed + 100 + ship.Id, spawn.Accuracy, spawn.standoff),
                 SignatureTimer = spawn.signatureEvery * 0.5f,
                 MissileTimer = spawn.missileEvery * 0.6f,
@@ -325,7 +342,7 @@ namespace Airships.Core
                 }
                 var away = (float)Math.Atan2(ship.X - Player.X, ship.Z - Player.Z);
                 command.Turn = DogfightSim.WrapAngle(away - ship.Heading) * 2.2f;
-                command.Throttle = 1f;
+                command.Throttle = enemy.IsMain ? MainFleeThrottle : 1f;
                 command.FireBow = false;
                 command.FireBroadside = false;
                 return command;
@@ -472,7 +489,7 @@ namespace Airships.Core
         {
             foreach (var enemy in enemies)
             {
-                if (!enemy.Escaping || !enemy.Ship.Alive) continue;
+                if (!enemy.Escaping || !enemy.Ship.Alive || enemy.IsMain) continue;
                 var dx = enemy.Ship.X - Player.X;
                 var dz = enemy.Ship.Z - Player.Z;
                 if (dx * dx + dz * dz >= EscapeDistance * EscapeDistance) Sim.Depart(enemy.Ship);
@@ -549,8 +566,7 @@ namespace Airships.Core
             switch (config.Objective)
             {
                 case "capture":
-                    if (Target != null && !Target.Ship.Alive) Outcome = Target.Ship.Departed ? SkyOutcome.TargetEscaped : SkyOutcome.TargetSunk;
-                    break;
+                    break; // Only boarding the main enemy ends this, and that's handled above.
                 case "disable_engines":
                     if (Target != null && (Target.Ship.EnginesOut || !Target.Ship.Alive)) Outcome = SkyOutcome.Won;
                     break;
@@ -569,7 +585,6 @@ namespace Airships.Core
                     if (PickupsTaken >= pickups.Count) Outcome = SkyOutcome.Won;
                     break;
                 default:
-                    if (config.Phase?.script == "betrayal" && Target != null && Target.Spawn.key != "scout") break;
                     if (!anyAlive && !glidersFlying) Outcome = Target != null && Target.Ship.Departed && enemies.Count == 1 ? SkyOutcome.TargetEscaped : SkyOutcome.Won;
                     break;
             }
@@ -605,7 +620,7 @@ namespace Airships.Core
             var target = encounter.Target?.Ship;
             var wanted = "round";
             if (objective == "repel") wanted = "flak";
-            else if ((objective == "capture" || objective == "disable_engines") && target != null && !target.EnginesOut) wanted = "chain";
+            else if (objective == "disable_engines" && target != null && !target.EnginesOut) wanted = "chain";
             var pick = available.Find(a => a.id == wanted) ?? available.Find(a => a.id == "round");
             if (pick != null) encounter.Player.Ammo = pick;
         }
@@ -651,7 +666,7 @@ namespace Airships.Core
 
             if (encounter.HasControl("aim"))
             {
-                ship.Aim = wantsBoard && objective != "sink_all" || objective == "disable_engines" ? ShipPart.Engines : ShipPart.Hull;
+                ship.Aim = objective == "disable_engines" ? ShipPart.Engines : ShipPart.Hull;
                 encounter.MarkUsed("aim");
             }
             if (encounter.HasControl("signature") && ship.Loadout.Signature != null)
@@ -686,6 +701,9 @@ namespace Airships.Core
                 command.Grapple = sim.BoardingTarget(ship) != null;
                 if (command.Grapple) encounter.MarkUsed("grapple");
             }
+
+            // Nothing is worth flying into a whale's mouth for.
+            if (sim.Field != null) DogfightAi.FleeWhale(sim.Field, ship, ref command);
             return command;
         }
     }

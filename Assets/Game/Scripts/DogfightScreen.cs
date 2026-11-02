@@ -17,6 +17,18 @@ namespace Airships.Game
         const float GaugeHeight = 360f;
         const float WhaleMarkerRange = 230f;
         const float RollTapSeconds = 0.22f;
+        const float RadarScale = 0.25f;
+        const float RadarRim = 88f;
+        const float SwallowSeconds = 0.7f;
+        const float GulpSeconds = 2.4f;
+        const float GulpGlideSpeed = 9f;
+        const float SwallowGlideSpeed = 22f;
+        static readonly Vector3 SwallowPoint = new Vector3(0f, -3f, -9f); // Inside the mouth.
+        static readonly Vector3 SwallowCameraOffset = new Vector3(36f, 4f, 62f); // In front of the jaws, off to one side, looking in.
+        const int MaxEnemyRows = 4;
+        const float EnemyRowHeight = 46f;
+        const float RattleSeconds = 0.9f;
+        const string Torpedo = "torpedo";
 
         public DogfightSim Sim { get; private set; }
         public SkyEncounter Encounter { get; private set; }
@@ -30,13 +42,23 @@ namespace Airships.Game
             public float Flash;
             public RectTransform Marker;
             public TextMeshProUGUI Label;
+            public Bar MarkerHull;
             public string Name;
+            public float Rattle;
             public List<EffectEmitter> Fires = new List<EffectEmitter>();
             public List<EffectEmitter> Embers = new List<EffectEmitter>();
             public List<EffectEmitter> Smoke = new List<EffectEmitter>();
             public List<EffectEmitter> Exhaust = new List<EffectEmitter>();
             public List<EffectEmitter> Burners = new List<EffectEmitter>();
             public List<EffectEmitter> Leaks = new List<EffectEmitter>();
+        }
+
+        class EnemyRow
+        {
+            public ShipState Ship;
+            public GameObject Root;
+            public Bar Hull;
+            public TextMeshProUGUI Name;
         }
 
         class PickupView
@@ -63,6 +85,8 @@ namespace Airships.Game
         float smokeTimer;
         float bobTime;
 
+        bool swallowing;
+        bool wasRiding;
         Transform cameraProxy;
         Transform cameraLook;
         float cameraYaw;
@@ -74,6 +98,11 @@ namespace Airships.Game
         Mesh lightShotMesh;
         Mesh heavyShotMesh;
         const float DangerHullShare = 0.4f; // Below this, the music's danger layer comes in.
+        const float EngineCruiseLevel = 0.55f;
+        const float HookFlightSeconds = 0.22f;
+        const float CloseSoundMeters = 40f;
+        const float FarSoundMeters = 220f;
+        const float FarSoundLevel = 0.25f;
         const float ExhaustScale = 0.55f; // At the kit's size, propeller smoke hides the ship's stern.
         Material shotKitMaterial;
         Material fittingMaterial;
@@ -84,6 +113,10 @@ namespace Airships.Game
         readonly List<Image> abilityIcons = new List<Image>();
         readonly Dictionary<string, Mesh> ammoMeshes = new Dictionary<string, Mesh>();
         readonly HashSet<int> missiles = new HashSet<int>();
+        readonly HashSet<int> torpedoes = new HashSet<int>();
+        readonly List<EnemyRow> enemyRows = new List<EnemyRow>();
+        Image boardLine;
+        TextMeshProUGUI enemyHullText;
         readonly List<PickupView> pickupViews = new List<PickupView>();
         RawImage rain;
         float boostHeld;
@@ -126,6 +159,7 @@ namespace Airships.Game
         GameObject altitudeGauge;
         RectTransform radar;
         readonly List<RectTransform> radarDots = new List<RectTransform>();
+        readonly List<RectTransform> whaleDots = new List<RectTransform>();
         Canvas canvas;
         GameObject hud;
         GameObject pauseOverlay;
@@ -133,6 +167,8 @@ namespace Airships.Game
         CommsBar comms;
         ShipState focus;
         float lastPlayerHull;
+        bool wasBoosting;
+        bool hullAlarmRang;
         readonly List<(string control, Transform transform)> teachable = new List<(string, Transform)>();
         List<AmmoDef> ammoChoices;
         int ammoIndex;
@@ -153,7 +189,7 @@ namespace Airships.Game
             player = Encounter.Player;
             autopilot = new AutoCaptain(director.Seed + 2, 4f);
             hazardViews = new HazardViews(Sim.Field, transform);
-            zoneViews = new SkyZoneViews(Sim.Weather, transform, config.Mechanics.Contains("winds") || config.Weather == "cyclone", weather.lightningEvery > 0f || config.Weather == "cyclone");
+            zoneViews = new SkyZoneViews(Sim.Weather, transform, weather.lightningEvery > 0f || config.Weather == "cyclone");
             lastPlayerHull = player.Hull;
 
             shotRoot = new GameObject("Shots").transform;
@@ -193,7 +229,7 @@ namespace Airships.Game
             director.Stage.FrameTarget(cameraProxy, cameraLook, new Vector3(0f, 19f * cameraScale, -54f * cameraScale), 52f, 0.35f);
 
             var phase = config.Phase;
-            director.ScreenFx.Milestone(phase == null ? "ENEMY SIGHTED!" : director.Run.PhaseIndex == 0 ? director.Run.Mission.title.ToUpperInvariant() : "BATTLE STATIONS!", Palette.Danger);
+            director.ScreenFx.Milestone(phase == null ? "ENEMY SIGHTED!" : director.Run.PhaseIndex == 0 ? director.Run.Mission.title.ToUpperInvariant() : "BATTLE STATIONS!", Palette.Danger, Sfx.WarHorn);
         }
 
         // Bigger ships need the chase camera further back, or they fill the screen.
@@ -350,19 +386,26 @@ namespace Airships.Game
             if (state != player)
             {
                 var friendly = state.Team == player.Team;
+                var main = state.Boarding == BoardingRule.Main;
                 var image = new GameObject("Ship Marker", typeof(RectTransform)).AddComponent<Image>();
                 image.transform.SetParent(safeArea, false);
                 image.raycastTarget = false;
-                image.sprite = KitArt.Icon(friendly ? "Marker_Waypoint" : "Marker_EnemyFleet");
-                image.color = friendly ? Palette.Heal : state.BoardsOnContact ? Palette.Accent : Color.white;
+                image.sprite = KitArt.Icon(friendly ? "Marker_Waypoint" : main ? "Marker_Objective" : "Marker_EnemyFleet");
+                image.color = friendly ? Palette.Heal : state.BoardsOnContact || main ? Palette.Accent : Color.white;
                 view.Marker = image.rectTransform;
-                view.Marker.sizeDelta = state.BoardsOnContact ? new Vector2(30f, 30f) : new Vector2(50f, 50f);
+                view.Marker.sizeDelta = state.BoardsOnContact ? new Vector2(30f, 30f) : main ? new Vector2(66f, 66f) : new Vector2(50f, 50f);
                 view.Marker.anchorMin = Vector2.zero;
                 view.Marker.anchorMax = Vector2.zero;
                 view.Label = UIKit.Text("Distance", safeArea, "", 26f, friendly ? Palette.Heal : Palette.TextLight);
                 view.Label.rectTransform.sizeDelta = new Vector2(320f, 40f);
                 view.Label.rectTransform.anchorMin = Vector2.zero;
                 view.Label.rectTransform.anchorMax = Vector2.zero;
+                if (!state.BoardsOnContact)
+                {
+                    view.MarkerHull = UIKit.Bar("Marker Hull", safeArea, friendly ? Palette.Heal : Palette.Danger);
+                    UIKit.Place((RectTransform)view.MarkerHull.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(120f, 16f));
+                    view.MarkerHull.Set(state.Hull / state.Loadout.Hull, true);
+                }
             }
             views.Add(view);
             viewById[state.Id] = view;
@@ -424,6 +467,7 @@ namespace Airships.Game
             {
                 command = ReadPlayerCommand();
             }
+            AudioBank.SetEngine(command.Throttle > DefaultThrottle ? 1f : EngineCruiseLevel);
             Encounter.Step(command);
 
             foreach (var simEvent in Sim.Events) Present(simEvent);
@@ -465,14 +509,14 @@ namespace Airships.Game
             var signature = signatureButton.ConsumeTap();
 
             // A quick tap of BOOST rolls toward the stick, and holding it opens the throttle.
-            var evade = 0f;
+            var roll = false;
             if (boostButton.Held)
             {
                 boostHeld += DogfightSim.TickSeconds;
             }
             else
             {
-                if (boostHeld > 0f && boostHeld < RollTapSeconds) evade = stick.Value.x < -0.1f ? -1f : 1f;
+                if (boostHeld > 0f && boostHeld < RollTapSeconds) roll = true;
                 boostHeld = 0f;
             }
             boosting = boosting && boostHeld >= RollTapSeconds;
@@ -487,9 +531,16 @@ namespace Airships.Game
                 fireBow |= keyboard.spaceKey.isPressed;
                 fireBroadside |= keyboard.eKey.isPressed;
                 grapple |= keyboard.gKey.isPressed;
-                if (keyboard.qKey.wasPressedThisFrame) evade = turn < 0f ? -1f : 1f;
+                roll |= keyboard.qKey.wasPressedThisFrame;
                 signature |= keyboard.rKey.wasPressedThisFrame;
             }
+
+            var evade = 0f;
+            var evadeLift = 0f;
+            if (roll) DogfightSim.RollDirection(turn, Encounter.CanClimb ? climb : 0f, out evade, out evadeLift);
+
+            if (boosting && !wasBoosting) AudioBank.Play(Sfx.BoostIgnite, 0.7f);
+            wasBoosting = boosting;
 
             if (Mathf.Abs(turn) > 0.1f) Encounter.MarkUsed("stick");
             if (Mathf.Abs(climb) > 0.1f) Encounter.MarkUsed("altitude");
@@ -511,6 +562,7 @@ namespace Airships.Game
                 Patch = patchPressed,
                 Overdrive = overdrivePressed,
                 Evade = evade,
+                EvadeLift = evadeLift,
             };
             patchPressed = false;
             overdrivePressed = false;
@@ -521,6 +573,14 @@ namespace Airships.Game
         {
             switch (e.Kind)
             {
+                case DogfightEventKind.Fired when e.AmmoId == Torpedo:
+                    SpawnShot(e);
+                    missiles.Add(e.ProjectileId);
+                    torpedoes.Add(e.ProjectileId);
+                    Effects.Play("CannonFire", new Vector3(e.X, e.Y + ProjectileHeight, e.Z), 2.4f);
+                    AudioBank.Play(Sfx.MissileLaunch, 0.9f);
+                    if (e.ShipId == player.Id) director.Stage.Shake(0.6f);
+                    break;
                 case DogfightEventKind.Fired:
                     SpawnShot(e);
                     Effects.Play("CannonFire", new Vector3(e.X, e.Y + ProjectileHeight, e.Z), e.Heavy ? 2.2f : 1.3f);
@@ -539,7 +599,14 @@ namespace Airships.Game
                     PresentHit(e);
                     break;
                 case DogfightEventKind.Missed:
+                    if (torpedoes.Contains(e.ProjectileId))
+                    {
+                        // Out of fuel, a torpedo goes off in the air rather than vanishing.
+                        BurstTorpedo(e, 0.7f * NearnessToPlayer(e));
+                        break;
+                    }
                     ReleaseShot(e.ProjectileId);
+                    PresentMissSound(e);
                     if (e.AmmoId == "flak") Effects.Play("FlakBurst", new Vector3(e.X, e.Y + ProjectileHeight, e.Z), 1.5f);
                     else if (e.AmmoId == "mortar") Effects.Play("MortarImpact", new Vector3(e.X, e.Y + ProjectileHeight, e.Z));
                     else Effects.Play("CannonSmoke", new Vector3(e.X, e.Y + ProjectileHeight, e.Z), 0.8f);
@@ -563,6 +630,7 @@ namespace Airships.Game
                     if (e.ShipId != player.Id) HideShipSoon(e.ShipId);
                     break;
                 case DogfightEventKind.ShotBlocked:
+                    if (torpedoes.Contains(e.ProjectileId)) BurstTorpedo(e, NearnessToPlayer(e));
                     ReleaseShot(e.ProjectileId);
                     Fx.Puff(new Vector3(e.X, e.Y + ProjectileHeight, e.Z), e.HazardKind == HazardKind.Rock ? Palette.Smoke : Palette.DeckWood);
                     AudioBank.Play(Sfx.Hit, 0.25f);
@@ -572,6 +640,7 @@ namespace Airships.Game
                     break;
                 case DogfightEventKind.HazardBroken:
                     hazardViews.Hide(e.HazardId);
+                    AudioBank.Play(e.HazardKind == HazardKind.Jellyfish ? Sfx.JellyPop : Sfx.TimberBreak, 0.8f * NearnessToPlayer(e));
                     Fx.Burst(new Vector3(e.X, e.Y, e.Z), e.HazardKind == HazardKind.Jellyfish ? Palette.Storm : Palette.DeckWood, 16, 12f, 1.4f, 0.8f, 1f);
                     break;
                 case DogfightEventKind.ShipBump:
@@ -592,14 +661,19 @@ namespace Airships.Game
                     break;
                 case DogfightEventKind.Raked:
                     director.ScreenFx.FloatingNumber(new Vector3(e.X, e.Y + ProjectileHeight + 3f, e.Z), director.Stage.MainCamera, "RAKED!", Palette.Accent, 56f);
+                    AudioBank.Play(Sfx.Raked, 0.85f);
                     break;
                 case DogfightEventKind.Evaded:
                     Fx.Burst(new Vector3(e.X, e.Y + ProjectileHeight, e.Z), Palette.Cloud, 16, 16f, 1.4f, 0.4f);
-                    AudioBank.Play(Sfx.Slash, 0.7f);
+                    AudioBank.Play(Sfx.ShipRoll, e.ShipId == player.Id ? 0.9f : 0.3f);
                     Encounter.MarkUsed("evade");
                     break;
+                case DogfightEventKind.DamageDrift:
+                    AudioBank.Play(Sfx.HullCreak, 0.6f);
+                    director.Stage.Shake(0.3f);
+                    break;
                 case DogfightEventKind.VolleyWarning:
-                    AudioBank.Play(Sfx.Denied, 0.35f, 0.3f);
+                    AudioBank.Play(Sfx.VolleyWarning, 0.3f, 0.1f);
                     if (viewById.TryGetValue(e.ShipId, out var aiming))
                     {
                         foreach (var muzzle in KitArt.MatchSockets(aiming.Model.Kit, new[] { "muzzle*" })) Fx.Burst(muzzle.position, Palette.Danger, 2, 1f, 1.8f, 0.7f);
@@ -609,7 +683,7 @@ namespace Airships.Game
                     SpawnShot(e);
                     missiles.Add(e.ProjectileId);
                     Effects.Play("CannonFire", new Vector3(e.X, e.Y + ProjectileHeight, e.Z), 2f);
-                    AudioBank.Play(Sfx.HeavyCannon, 0.7f);
+                    AudioBank.Play(Sfx.MissileLaunch, 0.75f);
                     break;
                 case DogfightEventKind.MineBlast:
                     hazardViews.Hide(e.HazardId);
@@ -625,10 +699,10 @@ namespace Airships.Game
                         view.Marker.gameObject.SetActive(false);
                     }
                     Effects.Play("LiftCoreSabotage", new Vector3(e.X, e.Y, e.Z));
-                    AudioBank.Play(Sfx.Sting, 0.6f);
+                    AudioBank.Play(Sfx.Pickup, 0.8f);
                     break;
                 case DogfightEventKind.WaveArrived:
-                    director.ScreenFx.Milestone("REINFORCEMENTS!", Palette.Danger);
+                    director.ScreenFx.Milestone("REINFORCEMENTS!", Palette.Danger, Sfx.WarHorn);
                     break;
                 case DogfightEventKind.PartDisabled:
                     var at = new Vector3(e.X, e.Y + ProjectileHeight, e.Z);
@@ -639,20 +713,27 @@ namespace Airships.Game
                 case DogfightEventKind.HookLanded:
                     var hooked = new Vector3(e.X, e.Y + ProjectileHeight, e.Z);
                     Fx.Hit(hooked, false);
-                    AudioBank.Play(Sfx.Slash, 0.9f);
+                    AudioBank.Play(Sfx.HookThrow, 0.7f);
+                    StartCoroutine(PlayAfter(Sfx.HookLand, HookFlightSeconds, 0.9f));
                     director.ScreenFx.FloatingNumber(hooked, director.Stage.MainCamera, "HOOK!", Palette.Brass, 54f);
                     break;
                 case DogfightEventKind.HooksSnapped:
-                    AudioBank.Play(Sfx.Denied, 0.9f);
+                    AudioBank.Play(Sfx.RopeSnap, 0.9f);
                     director.ScreenFx.FloatingNumber(new Vector3(e.X, e.Y + ProjectileHeight, e.Z), director.Stage.MainCamera, "LINES SNAPPED", Palette.Danger, 50f);
                     break;
+                case DogfightEventKind.Boarded:
+                    AudioBank.Play(Sfx.ChainTaut, 0.7f);
+                    break;
+                case DogfightEventKind.GliderLaunched:
+                    AudioBank.Play(Sfx.GliderLaunch, 0.7f * NearnessToPlayer(e));
+                    break;
                 case DogfightEventKind.Tethered:
-                    AudioBank.Play(Sfx.HeavyHit, 1f, 0f);
+                    AudioBank.Play(Sfx.ChainTaut, 1f, 0f);
                     director.Stage.Shake(1.4f);
                     break;
                 case DogfightEventKind.SignatureFired:
                     Fx.Burst(new Vector3(e.X, e.Y + ProjectileHeight, e.Z), Palette.Accent, 18, 14f, 1.4f, 0.5f);
-                    AudioBank.Play(Sfx.Sting, 0.4f);
+                    AudioBank.Play(Sfx.SignatureFire, 0.75f);
                     break;
                 case DogfightEventKind.BoarderLanded:
                     director.ScreenFx.Flash(Palette.Danger, 0.2f);
@@ -661,6 +742,7 @@ namespace Airships.Game
                     HideShipSoon(e.ShipId);
                     break;
                 case DogfightEventKind.Departed:
+                    AudioBank.Play(Sfx.ShipFlyby, 0.7f * NearnessToPlayer(e));
                     HideShipSoon(e.ShipId);
                     break;
                 case DogfightEventKind.Patched:
@@ -669,24 +751,48 @@ namespace Airships.Game
                     break;
                 case DogfightEventKind.Overdrive:
                     director.ScreenFx.Flash(Palette.Storm, 0.2f);
-                    AudioBank.Play(Sfx.Sting, 0.5f);
+                    AudioBank.Play(Sfx.Overdrive, 0.75f);
                     break;
                 case DogfightEventKind.Crushing:
+                    AudioBank.Play(Sfx.HullCreak, 0.9f);
                     director.Stage.Shake(0.5f);
                     director.ScreenFx.Flash(Palette.Danger, 0.15f);
                     break;
                 case DogfightEventKind.LightningWarning:
                     zoneViews.ShowWarning(new Vector3(e.X, e.Y, e.Z), director.Content.skyRules.lightningRadius);
-                    AudioBank.Play(Sfx.WhaleCall, 0.25f, 0.5f);
+                    AudioBank.Play(Sfx.ThunderRumble, 0.6f);
                     break;
                 case DogfightEventKind.LightningStrike:
                     zoneViews.Strike(new Vector3(e.X, player.Y, e.Z));
                     director.ScreenFx.Flash(Palette.Cloud, 0.35f, 0.18f);
-                    AudioBank.Play(Sfx.Explosion, 0.7f);
+                    AudioBank.Play(Sfx.LightningCrack, 0.9f);
                     director.Stage.Shake(1f);
                     break;
             }
         }
+
+        // Flak and shells burst loudest near the player. A miss only whizzes if it goes close by,
+        // and it's a near miss if the player rolled out of the way of it.
+        void PresentMissSound(DogfightEvent e)
+        {
+            if (e.AmmoId == "flak") AudioBank.Play(Sfx.FlakBurst, 0.7f * NearnessToPlayer(e));
+            else if (e.AmmoId == "mortar") AudioBank.Play(Sfx.MortarBurst, 0.7f * NearnessToPlayer(e));
+            else if (NearnessToPlayer(e) >= 1f) AudioBank.Play(player.ImmuneTimer > 0f ? Sfx.NearMiss : Sfx.ShotWhiz, player.ImmuneTimer > 0f ? 0.8f : 0.35f);
+        }
+
+        float NearnessToPlayer(DogfightEvent e)
+        {
+            var distance = Mathf.Sqrt((e.X - player.X) * (e.X - player.X) + (e.Z - player.Z) * (e.Z - player.Z));
+            return Mathf.Lerp(1f, FarSoundLevel, Mathf.InverseLerp(CloseSoundMeters, FarSoundMeters, distance));
+        }
+
+        static IEnumerator PlayAfter(Sfx sound, float seconds, float volume)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            AudioBank.Play(sound, volume);
+        }
+
+        void OnDestroy() => AudioBank.SetEngine(0f);
 
         void HideShipSoon(int shipId)
         {
@@ -697,6 +803,7 @@ namespace Airships.Game
         {
             view.Marker?.gameObject.SetActive(false);
             view.Label?.gameObject.SetActive(false);
+            if (view.MarkerHull != null) view.MarkerHull.gameObject.SetActive(false);
             yield return new WaitForSeconds(view.State.Departed ? 0f : 1.6f);
             view.Model.Root.SetActive(false);
         }
@@ -725,18 +832,86 @@ namespace Airships.Game
 
         void PresentEaten(DogfightEvent e)
         {
-            playerView.Model.Root.SetActive(false);
-            Fx.Burst(new Vector3(e.X, e.Y, e.Z), Palette.DeckWood, 24, 18f, 1.6f, 0.9f, 1f);
-            AudioBank.Play(Sfx.Explosion, 1f, 0f);
+            // The ship stops flying here, and Swallow takes it from there.
+            swallowing = true;
+            director.Stage.Shake(1f);
+        }
+
+        // The ship goes into the open mouth, the jaws snap shut, and a gulp travels down the whale.
+        IEnumerator Swallow()
+        {
+            var ship = playerView.Model.Root.transform;
+            var eater = hazardViews.WhaleNearest(ship.position);
+            hazardViews.HoldMouth(eater, 1f, 8f);
+            director.Stage.FrameTarget(eater, eater, SwallowCameraOffset, 52f, 0.5f);
+
+            var from = ship.position;
+            var fromScale = ship.localScale;
+            var glide = Vector3.zero;
+            for (var t = 0f; t < SwallowSeconds; t += Time.unscaledDeltaTime)
+            {
+                // The whale keeps coming, closing over the ship.
+                glide += eater.forward * SwallowGlideSpeed * Time.unscaledDeltaTime;
+                hazardViews.Gulp(eater, 0f, glide);
+                var drawn = t / SwallowSeconds;
+                drawn *= drawn;
+                ship.position = Vector3.Lerp(from, eater.TransformPoint(SwallowPoint), drawn);
+                ship.localScale = Vector3.Lerp(fromScale, fromScale * 0.2f, drawn);
+                ship.Rotate(0f, 0f, 420f * Time.unscaledDeltaTime, Space.Self);
+                yield return null;
+            }
+
+            ship.gameObject.SetActive(false);
+            hazardViews.HoldMouth(eater, 0f, 14f);
+            AudioBank.Play(Sfx.WhaleGulp, 1f, 0f);
             director.Stage.Shake(3f);
-            GameTime.HitStop(0.12f);
-            director.ScreenFx.Flash(Palette.Ink, 0.7f);
+            director.ScreenFx.Flash(Palette.Ink, 0.5f);
+            director.ScreenFx.Milestone("SWALLOWED WHOLE!", Palette.Danger);
+            Fx.Burst(eater.TransformPoint(0f, 0f, 5f), Palette.DeckWood, 24, 18f, 1.6f, 0.9f, 1f);
+
+            var burped = false;
+            for (var t = 0f; t < GulpSeconds; t += Time.unscaledDeltaTime)
+            {
+                glide += eater.forward * GulpGlideSpeed * Time.unscaledDeltaTime;
+                hazardViews.Gulp(eater, Mathf.Sin(t * 7f) * Mathf.Exp(-t * 1.4f) * 0.12f, glide);
+                if (!burped && t > GulpSeconds * 0.6f)
+                {
+                    burped = true;
+                    Fx.Burst(eater.TransformPoint(0f, 2f, 6f), Palette.DeckWood, 10, 10f, 1.2f, 1f, 2f);
+                    AudioBank.Play(Sfx.WhaleCall, 0.6f, 0f);
+                }
+                yield return null;
+            }
+        }
+
+        void BurstTorpedo(DogfightEvent e, float volume)
+        {
+            ReleaseShot(e.ProjectileId);
+            torpedoes.Remove(e.ProjectileId);
+            missiles.Remove(e.ProjectileId);
+            Effects.Play("MortarImpact", new Vector3(e.X, e.Y + ProjectileHeight, e.Z), 2.4f);
+            AudioBank.Play(Sfx.MortarBurst, volume);
+        }
+
+        // A torpedo strike is the biggest hit in the sky: a full explosion, and the ship it hit shakes.
+        void PresentTorpedoHit(DogfightEvent e, Vector3 position)
+        {
+            torpedoes.Remove(e.ProjectileId);
+            missiles.Remove(e.ProjectileId);
+            Effects.Play("ShipExplosion", position, 0.8f);
+            Effects.Play("ShipShockwave", position, 0.7f);
+            Effects.Play("MortarImpact", position, 2.2f);
+            AudioBank.Play(Sfx.Explosion, 0.9f, 0.05f);
+            director.Stage.Shake(1.1f);
+            GameTime.HitStop(0.05f);
+            if (viewById.TryGetValue(e.ShipId, out var struck)) struck.Rattle = 1f;
         }
 
         void PresentHit(DogfightEvent e)
         {
             var position = new Vector3(e.X, e.Y + ProjectileHeight + 1f, e.Z);
-            if (e.AmmoId == "flak") Effects.Play("FlakBurst", position, 1.5f);
+            if (e.AmmoId == Torpedo) PresentTorpedoHit(e, position);
+            else if (e.AmmoId == "flak") Effects.Play("FlakBurst", position, 1.5f);
             else if (e.AmmoId == "mortar" || e.AmmoId == "missile") Effects.Play("MortarImpact", position, 1.6f);
             else Effects.Play("HullImpact", position, e.Heavy ? 2f : 1.2f);
             var hitPlayer = e.ShipId == player.Id;
@@ -767,11 +942,13 @@ namespace Airships.Game
             shot.GetComponent<MeshFilter>().sharedMesh = mesh != null ? mesh : e.Heavy ? heavyShotMesh : lightShotMesh;
             shot.GetComponent<MeshRenderer>().sharedMaterial = mesh != null ? shotKitMaterial : shotMaterial;
             shot.transform.localScale = Vector3.one * (mesh == null ? 1f : e.Heavy ? meshScale : meshScale * 0.6f);
+            var isTorpedo = e.AmmoId == Torpedo;
             shot.transform.rotation = Quaternion.identity;
             shot.transform.position = new Vector3(e.X, e.Y + ProjectileHeight, e.Z);
             var trail = shot.GetComponent<TrailRenderer>();
-            trail.enabled = director.Stage.HighDefinition;
-            trail.widthMultiplier = e.Heavy ? 0.7f : 0.4f;
+            trail.enabled = director.Stage.HighDefinition || isTorpedo;
+            trail.widthMultiplier = isTorpedo ? 2.6f : e.Heavy ? 0.7f : 0.4f;
+            trail.time = isTorpedo ? 0.9f : 0.22f;
             trail.Clear();
             shot.SetActive(true);
             shots[e.ProjectileId] = shot;
@@ -789,6 +966,7 @@ namespace Airships.Game
                 case "grapeshot": asset = "SM_Prop_Grapeshot"; break;
                 case "mortar": asset = "SM_Prop_MortarShell"; break;
                 case "missile": asset = "SM_Prop_Missile"; scale = 4.5f; break;
+                case Torpedo: asset = "SM_Prop_Missile"; scale = 10f; break;
                 default: asset = "SM_Prop_Cannonball"; break;
             }
             if (ammoMeshes.TryGetValue(asset, out var cached)) return cached;
@@ -828,15 +1006,14 @@ namespace Airships.Game
             hud.SetActive(false);
             CloseOverlays();
             hookLine.enabled = false;
+            AudioBank.SetEngine(0f);
             var outcome = Encounter.Outcome;
             var boarded = Encounter.BoardedEnemy != null && viewById.TryGetValue(Encounter.BoardedEnemy.Ship.Id, out var boardedView) ? boardedView : null;
             var focusView = boarded ?? (Encounter.Target != null && viewById.TryGetValue(Encounter.Target.Ship.Id, out var targetView) ? targetView : playerView);
 
             if (outcome == SkyOutcome.Eaten)
             {
-                director.ScreenFx.Milestone("SWALLOWED WHOLE!", Palette.Danger);
-                director.Stage.FrameTarget(hazardViews.WhaleTransform, hazardViews.WhaleTransform, new Vector3(40f, 26f, -60f), 52f, 1f);
-                yield return new WaitForSecondsRealtime(2.6f);
+                yield return Swallow();
                 if (director.Run != null) director.OnSkyFinished(Encounter);
                 else director.OnEatenByWhale();
                 yield break;
@@ -850,7 +1027,7 @@ namespace Airships.Game
                 yield break;
             }
 
-            var banner = outcome == SkyOutcome.Boarded ? "BOARDING!" : outcome == SkyOutcome.TargetSunk ? "SUNK!" : outcome == SkyOutcome.TargetEscaped ? "THEY GOT AWAY!" : director.Run != null ? "SKY CLEAR!" : "ENEMY CRIPPLED!";
+            var banner = outcome == SkyOutcome.Boarded ? "BOARDING!" : outcome == SkyOutcome.TargetEscaped ? "THEY GOT AWAY!" : director.Run != null ? "SKY CLEAR!" : "ENEMY CRIPPLED!";
             director.ScreenFx.Milestone(banner, outcome == SkyOutcome.TargetEscaped ? Palette.Danger : Palette.Accent);
             director.Stage.FrameTarget(focusView.Model.Root.transform, focusView.Model.Body, new Vector3(30f, 16f, -34f), 42f, 1f);
             yield return new WaitForSecondsRealtime(2f);
@@ -902,9 +1079,17 @@ namespace Airships.Game
         {
             var alpha = Mathf.Clamp01(accumulator / DogfightSim.TickSeconds);
             bobTime += Time.deltaTime;
-            foreach (var view in views) PlaceShip(view.Model, view.State, view.Previous, view.PreviousHeading, alpha);
-            hazardViews.Update(alpha);
+            foreach (var view in views)
+            {
+                if (swallowing && view == playerView) continue;
+                PlaceShip(view.Model, view.State, view.Previous, view.PreviousHeading, alpha);
+                RattleShip(view);
+            }
+            hazardViews.Update(alpha, new Vector3(player.X, player.Y, player.Z));
             zoneViews.Update(player);
+            var riding = player.Alive && Sim.Weather.WindScale(player, 2f) > 1f;
+            if (riding && !wasRiding) AudioBank.Play(Sfx.BoostIgnite, 0.6f);
+            wasRiding = riding;
             UpdateHookLine();
 
             if (!ended)
@@ -959,6 +1144,18 @@ namespace Airships.Game
                 pickup.Model.position = new Vector3(pickup.Pickup.X, pickup.Base + Mathf.Sin(bobTime * 1.4f + pickup.Pickup.Id) * 1.2f, pickup.Pickup.Z);
             }
             if (rain != null) rain.uvRect = new Rect(Time.time * 0.05f, Time.time * 1.2f, rain.rectTransform.rect.width / 512f, rain.rectTransform.rect.height / 512f);
+        }
+
+        // Shakes the hull on top of its usual motion, and dies away quickly.
+        void RattleShip(ShipView view)
+        {
+            if (view.Rattle <= 0f) return;
+            view.Rattle = Mathf.Max(0f, view.Rattle - Time.deltaTime / RattleSeconds);
+            var strength = view.Rattle * view.Rattle;
+            var time = Time.time * 38f;
+            var body = view.Model.Body;
+            body.localPosition += new Vector3(Mathf.PerlinNoise(time, 0f) - 0.5f, Mathf.PerlinNoise(0f, time) - 0.5f, 0f) * (3.2f * strength * view.Model.Scale);
+            body.localRotation *= Quaternion.Euler((Mathf.PerlinNoise(time, 7f) - 0.5f) * 22f * strength, 0f, (Mathf.PerlinNoise(7f, time) - 0.5f) * 30f * strength);
         }
 
         void UpdateEmitters(ShipView view)
@@ -1057,7 +1254,10 @@ namespace Airships.Game
             var roll = Mathf.LerpAngle(current, bank, 1f - Mathf.Exp(-4f * Time.deltaTime));
             var climbPitch = -ship.ClimbRate / DogfightSim.ClimbSpeed * 14f;
             var pitch = alive ? Mathf.Sin(bobTime * 1.3f + ship.Id) * 1.2f + climbPitch : 6f;
-            model.Body.localRotation = Quaternion.Euler(pitch, 0f, roll + (ship.EvadeTimer > 0f ? -ship.EvadeSide * (1f - ship.EvadeTimer / director.Content.skyRules.evadeSeconds) * 360f : 0f));
+
+            // A roll spins the way it throws the ship: over the side, or nose up or nose down and over.
+            var rollSpin = ship.EvadeTimer > 0f ? (1f - ship.EvadeTimer / director.Content.skyRules.evadeSeconds) * 360f : 0f;
+            model.Body.localRotation = Quaternion.Euler(pitch - ship.EvadeLift * rollSpin, 0f, roll - ship.EvadeSide * rollSpin);
 
             var sink = alive ? 0f : -2.4f;
             var height = Mathf.Sin(bobTime * 1.1f + ship.Id) * 0.5f + sink;
@@ -1085,7 +1285,7 @@ namespace Airships.Game
             AddStickLabel(stickZone, "DIVE", -118f, "Hud_AltitudeDown");
             Teachable("stick", stickZone.Find("Stick Base"));
 
-            bowButton = BuildFireButton(safe, "BOW", "Ammo_Round", new Vector2(-30f, 250f), 200f, Palette.PanelLight, out bowCooldown);
+            bowButton = BuildFireButton(safe, "TORPEDO", "Ammo_Missile", new Vector2(-30f, 250f), 200f, Palette.PanelLight, out bowCooldown);
             broadsideButton = BuildFireButton(safe, "BROADSIDE", "Hud_FireBroadside", new Vector2(-250f, 40f), 250f, Palette.PlayerPaint, out broadsideCooldown);
             boostButton = BuildFireButton(safe, "BOOST / ROLL", "Hud_ThrottleUp", new Vector2(-30f, 40f), 190f, Palette.PanelLight, out boostCooldown);
             grappleButton = BuildFireButton(safe, "GRAPPLE", "Hud_Grapple", new Vector2(-270f, 300f), 190f, Palette.Brass, out grappleCooldown);
@@ -1101,6 +1301,7 @@ namespace Airships.Game
 
             aimButton = SmallButton(safe, "AIM: HULL", "Target_Reticle", new Vector2(-250f, 500f), new Vector2(230f, 84f), CycleAim, out aimIcon);
             ammoButton = SmallButton(safe, "AMMO", "Ammo_Round", new Vector2(-30f, 640f), new Vector2(250f, 84f), CycleAmmo, out ammoIcon);
+            ammoButton.ClickSound = Sfx.AmmoLoad;
             patchButton = SmallButton(safe, "PATCH", "Hud_Repair", new Vector2(-540f, 640f), new Vector2(200f, 84f), () => { patchPressed = true; Encounter.MarkUsed("patch"); }, out _);
             overdriveButton = SmallButton(safe, "OVERDRIVE", "Module_LiftCore", new Vector2(-290f, 640f), new Vector2(240f, 84f), () => { overdrivePressed = true; Encounter.MarkUsed("overdrive"); }, out _);
             Teachable("aim", aimButton.transform);
@@ -1112,7 +1313,13 @@ namespace Airships.Game
             BuildAltitudeGauge(safe);
 
             playerHull = BuildHullBar(safe, director.Sky.PlayerShipName, new Vector2(0f, 1f), new Vector2(28f, -20f), Palette.Heal, out playerHullText, out _);
-            enemyHull = BuildHullBar(safe, "", new Vector2(1f, 1f), new Vector2(-28f, -20f), Palette.Danger, out _, out enemyName);
+            enemyHull = BuildHullBar(safe, "", new Vector2(1f, 1f), new Vector2(-28f, -20f), Palette.Danger, out enemyHullText, out enemyName);
+            boardLine = UIKit.Solid("Boarding Line", enemyHull.transform, Palette.Accent);
+            var share = director.Content.skyRules.mainBoardHullShare;
+            boardLine.rectTransform.anchorMin = new Vector2(share, 0f);
+            boardLine.rectTransform.anchorMax = new Vector2(share, 1f);
+            boardLine.rectTransform.sizeDelta = new Vector2(6f, 0f);
+            boardLine.gameObject.SetActive(false);
             BuildEnemyParts(safe);
             playerHull.Set(player.Hull / player.Loadout.Hull, true);
 
@@ -1157,7 +1364,7 @@ namespace Airships.Game
             UIKit.Place(whaleWarning.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -250f), new Vector2(1100f, 80f));
 
             if (Encounter.HasControl("radar")) BuildRadar(safe);
-            comms = CommsBar.Create(safe, director.Content.campaign, -124f);
+            comms = CommsBar.Create(safe, director.Content.campaign, -124f, false);
             CommsLine line;
             while ((line = Encounter.NextComms()) != null) comms.Say(line);
             RefreshControls();
@@ -1186,7 +1393,10 @@ namespace Airships.Game
             if (director.Run == null) return "";
             switch (director.Sky.Objective)
             {
-                case "capture": return Encounter.HasControl("aim") ? "CAPTURE: stop their engines, then hook them" : "CAPTURE: beat them down, then hook them";
+                case "capture":
+                    var main = Encounter.Main;
+                    if (main == null) return "";
+                    return Sim.IsBoardable(main.Ship) ? $"BOARD {main.Spawn.name}: close in and GRAPPLE" : $"BOARD {main.Spawn.name}: beat them under {Mathf.RoundToInt(director.Content.skyRules.mainBoardHullShare * 100f)}% hull";
                 case "disable_engines": return "Knock out their engines";
                 case "survive": return "Survive the storm";
                 case "collect": return $"Collect them all: {Encounter.PickupsTaken} of {Encounter.Pickups.Count}";
@@ -1294,15 +1504,36 @@ namespace Airships.Game
                     dot.rectTransform.anchorMax = Vector2.one * 0.5f;
                     radarDots.Add(dot.rectTransform);
                 }
-                var offset = new Vector2(view.State.X - player.X, view.State.Z - player.Z);
-                var angle = -player.Heading;
-                var rotated = new Vector2(offset.x * Mathf.Cos(angle) - offset.y * Mathf.Sin(angle), offset.x * Mathf.Sin(angle) + offset.y * Mathf.Cos(angle));
                 radarDots[index].gameObject.SetActive(true);
                 radarDots[index].GetComponent<Image>().color = view.State.Team == player.Team ? Palette.Heal : Palette.Danger;
-                radarDots[index].anchoredPosition = Vector2.ClampMagnitude(rotated * 0.25f, 88f);
+                radarDots[index].anchoredPosition = RadarPosition(view.State.X, view.State.Z);
                 index++;
             }
             for (; index < radarDots.Count; index++) radarDots[index].gameObject.SetActive(false);
+
+            for (var i = 0; i < Sim.Field.Whales.Count; i++)
+            {
+                if (i >= whaleDots.Count)
+                {
+                    var dot = UIKit.Solid("Whale Dot", radar, Palette.WhaleDot);
+                    dot.sprite = UIKit.Circle;
+                    dot.rectTransform.sizeDelta = Vector2.one * 18f;
+                    dot.rectTransform.anchorMin = Vector2.one * 0.5f;
+                    dot.rectTransform.anchorMax = Vector2.one * 0.5f;
+                    whaleDots.Add(dot.rectTransform);
+                }
+                var whale = Sim.Field.Whales[i];
+                whaleDots[i].anchoredPosition = RadarPosition(whale.X, whale.Z);
+            }
+        }
+
+        // Where a point in the sky shows on the radar. Anything out of range sits on the rim.
+        Vector2 RadarPosition(float x, float z)
+        {
+            var offset = new Vector2(x - player.X, z - player.Z);
+            var angle = -player.Heading;
+            var rotated = new Vector2(offset.x * Mathf.Cos(angle) - offset.y * Mathf.Sin(angle), offset.x * Mathf.Sin(angle) + offset.y * Mathf.Cos(angle));
+            return Vector2.ClampMagnitude(rotated * RadarScale, RadarRim);
         }
 
         // Each control appears only once the story has introduced it, and pulses until it's been tried.
@@ -1426,7 +1657,10 @@ namespace Airships.Game
 
         void UpdateHud()
         {
-            AudioBank.SetDanger(Encounter.BetrayalStarted || player.Hull < player.Loadout.Hull * DangerHullShare ? 1f : 0f);
+            var hullFailing = player.Hull < player.Loadout.Hull * DangerHullShare;
+            AudioBank.SetDanger(Encounter.BetrayalStarted || hullFailing ? 1f : 0f);
+            if (hullFailing && !hullAlarmRang) AudioBank.Play(Sfx.HullAlarm, 0.65f, 0f);
+            hullAlarmRang = hullFailing;
             if (!Mathf.Approximately(player.Hull, lastPlayerHull))
             {
                 lastPlayerHull = player.Hull;
@@ -1462,7 +1696,10 @@ namespace Airships.Game
                 enemyHull.Set(next.Hull / next.Loadout.Hull, true);
             }
             if (focus == null) return;
-            enemyHull.Set(focus.Hull / focus.Loadout.Hull);
+            var hullShare = focus.Hull / focus.Loadout.Hull;
+            enemyHull.Set(hullShare);
+            boardLine.gameObject.SetActive(focus.Boarding == BoardingRule.Main);
+            enemyHullText.text = focus.Boarding == BoardingRule.Main && Sim.IsBoardable(focus) ? "BOARD!" : $"{Mathf.CeilToInt(hullShare * 100f)}%";
             PlaceAltitudeTick(enemyAltitudeTick, focus.Y);
             enemyParts.SetActive(Encounter.HasControl("aim"));
             if (enemyParts.activeSelf)
@@ -1471,6 +1708,45 @@ namespace Airships.Game
                 enemyGuns.Set(focus.Guns / focus.MaxSubsystem);
                 enemyEnvelope.Set(focus.Envelope / focus.MaxSubsystem);
             }
+            UpdateEnemyRows();
+        }
+
+        // Every other enemy still flying gets its own bar under the main one.
+        void UpdateEnemyRows()
+        {
+            var top = enemyParts.activeSelf ? -176f : -122f;
+            var shown = 0;
+            foreach (var enemy in Encounter.Enemies)
+            {
+                var ship = enemy.Ship;
+                if (shown >= MaxEnemyRows || ship == focus || ship.Team == player.Team || !ship.Alive || ship.BoardsOnContact) continue;
+                if (shown == enemyRows.Count) enemyRows.Add(BuildEnemyRow());
+                var row = enemyRows[shown];
+                var share = ship.Hull / ship.Loadout.Hull;
+                row.Root.SetActive(true);
+                ((RectTransform)row.Root.transform).anchoredPosition = new Vector2(-28f, top - shown * EnemyRowHeight);
+                if (row.Ship != ship)
+                {
+                    row.Ship = ship;
+                    row.Name.text = viewById.TryGetValue(ship.Id, out var view) ? view.Name : "";
+                    row.Hull.Set(share, true);
+                }
+                row.Hull.Set(share);
+                shown++;
+            }
+            for (var i = shown; i < enemyRows.Count; i++) enemyRows[i].Root.SetActive(false);
+        }
+
+        EnemyRow BuildEnemyRow()
+        {
+            var panel = UIKit.Panel("Enemy Row", safeArea, Palette.WithAlpha(Palette.Panel, 0.88f));
+            UIKit.Place(panel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), Vector2.zero, new Vector2(620f, 42f));
+            var name = UIKit.Text("Name", panel.transform, "", 22f, Palette.TextLight, TextAlignmentOptions.Left);
+            name.characterSpacing = 0f;
+            UIKit.Place(name.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(280f, 34f));
+            var bar = UIKit.Bar("Hull", panel.transform, Palette.Danger);
+            UIKit.Place((RectTransform)bar.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-10f, 0f), new Vector2(306f, 26f));
+            return new EnemyRow { Root = panel.gameObject, Hull = bar, Name = name };
         }
 
         void UpdateGrappleButton()
@@ -1571,6 +1847,11 @@ namespace Airships.Game
                 view.Label.text = !Encounter.CanClimb || Mathf.Abs(above) < 3 ? $"{Mathf.RoundToInt(distance)} m" : $"{Mathf.RoundToInt(distance)} m  {(above > 0 ? "+" : "")}{above}";
                 view.Label.color = DogfightSim.CanElevate(player, view.State, player.Loadout.Broadside) ? Palette.Accent : Palette.Ink;
                 PlaceMarker(view.Marker, view.Label.rectTransform, view.Model.Body.position + Vector3.up * 13f * view.Model.Scale);
+                if (view.MarkerHull != null)
+                {
+                    view.MarkerHull.Set(view.State.Hull / view.State.Loadout.Hull, true);
+                    ((RectTransform)view.MarkerHull.transform).anchoredPosition = view.Marker.anchoredPosition + Vector2.down * 38f;
+                }
             }
             foreach (var pickup in pickupViews)
             {
@@ -1582,12 +1863,15 @@ namespace Airships.Game
 
         void UpdateWhaleHud()
         {
-            var whale = Sim.Field.Whale;
-            var distance = 0f;
-            if (whale != null)
+            // Show whichever whale matters most: the one hunting, or else the closest.
+            WhaleState whale = null;
+            var distance = float.MaxValue;
+            foreach (var candidate in Sim.Field.Whales)
             {
-                var to = new Vector3(whale.X - player.X, whale.Y - player.Y, whale.Z - player.Z);
-                distance = to.magnitude;
+                var to = new Vector3(candidate.X - player.X, candidate.Y - player.Y, candidate.Z - player.Z).magnitude;
+                if (whale != null && (whale.MouthOpen || (to >= distance && !candidate.MouthOpen))) continue;
+                whale = candidate;
+                distance = to;
             }
             var show = whale != null && (whale.MouthOpen || distance < WhaleMarkerRange);
             whaleMarker.gameObject.SetActive(show);

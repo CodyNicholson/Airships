@@ -12,7 +12,8 @@ namespace Airships.Core
         public float Y;
         public float Z;
         public float Radius;
-        public float Heading; // The way a wind current blows.
+        public float Heading; // The way a wind tunnel blows.
+        public float Length; // Wind tunnels only: Radius is the tube's, and X, Y and Z its middle.
         public float Strength;
     }
 
@@ -23,11 +24,15 @@ namespace Airships.Core
         public float Timer;
     }
 
-    // Wind currents, cloud banks, updrafts and lightning for one fight. Deterministic from its seed.
+    // Wind tunnels, cloud banks, updrafts and lightning for one fight. Deterministic from its seed.
     public class SkyWeather
     {
         const float WindAngle = 1.05f; // Radians either side of the wind where a ship still rides it.
-        const float WindRadius = 62f;
+        const float WindRadius = 26f;
+        const float TunnelLength = 240f;
+        const float TunnelPush = 26f; // Meters per second along the tunnel, felt the moment a ship enters.
+        const float TunnelAltitudeMin = -15f;
+        const float TunnelAltitudeMax = 35f;
         const float CloudRadius = 58f;
         const float CloudHeight = 22f;
         const float UpdraftRadius = 44f;
@@ -47,9 +52,13 @@ namespace Airships.Core
         public IReadOnlyList<LightningStrike> Strikes => strikes;
         public int LightningTargetId { get; set; }
 
-        public SkyWeather(WeatherDef def, SkyRulesDef rules, int seed)
+        readonly bool level;
+
+        // Level puts every wind tunnel at the height of a fight where ships can't climb.
+        public SkyWeather(WeatherDef def, SkyRulesDef rules, int seed, bool level = false)
         {
             this.rules = rules;
+            this.level = level;
             random = new GameRandom(seed);
             lightningEvery = def.lightningEvery;
             nextStrike = lightningEvery;
@@ -66,12 +75,14 @@ namespace Airships.Core
                 // Evenly around the arena with some wobble, so a zone is always within reach.
                 var angle = (i + random.Range(0f, 0.7f)) / Math.Max(1, count) * (float)Math.PI * 2f;
                 var distance = random.Range(0.3f, 1f) * DogfightSim.ArenaRadius * ZoneSpread;
+                var isWind = kind == SkyZoneKind.Wind;
                 zones.Add(new SkyZone
                 {
                     Kind = kind,
+                    Length = isWind ? TunnelLength : 0f,
                     X = (float)Math.Sin(angle) * distance,
                     Z = (float)Math.Cos(angle) * distance,
-                    Y = kind == SkyZoneKind.Cloud || kind == SkyZoneKind.Toxic ? random.Range(-12f, 22f) : 0f,
+                    Y = isWind ? (level ? 0f : random.Range(TunnelAltitudeMin, TunnelAltitudeMax)) : kind == SkyZoneKind.Cloud || kind == SkyZoneKind.Toxic ? random.Range(-12f, 22f) : 0f,
                     Radius = radius,
                     Heading = random.Range(0f, (float)Math.PI * 2f),
                     Strength = kind == SkyZoneKind.Updraft ? UpdraftStrength : 1f,
@@ -84,13 +95,28 @@ namespace Airships.Core
             return DogfightSim.DistanceSquared(ship.X, ship.Z, zone.X, zone.Z) <= zone.Radius * zone.Radius;
         }
 
-        // Flying with a wind current multiplies airspeed. Flying against one does nothing.
+        // Whether a ship is flying with a wind tunnel, inside its tube.
+        static bool RidingTunnel(ShipState ship, SkyZone zone)
+        {
+            if (zone.Kind != SkyZoneKind.Wind) return false;
+            var dirX = (float)Math.Sin(zone.Heading);
+            var dirZ = (float)Math.Cos(zone.Heading);
+            var dx = ship.X - zone.X;
+            var dz = ship.Z - zone.Z;
+            var along = dx * dirX + dz * dirZ;
+            if (Math.Abs(along) > zone.Length * 0.5f) return false;
+            var across = dx * dirZ - dz * dirX;
+            var dy = ship.Y - zone.Y;
+            if (across * across + dy * dy > zone.Radius * zone.Radius) return false;
+            return Math.Abs(DogfightSim.WrapAngle(zone.Heading - ship.Heading)) <= WindAngle;
+        }
+
+        // Flying with a wind tunnel multiplies airspeed. Flying against one does nothing.
         public float WindScale(ShipState ship, float windSpeedScale)
         {
             foreach (var zone in zones)
             {
-                if (zone.Kind != SkyZoneKind.Wind || !Inside(ship, zone)) continue;
-                if (Math.Abs(DogfightSim.WrapAngle(zone.Heading - ship.Heading)) <= WindAngle) return windSpeedScale;
+                if (RidingTunnel(ship, zone)) return windSpeedScale;
             }
             return 1f;
         }
@@ -103,6 +129,11 @@ namespace Airships.Core
                 ship.Hidden = false;
                 foreach (var zone in zones)
                 {
+                    if (RidingTunnel(ship, zone))
+                    {
+                        ship.X += (float)Math.Sin(zone.Heading) * TunnelPush * DogfightSim.TickSeconds;
+                        ship.Z += (float)Math.Cos(zone.Heading) * TunnelPush * DogfightSim.TickSeconds;
+                    }
                     if (!Inside(ship, zone)) continue;
                     if (zone.Kind == SkyZoneKind.Cloud && Math.Abs(ship.Y - zone.Y) <= CloudHeight) ship.Hidden = true;
                     if (zone.Kind == SkyZoneKind.Updraft) ship.Y = DogfightSim.ClampAltitude(ship.Y + zone.Strength * DogfightSim.TickSeconds);

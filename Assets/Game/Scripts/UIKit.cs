@@ -244,15 +244,22 @@ namespace Airships.Game
     {
         public Image Fill;
         Coroutine tween;
+        float goal = -1f;
 
         public void Set(float value, bool instant = false)
         {
             value = Mathf.Clamp01(value);
             if (instant || !isActiveAndEnabled)
             {
+                if (tween != null) StopCoroutine(tween);
+                goal = value;
                 Fill.fillAmount = value;
                 return;
             }
+
+            // HUDs call this every frame. Restarting for the same value would pin the bar where it is.
+            if (Mathf.Approximately(value, goal)) return;
+            goal = value;
             if (tween != null) StopCoroutine(tween);
             var start = Fill.fillAmount;
             tween = StartCoroutine(Ease.Tween(0.3f, t => Fill.fillAmount = Mathf.Lerp(start, value, t)));
@@ -475,11 +482,11 @@ namespace Airships.Game
             Destroy(text.gameObject);
         }
 
-        // The win and level-up moment: flash, sting, then a banner that pops in and leaves.
-        public void Milestone(string message, Color color)
+        // The big moment: flash, sting, then a banner that pops in and leaves. Bad news gets a darker sting.
+        public void Milestone(string message, Color color, Sfx? sound = null)
         {
             Flash(Palette.Accent);
-            AudioBank.Play(Sfx.Sting, 1f, 0f);
+            AudioBank.Play(sound ?? (color == Palette.Danger ? Sfx.DangerSting : Sfx.Sting), 1f, 0f);
             if (bannerRoutine != null) StopCoroutine(bannerRoutine);
             if (banner != null) Destroy(banner);
             bannerRoutine = StartCoroutine(BannerRoutine(message, color));

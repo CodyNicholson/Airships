@@ -97,7 +97,8 @@
       "baseStats": { "hp": 50, "mp": 18, "attack": 11, "defense": 5, "spirit": 11, "speed": 8 } }
   ],
   "cannons": [
-    { "id": "bow_chaser", "name": "Bow Chasers", "mount": "Bow", "damage": 8, "reload": 0.6, "shots": 1, "spreadDegrees": 2, "projectileSpeed": 130, "range": 130, "aimAssistDegrees": 14, "elevationDegrees": 40 },
+    { "id": "torpedo_tube", "name": "Torpedo", "mount": "Bow", "damage": 65, "reload": 3.5, "shots": 1, "spreadDegrees": 0, "projectileSpeed": 72, "range": 360, "aimAssistDegrees": 10, "elevationDegrees": 40, "ammoId": "torpedo", "homingTurn": 0.1, "hitRadiusBonus": 2 },
+    { "id": "bow_chaser", "name": "Chase Guns", "mount": "Bow", "damage": 8, "reload": 0.6, "shots": 1, "spreadDegrees": 2, "projectileSpeed": 130, "range": 130, "aimAssistDegrees": 14, "elevationDegrees": 40 },
     { "id": "broadside_battery", "name": "Broadside Battery", "mount": "Broadside", "damage": 20, "reload": 5, "shots": 5, "spreadDegrees": 24, "projectileSpeed": 95, "range": 110, "aimAssistDegrees": 35, "elevationDegrees": 10 },
     { "id": "light_battery", "name": "Light Battery", "mount": "Broadside", "damage": 16, "reload": 3.6, "shots": 4, "spreadDegrees": 22, "projectileSpeed": 100, "range": 105, "aimAssistDegrees": 35, "elevationDegrees": 12 },
     { "id": "heavy_battery", "name": "Heavy Battery", "mount": "Broadside", "damage": 24, "reload": 5.2, "shots": 7, "spreadDegrees": 28, "projectileSpeed": 95, "range": 120, "aimAssistDegrees": 35, "elevationDegrees": 10 },
@@ -131,7 +132,7 @@
     { "id": "armor", "name": "Iron Plating", "description": "+2 armor per level", "stat": "armor", "perLevel": 2, "maxLevel": 5, "baseCost": 100, "costGrowth": 1.6 },
     { "id": "engine", "name": "Tuned Engines", "description": "+12% speed per level", "stat": "speed", "perLevel": 0.12, "maxLevel": 5, "baseCost": 70, "costGrowth": 1.6 },
     { "id": "rudder", "name": "Sky Rudder", "description": "+10% turning per level", "stat": "turn", "perLevel": 0.10, "maxLevel": 5, "baseCost": 60, "costGrowth": 1.6 },
-    { "id": "bow", "name": "Bored Chasers", "description": "+15% bow damage per level", "stat": "bowDamage", "perLevel": 0.15, "maxLevel": 5, "baseCost": 90, "costGrowth": 1.6 },
+    { "id": "bow", "name": "Torpedo Warheads", "description": "+15% torpedo damage per level", "stat": "bowDamage", "perLevel": 0.15, "maxLevel": 5, "baseCost": 90, "costGrowth": 1.6 },
     { "id": "broadside", "name": "Heavy Battery", "description": "+15% broadside damage per level", "stat": "broadsideDamage", "perLevel": 0.15, "maxLevel": 5, "baseCost": 110, "costGrowth": 1.6 }
   ],
   "economy": {
@@ -268,27 +269,27 @@
     {"id": "armada_officer", "asset": "SK_ArmadaOfficer", "faction": "Gilded", "weaponR": "SM_Prop_RoyalSabre", "weaponL": "", "gunR": "", "gunL": "SM_Prop_DuelPistol", "portrait": "ArmadaOfficer"},
     {"id": "warden_guard", "asset": "SK_ArmadaSoldier", "faction": "Warden", "weaponR": "SM_Prop_Cutlass", "weaponL": "", "gunR": "", "gunL": "", "portrait": "ArmadaSoldier"},
     {"id": "royal_guard", "asset": "SK_RoyalGuard", "faction": "Gilded", "weaponR": "SM_Prop_ArmadaHalberd", "weaponL": "", "gunR": "", "gunL": "", "portrait": "RoyalGuard"},
-    {"id": "gorse", "asset": "SK_PirateCaptain", "faction": "Scrap", "weaponR": "SM_Prop_BoardingAxe", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "ashgrave", "asset": "SK_ArmadaOfficer", "faction": "Syndicate", "weaponR": "SM_Prop_TwinScimitar", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "thrace", "asset": "SK_ArmadaOfficer", "faction": "Emerald", "weaponR": "SM_Prop_TwinScimitar", "weaponL": "", "gunR": "", "gunL": "SM_Prop_DuelPistol", "portrait": ""},
+    {"id": "gorse", "asset": "SK_PirateCaptain", "faction": "Scrap", "weaponR": "SM_Prop_BoardingAxe", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Gorse"},
+    {"id": "ashgrave", "asset": "SK_ArmadaOfficer", "faction": "Syndicate", "weaponR": "SM_Prop_TwinScimitar", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Ashgrave"},
+    {"id": "thrace", "asset": "SK_ArmadaOfficer", "faction": "Emerald", "weaponR": "SM_Prop_TwinScimitar", "weaponL": "", "gunR": "", "gunL": "SM_Prop_DuelPistol", "portrait": "Thrace"},
     {"id": "scrap_bruiser", "asset": "SK_PirateBrute", "faction": "Scrap", "weaponR": "SM_Prop_BoardingAxe", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "scrap_hand", "asset": "SK_PirateDeckhand", "faction": "Scrap", "weaponR": "SM_Prop_Cutlass", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
+    {"id": "scrap_hand", "asset": "SK_PirateDeckhand", "faction": "Scrap", "weaponR": "SM_Prop_Cutlass", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Scrapper"},
     {"id": "scrap_gunner", "asset": "SK_PirateGunner", "faction": "Scrap", "weaponR": "", "weaponL": "", "gunR": "SM_Prop_Flintlock", "gunL": "", "portrait": ""},
     {"id": "syndicate_brute", "asset": "SK_PirateBrute", "faction": "Syndicate", "weaponR": "SM_Prop_BoardingAxe", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
     {"id": "syndicate_hand", "asset": "SK_PirateDeckhand", "faction": "Syndicate", "weaponR": "SM_Prop_Cutlass", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
     {"id": "syndicate_gunner", "asset": "SK_PirateGunner", "faction": "Syndicate", "weaponR": "", "weaponL": "", "gunR": "SM_Prop_Flintlock", "gunL": "", "portrait": ""},
-    {"id": "brill", "asset": "SK_PirateDeckhand", "faction": "Crimson", "weaponR": "SM_Prop_Cutlass", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "hask", "asset": "SK_PirateGunner", "faction": "Crimson", "weaponR": "", "weaponL": "", "gunR": "SM_Prop_Flintlock", "gunL": "", "portrait": ""},
-    {"id": "wren", "asset": "SK_PirateDeckhand", "faction": "Emerald", "weaponR": "SM_Prop_RumBottle", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "ivo", "asset": "SK_PirateDeckhand", "faction": "Azure", "weaponR": "SM_Prop_Spyglass", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "mirren", "asset": "SK_PirateGunner", "faction": "Crimson", "weaponR": "", "weaponL": "", "gunR": "SM_Prop_Flintlock", "gunL": "", "portrait": ""},
-    {"id": "odessa", "asset": "SK_PirateDeckhand", "faction": "Emerald", "weaponR": "SM_Prop_RumBottle", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""},
-    {"id": "tobin", "asset": "SK_PirateDeckhand", "faction": "Azure", "weaponR": "SM_Prop_Spyglass", "weaponL": "", "gunR": "", "gunL": "", "portrait": ""}
+    {"id": "brill", "asset": "SK_PirateDeckhand", "faction": "Crimson", "weaponR": "SM_Prop_Cutlass", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Brill"},
+    {"id": "hask", "asset": "SK_PirateGunner", "faction": "Crimson", "weaponR": "", "weaponL": "", "gunR": "SM_Prop_Flintlock", "gunL": "", "portrait": "Hask"},
+    {"id": "wren", "asset": "SK_PirateDeckhand", "faction": "Emerald", "weaponR": "SM_Prop_RumBottle", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Wren"},
+    {"id": "ivo", "asset": "SK_PirateDeckhand", "faction": "Azure", "weaponR": "SM_Prop_Spyglass", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Ivo"},
+    {"id": "mirren", "asset": "SK_PirateGunner", "faction": "Crimson", "weaponR": "", "weaponL": "", "gunR": "SM_Prop_Flintlock", "gunL": "", "portrait": "Mirren"},
+    {"id": "odessa", "asset": "SK_PirateDeckhand", "faction": "Emerald", "weaponR": "SM_Prop_RumBottle", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Odessa"},
+    {"id": "tobin", "asset": "SK_PirateDeckhand", "faction": "Azure", "weaponR": "SM_Prop_Spyglass", "weaponL": "", "gunR": "", "gunL": "", "portrait": "Tobin"}
   ],
   "items": [
     {"id": "rum", "name": "Rum", "description": "Restores a third of one crew member's health.", "icon": "Item_Rum", "kind": "heal", "power": 0.35, "cost": 45},
     {"id": "charge", "name": "Saboteur Charge", "description": "Hurts every enemy on deck.", "icon": "Item_SaboteurCharge", "kind": "damage", "power": 0.2, "cost": 80},
     {"id": "repair_kit", "name": "Repair Kit", "description": "A hull patch in your next air fight.", "icon": "Item_RepairKit", "kind": "patch", "power": 0, "cost": 90}
   ],
-  "skyRules": {"subsystemHullShare": 0.5, "disabledSpeedScale": 0.45, "disabledReloadScale": 2.5, "aimHullScale": 0.6, "aimSubsystemScale": 0.6, "grappleRange": 60, "grappleAltitude": 24, "grappleHullShare": 0.3, "grappleCooldown": 0.5, "snapRangeScale": 1.8, "hookedSpeedScale": 0.6, "reelSpeed": 16, "tetherBoardShare": 0.7, "tetherSinkSpeed": 4, "crushPerSecond": 40, "patchShare": 0.25, "overdriveSeconds": 6, "overdriveCooldown": 30, "overdriveSpeedScale": 1.4, "overdriveReloadScale": 0.6, "overdriveHullCost": 0.05, "ambushScale": 1.5, "weakPointScale": 1.5, "windSpeedScale": 2, "lightningWarning": 1.6, "lightningRadius": 18, "lightningDamage": 60, "repairGoldPerHull": 0.15, "minimumStartHullShare": 0.4, "scrapShare": 0.2, "nemesisArmorPerStack": 2, "nemesisHullPerStack": 0.15, "boardingExposure": 0.1, "exposurePerDefender": 0.04, "evadeSeconds": 0.55, "evadeSpeed": 88, "evadeCooldown": 6, "evadeImmunity": 0.55, "volleyWarning": 0.75, "rakeScale": 1.25, "envelopeSinkSpeed": 5, "toxicPerSecond": 7, "missileDamage": 60, "missileSpeed": 58, "missileTurn": 1.6, "missileSeconds": 5.5, "mineBlastRadius": 34, "mineBlastDamage": 70, "pickupRadius": 20, "campaignEnemyDamage": 1.3}
+  "skyRules": {"subsystemHullShare": 0.5, "disabledSpeedScale": 0.45, "disabledReloadScale": 2.5, "aimHullScale": 0.6, "aimSubsystemScale": 0.6, "grappleRange": 60, "grappleAltitude": 24, "grappleHullShare": 0.3, "grappleCooldown": 0.5, "snapRangeScale": 1.8, "hookedSpeedScale": 0.6, "reelSpeed": 16, "tetherBoardShare": 0.7, "tetherSinkSpeed": 4, "crushPerSecond": 40, "patchShare": 0.25, "overdriveSeconds": 6, "overdriveCooldown": 30, "overdriveSpeedScale": 1.4, "overdriveReloadScale": 0.6, "overdriveHullCost": 0.05, "ambushScale": 1.5, "weakPointScale": 1.5, "windSpeedScale": 2, "lightningWarning": 1.6, "lightningRadius": 18, "lightningDamage": 60, "repairGoldPerHull": 0.15, "minimumStartHullShare": 0.4, "scrapShare": 0.2, "nemesisArmorPerStack": 2, "nemesisHullPerStack": 0.15, "boardingExposure": 0.1, "exposurePerDefender": 0.04, "damagedDriftHullShare": 0.4, "damagedDriftGapMin": 1.5, "damagedDriftGapMax": 4.5, "damagedDriftSecondsMin": 0.8, "damagedDriftSecondsMax": 1.8, "damagedDriftTurnShare": 0.55, "damagedDriftSlip": 12, "evadeSeconds": 0.55, "evadeSpeed": 88, "evadeCooldown": 6, "evadeImmunity": 0.55, "volleyWarning": 0.75, "rakeScale": 1.25, "envelopeSinkSpeed": 5, "toxicPerSecond": 7, "missileDamage": 60, "missileSpeed": 58, "missileTurn": 1.6, "mainBoardHullShare": 0.25, "missileSeconds": 5.5, "mineBlastRadius": 34, "mineBlastDamage": 70, "pickupRadius": 20, "campaignEnemyDamage": 1.3}
 }

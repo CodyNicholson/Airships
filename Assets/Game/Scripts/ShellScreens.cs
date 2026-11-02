@@ -231,7 +231,7 @@ namespace Airships.Game
 
                 var buy = UIKit.Button("Buy", row.transform, "", 28f, Palette.PlayerPaint, () => Buy(upgrade));
                 UIKit.Place((RectTransform)buy.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-12f, 0f), new Vector2(190f, 88f));
-                buy.ClickSound = Sfx.Confirm;
+                buy.ClickSound = Sfx.CoinPurchase;
 
                 refreshers.Add(() =>
                 {
@@ -263,6 +263,7 @@ namespace Airships.Game
                     director.SaveGame();
                     Refresh();
                 });
+                buy.ClickSound = Sfx.CoinPurchase;
                 buy.Label.characterSpacing = 0f;
                 buy.Label.rectTransform.offsetMin = new Vector2(2f, 2f);
                 buy.Label.rectTransform.offsetMax = new Vector2(-2f, -2f);
@@ -467,7 +468,7 @@ namespace Airships.Game
         IEnumerator Celebrate(GameDirector director)
         {
             yield return new WaitForSecondsRealtime(0.45f);
-            if (hadLevelUp) director.ScreenFx.Milestone("LEVEL UP!", Palette.Accent);
+            if (hadLevelUp) director.ScreenFx.Milestone("LEVEL UP!", Palette.Accent, Sfx.LevelUp);
             if (!GameDirector.Autoplay) yield break;
             yield return new WaitForSecondsRealtime(1.5f);
             if (retry != null) retry();

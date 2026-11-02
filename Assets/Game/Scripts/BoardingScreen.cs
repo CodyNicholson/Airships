@@ -302,7 +302,7 @@ namespace Airships.Game
             if (strikes.Count == 0) return;
             Effects.Play("LightningStrike", strikes[UnityEngine.Random.Range(0, strikes.Count)].position, 0.35f);
             director.ScreenFx.Flash(Palette.Cloud, 0.25f, 0.15f);
-            AudioBank.Play(Sfx.Explosion, 0.35f);
+            AudioBank.Play(Sfx.ThunderDistant, 0.6f);
         }
 
         // The boarding party swings in on grapple lines, and bosses greet them with a taunt.
@@ -315,6 +315,7 @@ namespace Airships.Game
             }
             if (setup.Boarded)
             {
+                AudioBank.Play(Sfx.GrappleSwing, 0.85f);
                 var starts = new Dictionary<Fighter, Vector3>();
                 foreach (var fighter in fighters)
                 {
@@ -413,7 +414,7 @@ namespace Airships.Game
             gold.transform.localPosition = center + new Vector3(1f, 0f, -1.6f);
             gold.transform.localScale = Vector3.one * 1.2f;
             Fx.Burst(chest.transform.position + Vector3.up * 0.8f, Palette.Spark, 18, 3f, 0.6f, 0.8f, 2f);
-            AudioBank.Play(Sfx.Sting, 0.7f);
+            AudioBank.Play(Sfx.Plunder, 0.85f);
         }
 
         // A plain policy for automated runs: heal when hurt, otherwise use the strongest attack.
@@ -494,7 +495,7 @@ namespace Airships.Game
             {
                 var guarded = Battle.Submit(action);
                 Fx.Puff(fighter.Model.Root.transform.position + Vector3.up * 1.5f, Palette.Mana);
-                AudioBank.Play(Sfx.Confirm, 0.6f);
+                AudioBank.Play(Sfx.GuardUp, 0.8f);
                 ShowFloating(fighter, "GUARD", Palette.Mana, 40f);
                 fighter.Model.Animation.PlayThenReturn("Block");
                 yield return new WaitForSeconds(BlockMoment);
@@ -521,7 +522,7 @@ namespace Airships.Game
         // The whole crew charges on one prompt.
         IEnumerator PlayRush(BattleAction action)
         {
-            director.ScreenFx.Milestone("BOARDING RUSH!", Palette.Accent);
+            director.ScreenFx.Milestone("BOARDING RUSH!", Palette.Accent, Sfx.WarHorn);
             var pattern = TimingSequence.Pick(director.Content.timing, director.EncounterTier, true, patternRandom, lastPatternId);
             lastPatternId = pattern.id;
             timing.Begin(pattern, "ALL HANDS!", Palette.PlayerPaint);
@@ -607,7 +608,7 @@ namespace Airships.Game
             }
             else
             {
-                AudioBank.Play(isMagic ? Sfx.HeavyCannon : Sfx.Cannon, isMagic ? 0.55f : 0.7f);
+                AudioBank.Play(isMagic ? Sfx.MagicCast : Sfx.Pistol, isMagic ? 0.75f : 0.7f);
                 var color = isMagic ? Palette.Storm : Palette.Spark;
                 var muzzle = WeaponPoint(fighter, "muzzle");
                 Effects.Play(isMagic ? "LiftCoreSabotage" : "CannonFire", muzzle, isMagic ? 0.25f : 0.5f);
@@ -673,18 +674,20 @@ namespace Airships.Game
                         break;
                     case BattleEventKind.Status:
                         ShowFloating(byCombatant[result.Target], result.Label.ToUpperInvariant() + "!", Palette.Accent, 44f);
+                        AudioBank.Play(Sfx.StatusHit, 0.65f);
                         break;
                     case BattleEventKind.Burned:
                         var burned = byCombatant[result.Target];
                         burned.Flash = 1f;
                         ShowFloating(burned, result.Amount.ToString(), Palette.Danger, 50f);
                         Effects.Play("HullFire", burned.Model.Root.transform.position, 0.6f);
-                        AudioBank.Play(Sfx.Hit, 0.5f);
+                        AudioBank.Play(Sfx.Burn, 0.7f);
                         break;
                     case BattleEventKind.Stunned:
                         var stunned = byCombatant[result.Target];
                         ShowFloating(stunned, "STUNNED", Palette.Storm, 50f);
                         stunned.Model.Animation.PlayThenReturn("Hit");
+                        AudioBank.Play(Sfx.Stunned, 0.7f);
                         break;
                     case BattleEventKind.Counter:
                         var countered = byCombatant[result.Target];
@@ -692,14 +695,14 @@ namespace Airships.Game
                         byCombatant[result.Source].Model.Animation.PlayThenReturn("AttackMelee");
                         Effects.Play("BladeClash", countered.Model.Root.transform.position + Vector3.up * 1.4f, 1.5f);
                         ShowFloating(countered, $"COUNTER {result.Amount}", Palette.Accent, 56f);
-                        AudioBank.Play(Sfx.Slash, 1f);
+                        AudioBank.Play(Sfx.BladeClash, 0.9f);
                         break;
                     case BattleEventKind.Enraged:
                         var enraged = byCombatant[result.Target];
                         enraged.Model.Animation.PlayThenReturn("Taunt");
                         enraged.Model.SetEmission(Palette.Danger * 0.4f);
                         Effects.Play("BladeClash", enraged.Model.Root.transform.position + Vector3.up * 1.5f, 2.5f);
-                        director.ScreenFx.Milestone($"{enraged.Combatant.Name.ToUpperInvariant()} RAGES!", Palette.Danger);
+                        director.ScreenFx.Milestone($"{enraged.Combatant.Name.ToUpperInvariant()} RAGES!", Palette.Danger, Sfx.BossRoar);
                         Say("enrage");
                         break;
                     case BattleEventKind.Revived:
@@ -707,6 +710,7 @@ namespace Airships.Game
                         revived.Fallen = false;
                         revived.Model.Animation.Loop("Idle", 0f);
                         ShowFloating(revived, "BACK ON DECK", Palette.Heal, 50f);
+                        AudioBank.Play(Sfx.Revive, 0.85f);
                         Fx.Burst(revived.Model.Root.transform.position + Vector3.up, Palette.Heal, 18, 2f, 0.5f, 0.8f, 2f);
                         break;
                 }
@@ -728,7 +732,11 @@ namespace Airships.Game
             var perfect = result.Timing == TimingGrade.Perfect;
             var timed = result.Timing != TimingGrade.Miss;
             var blocked = timed && fighter.Combatant.IsPlayer;
-            if (blocked) Effects.Play("BladeClash", position);
+            if (blocked)
+            {
+                Effects.Play("BladeClash", position);
+                AudioBank.Play(Sfx.BladeClash, 0.75f);
+            }
             var woundedByMiss = !timed && fighter.Combatant.IsPlayer;
             var weakenedByMiss = !timed && !fighter.Combatant.IsPlayer;
             var color = woundedByMiss ? Palette.Danger : weakenedByMiss ? Palette.TextMuted : blocked ? Palette.Mana : perfect || result.Critical ? Palette.Accent : Palette.TextLight;
@@ -748,6 +756,7 @@ namespace Airships.Game
         void Fall(Fighter fighter)
         {
             fighter.Fallen = true;
+            AudioBank.Play(Sfx.BodyFall, 0.85f);
             Fx.Burst(fighter.Model.Root.transform.position + Vector3.up * 0.5f, Palette.Smoke, 7, 2f, 0.5f, 0.6f, 1f);
             fighter.Model.Animation.Play("Death");
         }

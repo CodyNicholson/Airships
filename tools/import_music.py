@@ -2,7 +2,9 @@
 
 Render each song first with that project's chiptune-composer skill, into one output folder, then run:
 
-    python tools/import_music.py <render output folder>
+    python tools/import_music.py <render output folder> [song ...]
+
+Naming songs imports only those, and leaves the other songs' files alone.
 
 A looping song is cut at its loop points into an intro and a loop clip, because Unity ignores the loop
 points stored in a WAV. Songs with a second layer keep it as a separate stem for the game to fade in.
@@ -17,11 +19,13 @@ LOOPING = {
     "skyward_regatta": "storm",
     "harbor_of_lanterns": None,
     "broadsides_at_dawn": "danger",
+    "wings_of_the_tempest": "danger",
+    "gauntlet_of_thunderheads": "danger",
     "cannons_over_cumulus": None,
     "leviathan_of_the_upper_winds": "danger",
     "the_sovereign_descends": "danger",
 }
-ONE_SHOTS = ["victory_fanfare"]
+ONE_SHOTS = ["victory_fanfare", "defeat_lament"]
 
 
 def write_part(source, start, end, target):
@@ -45,9 +49,14 @@ def find_loop(info):
     raise KeyError("No loop points in the song's report")
 
 
-def main(rendered):
+def main(rendered, only=None):
     os.makedirs(GAME_MUSIC, exist_ok=True)
+    unknown = set(only or []) - set(LOOPING) - set(ONE_SHOTS)
+    if unknown:
+        raise SystemExit(f"Unknown songs: {sorted(unknown)}")
     for song, extra in LOOPING.items():
+        if only and song not in only:
+            continue
         folder = os.path.join(rendered, song)
         with open(os.path.join(folder, song + ".json"), encoding="utf-8") as f:
             start, end = find_loop(json.load(f))
@@ -60,10 +69,12 @@ def main(rendered):
                 write_part(source, start, end, os.path.join(GAME_MUSIC, f"{song}_{layer}_loop.wav"))
         print(f"{song}: intro {start} samples, loop {end - start} samples, layers {list(stems)}")
     for song in ONE_SHOTS:
+        if only and song not in only:
+            continue
         with wave.open(os.path.join(rendered, song, song + ".wav"), "rb") as source:
             write_part(source, 0, source.getnframes(), os.path.join(GAME_MUSIC, song + ".wav"))
         print(f"{song}: one shot")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2:])

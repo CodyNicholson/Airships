@@ -35,6 +35,7 @@ namespace Airships.Game
         public static readonly Color Coat = Hex(0x274A8F);
         public static readonly Color Leather = Hex(0x6E4326);
         public static readonly Color Storm = Hex(0x5BC6E8);
+        public static readonly Color WhaleDot = Hex(0x2E8BFF);
         public static readonly Color Medic = Hex(0xF2F0E2);
         public static readonly Color Herb = Hex(0x4CA36A);
 

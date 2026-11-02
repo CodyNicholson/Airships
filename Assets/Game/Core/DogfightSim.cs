@@ -31,9 +31,13 @@ namespace Airships.Core
         public bool Patch;
         public bool Overdrive;
         public float Evade; // -1 rolls left, 1 rolls right.
+        public float EvadeLift; // -1 rolls down, 1 rolls up. Takes priority over Evade.
     }
 
     public enum ShipPart { Hull, Engines, Guns, Envelope }
+
+    // Standard is Free Skies. In the campaign, only a chapter's main enemy can be boarded.
+    public enum BoardingRule { Standard, Main, Never }
 
     public class ShipState
     {
@@ -60,6 +64,11 @@ namespace Airships.Core
         public float Envelope = 1f;
         public float EvadeTimer;
         public float EvadeSide;
+        public bool DriftsWhenHurt; // The player's ship pulls left or right once it's badly damaged.
+        public float DriftSide; // -1 left, 1 right, 0 while it's flying true.
+        public float DriftTimer; // Time left in this pull, or until the next one.
+        public float DriftSeconds; // The length of this pull.
+        public float EvadeLift;
         public float EvadeCooldown;
         public float ImmuneTimer;
         public ShipPart Aim;
@@ -69,7 +78,7 @@ namespace Airships.Core
         public bool Departed; // Fled the fight or landed its boarders, so it no longer takes part.
         public bool Hidden; // Inside a cloud bank, where enemies can't find it.
         public bool BoardsOnContact; // An assault glider.
-        public bool EasyToBoard; // Hooks can land whatever state it's in.
+        public BoardingRule Boarding;
         public bool WeakPoints; // This ship's shots find marked weak points.
         public int HooksRequired = 1;
         public int Hooks;
@@ -122,10 +131,12 @@ namespace Airships.Core
         public bool FindsWeakPoints;
         public float EnvelopeDamage;
         public string AmmoId;
-        public int HomingOn = -1; // A missile's target.
+        public int HomingOn = -1; // A missile's or torpedo's target.
+        public float HomingSpeed;
+        public float HomingTurn;
     }
 
-    public enum DogfightEventKind { Fired, Hit, Missed, Destroyed, HazardHit, HazardBroken, ShotBlocked, ShipBump, WhaleAlert, WhaleLunge, Eaten, PartDisabled, HookLanded, HooksSnapped, Boarded, Tethered, SignatureFired, BoarderLanded, Departed, Patched, Overdrive, Crushing, LightningWarning, LightningStrike, GliderLaunched, Evaded, VolleyWarning, Raked, MissileLaunched, MineBlast, PickupTaken, WaveArrived }
+    public enum DogfightEventKind { Fired, Hit, Missed, Destroyed, HazardHit, HazardBroken, ShotBlocked, ShipBump, WhaleAlert, WhaleLunge, Eaten, PartDisabled, HookLanded, HooksSnapped, Boarded, Tethered, SignatureFired, BoarderLanded, Departed, Patched, Overdrive, Crushing, LightningWarning, LightningStrike, GliderLaunched, Evaded, DamageDrift, VolleyWarning, Raked, MissileLaunched, MineBlast, PickupTaken, WaveArrived }
 
     public struct DogfightEvent
     {
@@ -165,6 +176,7 @@ namespace Airships.Core
         const float BumpDistanceShare = 1.4f;
         const float BumpDamage = 12f;
         const float BumpCooldown = 1f;
+        const float TorpedoLaunchMargin = 1.25f; // Always leaves its own ship behind, even under full burn.
 
         readonly List<ShipState> ships = new List<ShipState>();
         readonly List<ProjectileState> projectiles = new List<ProjectileState>();
@@ -272,6 +284,12 @@ namespace Airships.Core
         public bool CanBoard(ShipState ship, ShipState target)
         {
             if (Rules == null || target == null || !target.Alive || target.Team == ship.Team || target.BoardsOnContact) return false;
+            if (target.Boarding != BoardingRule.Standard)
+            {
+                // A line between the ships saves closing in, but the target must still be beaten.
+                var linked = target.TetheredTo == ship.Id || ship.TetheredTo == target.Id;
+                return IsBoardable(target) && (linked || InGrappleRange(ship, target));
+            }
             // Being dragged by someone's line means you can climb it. Your own line still needs a beaten target.
             if (target.TetheredTo == ship.Id) return true;
             if (ship.TetheredTo == target.Id && target.Hull <= target.Loadout.Hull * Rules.tetherBoardShare) return true;
@@ -280,7 +298,9 @@ namespace Airships.Core
 
         public bool IsBoardable(ShipState target)
         {
-            return Rules != null && (target.EasyToBoard || target.EnginesOut || target.Hull <= target.Loadout.Hull * Rules.grappleHullShare);
+            if (Rules == null || target.Boarding == BoardingRule.Never) return false;
+            if (target.Boarding == BoardingRule.Main) return target.Hull < target.Loadout.Hull * Rules.mainBoardHullShare;
+            return target.EnginesOut || target.Hull <= target.Loadout.Hull * Rules.grappleHullShare;
         }
 
         public bool InGrappleRange(ShipState ship, ShipState target)
@@ -419,24 +439,67 @@ namespace Airships.Core
             }
         }
 
+        // Below a share of its hull, a ship pulls to one side at random moments. Returns how hard it's
+        // pulling right now, from -1 to 1, swelling and easing off so it feels like a hurt ship.
+        float UpdateDamageDrift(ShipState ship)
+        {
+            if (Rules == null || !ship.DriftsWhenHurt) return 0f;
+            if (ship.Hull >= ship.Loadout.Hull * Rules.damagedDriftHullShare)
+            {
+                ship.DriftSide = 0f;
+                ship.DriftTimer = 0f;
+                return 0f;
+            }
+
+            ship.DriftTimer -= TickSeconds;
+            if (ship.DriftTimer <= 0f)
+            {
+                if (ship.DriftSide != 0f)
+                {
+                    ship.DriftSide = 0f;
+                    ship.DriftTimer = random.Range(Rules.damagedDriftGapMin, Rules.damagedDriftGapMax);
+                }
+                else
+                {
+                    ship.DriftSide = random.Value() < 0.5f ? -1f : 1f;
+                    ship.DriftSeconds = random.Range(Rules.damagedDriftSecondsMin, Rules.damagedDriftSecondsMax);
+                    ship.DriftTimer = ship.DriftSeconds;
+                    events.Add(new DogfightEvent { Kind = DogfightEventKind.DamageDrift, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
+                }
+            }
+            if (ship.DriftSide == 0f) return 0f;
+            return ship.DriftSide * (float)Math.Sin(Math.PI * (1f - ship.DriftTimer / ship.DriftSeconds));
+        }
+
         void UpdateEvade(ShipState ship, ShipCommand command)
         {
             ship.EvadeCooldown = Math.Max(0f, ship.EvadeCooldown - TickSeconds);
             ship.ImmuneTimer = Math.Max(0f, ship.ImmuneTimer - TickSeconds);
-            if (command.Evade != 0f && ship.EvadeCooldown <= 0f && ship.EvadeTimer <= 0f)
+            if ((command.Evade != 0f || command.EvadeLift != 0f) && ship.EvadeCooldown <= 0f && ship.EvadeTimer <= 0f)
             {
+                // A ship that can't climb right now rolls sideways instead of doing nothing.
+                var cantLift = ship.AltitudeLocked || (ship.EnvelopeOut && command.EvadeLift > 0f);
+                ship.EvadeLift = cantLift ? 0f : Math.Sign(command.EvadeLift);
+                ship.EvadeSide = ship.EvadeLift != 0f ? 0f : command.Evade != 0f ? Math.Sign(command.Evade) : 1f;
                 ship.EvadeTimer = Rules.evadeSeconds;
-                ship.EvadeSide = Math.Sign(command.Evade);
                 ship.EvadeCooldown = Rules.evadeCooldown;
                 ship.ImmuneTimer = Rules.evadeImmunity;
                 events.Add(new DogfightEvent { Kind = DogfightEventKind.Evaded, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
             }
             if (ship.EvadeTimer <= 0f) return;
 
-            // A roll throws the ship sideways, across the line of whatever was aimed at it.
+            // A roll throws the ship off the line of whatever was aimed at it: sideways, or up or down.
             ship.EvadeTimer -= TickSeconds;
             ship.X += ship.ForwardZ * ship.EvadeSide * Rules.evadeSpeed * TickSeconds;
             ship.Z -= ship.ForwardX * ship.EvadeSide * Rules.evadeSpeed * TickSeconds;
+            ship.Y = ClampAltitude(ship.Y + ship.EvadeLift * Rules.evadeSpeed * TickSeconds);
+        }
+
+        // Which way a roll goes for a stick position: whichever way the stick is pushed furthest.
+        public static void RollDirection(float turn, float climb, out float side, out float lift)
+        {
+            lift = climb != 0f && Math.Abs(climb) >= Math.Abs(turn) ? Math.Sign(climb) : 0f;
+            side = lift != 0f ? 0f : turn < -0.1f ? -1f : 1f;
         }
 
         // Announced first, so a player has time to roll out of the way.
@@ -464,6 +527,8 @@ namespace Airships.Core
                 Heavy = true,
                 AmmoId = "missile",
                 HomingOn = target.Id,
+                HomingSpeed = Rules.missileSpeed,
+                HomingTurn = Rules.missileTurn,
             };
             projectiles.Add(projectile);
             announced.Add(new DogfightEvent { Kind = DogfightEventKind.MissileLaunched, ShipId = ship.Id, ProjectileId = projectile.Id, X = ship.X, Y = ship.Y, Z = ship.Z, Heavy = true, AmmoId = "missile" });
@@ -477,8 +542,8 @@ namespace Airships.Core
             var dy = target.Y - projectile.Y;
             var dz = target.Z - projectile.Z;
             var length = Math.Max(0.01f, (float)Math.Sqrt(dx * dx + dy * dy + dz * dz));
-            var blend = Math.Min(1f, Rules.missileTurn * TickSeconds);
-            var speed = Rules.missileSpeed;
+            var blend = Math.Min(1f, projectile.HomingTurn * TickSeconds);
+            var speed = projectile.HomingSpeed;
             projectile.VelocityX += (dx / length * speed - projectile.VelocityX) * blend;
             projectile.VelocityY += (dy / length * speed - projectile.VelocityY) * blend;
             projectile.VelocityZ += (dz / length * speed - projectile.VelocityZ) * blend;
@@ -605,8 +670,16 @@ namespace Airships.Core
                 turn += WrapAngle(toCenter - ship.Heading) * BoundaryTurnStrength * over;
             }
 
+            var drift = UpdateDamageDrift(ship);
+            if (drift != 0f) turn += drift * Rules.damagedDriftTurnShare * loadout.TurnDegrees * DegreesToRadians;
+
             ship.TurnRate = turn;
             ship.Heading = WrapAngle(ship.Heading + turn * TickSeconds);
+            if (drift != 0f)
+            {
+                ship.X += ship.ForwardZ * drift * Rules.damagedDriftSlip * TickSeconds;
+                ship.Z -= ship.ForwardX * drift * Rules.damagedDriftSlip * TickSeconds;
+            }
 
             var climb = ship.AltitudeLocked ? 0f : Clamp(command.Climb, -1f, 1f);
             if (Rules != null && ship.EnvelopeOut) climb = -Rules.envelopeSinkSpeed / ClimbSpeed;
@@ -659,6 +732,7 @@ namespace Airships.Core
             var cannon = ship.Loadout.Bow;
             ship.BowCooldown = cannon.reload * ReloadScale(ship);
             var aim = ship.Heading;
+            var locked = -1;
 
             // Gentle aim assist so firing works with thumbs: shots curve onto a target near the bow.
             var target = Opponent(ship);
@@ -668,9 +742,10 @@ namespace Airships.Core
                 if (Math.Abs(WrapAngle(toTarget - ship.Heading)) <= cannon.aimAssistDegrees * DegreesToRadians)
                 {
                     aim = toTarget;
+                    locked = target.Id;
                 }
             }
-            FireVolley(ship, cannon, aim, PitchToward(ship, target, cannon), ship.Loadout.BowDamageScale, 0f, false);
+            FireVolley(ship, cannon, aim, PitchToward(ship, target, cannon), ship.Loadout.BowDamageScale, 0f, false, locked);
         }
 
         // Guns angle toward a target's altitude only within their elevation limit. Beyond it they fire
@@ -718,14 +793,15 @@ namespace Airships.Core
             FireVolley(ship, cannon, aim, PitchToward(ship, target, cannon, ammo != null && ammo.ignoresElevation), ship.Loadout.BroadsideDamageScale * extraDamage, side, true);
         }
 
-        void FireVolley(ShipState ship, CannonDef cannon, float aim, float pitch, float damageScale, float side, bool heavy)
+        void FireVolley(ShipState ship, CannonDef cannon, float aim, float pitch, float damageScale, float side, bool heavy, int locked = -1)
         {
             var count = Math.Max(1, cannon.shots);
+            var torpedo = !string.IsNullOrEmpty(cannon.ammoId);
             for (var i = 0; i < count; i++)
             {
                 var fraction = count == 1 ? 0f : i / (float)(count - 1) - 0.5f;
                 var angle = aim + (fraction + random.Range(-0.12f, 0.12f)) * cannon.spreadDegrees * DegreesToRadians;
-                var speed = cannon.projectileSpeed;
+                var speed = torpedo ? Math.Max(cannon.projectileSpeed, ship.Speed * TorpedoLaunchMargin) : cannon.projectileSpeed;
                 var flatSpeed = speed * (float)Math.Cos(pitch);
 
                 // Broadside guns sit along the hull; bow guns sit at the front.
@@ -751,6 +827,15 @@ namespace Airships.Core
                     FindsWeakPoints = ship.WeakPoints,
                 };
                 ApplyShotType(ship, projectile, heavy);
+                if (torpedo)
+                {
+                    projectile.Heavy = true;
+                    projectile.AmmoId = cannon.ammoId;
+                    projectile.HitRadiusBonus = cannon.hitRadiusBonus;
+                    projectile.HomingOn = locked;
+                    projectile.HomingSpeed = speed;
+                    projectile.HomingTurn = cannon.homingTurn;
+                }
                 projectiles.Add(projectile);
                 events.Add(new DogfightEvent
                 {
@@ -760,7 +845,7 @@ namespace Airships.Core
                     X = startX,
                     Y = ship.Y,
                     Z = startZ,
-                    Heavy = heavy,
+                    Heavy = projectile.Heavy,
                     AmmoId = projectile.AmmoId,
                 });
             }
@@ -848,7 +933,7 @@ namespace Airships.Core
         void ApplyHit(ProjectileState projectile, ShipState ship)
         {
             var raw = projectile.Damage;
-            var stern = Rules != null && projectile.HomingOn < 0 && IsStern(projectile, ship);
+            var stern = Rules != null && projectile.AmmoId != "missile" && IsStern(projectile, ship);
             if (projectile.FindsWeakPoints && stern) raw *= Rules.weakPointScale;
             if (stern && projectile.Heavy)
             {
@@ -1132,10 +1217,14 @@ namespace Airships.Core
             command.Climb = AwayFromAltitude(threat.Y, ship.Y);
         }
 
-        static void FleeWhale(HazardField field, ShipState ship, ref ShipCommand command)
+        public static void FleeWhale(HazardField field, ShipState ship, ref ShipCommand command)
         {
-            var whale = field.Whale;
-            if (whale == null || !whale.MouthOpen || whale.TargetId != ship.Id) return;
+            WhaleState whale = null;
+            foreach (var candidate in field.Whales)
+            {
+                if (candidate.MouthOpen && candidate.TargetId == ship.Id) whale = candidate;
+            }
+            if (whale == null) return;
             var dx = ship.X - whale.X;
             var dz = ship.Z - whale.Z;
             if (dx * dx + dz * dz > WhaleFleeRange * WhaleFleeRange) return;

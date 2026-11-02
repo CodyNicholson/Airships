@@ -248,14 +248,15 @@ namespace Airships.Tests
             var hull = encounter.Player.Hull;
             for (var i = 0; i < 30 * 4; i++) encounter.Step(default);
             Assert.Less(encounter.Player.Y, startAltitude, "Dragged downward");
-            Assert.IsTrue(encounter.Sim.CanBoard(encounter.Player, encounter.Target.Ship), "The line can be climbed");
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, encounter.Target.Ship), "A healthy main enemy can't be boarded, line or no line");
             for (var i = 0; i < 30 * 25 && encounter.Outcome == SkyOutcome.Ongoing; i++) encounter.Step(default);
             Assert.Less(encounter.Player.Hull, hull, "Staying on the line ends in the crush");
 
             var rider = Sky("capture", new SkySpawn { key = "krag", shipId = "iron_maw", name = "Krag", ai = "krag", target = true, unsinkable = true, harpoonAfter = 0.1f, hooks = 3 });
             for (var i = 0; i < 90 && rider.Target.Ship.TetheredTo < 0; i++) rider.Step(default);
+            rider.Target.Ship.Hull = rider.Target.Ship.Loadout.Hull * 0.2f;
             rider.Step(new ShipCommand { Grapple = true });
-            Assert.AreEqual(SkyOutcome.Boarded, rider.Outcome, "One grapple climbs the tether");
+            Assert.AreEqual(SkyOutcome.Boarded, rider.Outcome, "One grapple climbs the tether once they're beaten");
         }
 
         [Test]
@@ -339,6 +340,7 @@ namespace Airships.Tests
 
             var wind = new List<SkyZone>(weather.Zones).Find(z => z.Kind == SkyZoneKind.Wind);
             ship.X = wind.X;
+            ship.Y = wind.Y;
             ship.Z = wind.Z;
             ship.Heading = wind.Heading;
             Assert.AreEqual(content.skyRules.windSpeedScale, weather.WindScale(ship, content.skyRules.windSpeedScale), "With the wind");
@@ -388,7 +390,12 @@ namespace Airships.Tests
             ship.X = strike.X;
             ship.Z = strike.Z;
             var hull = ship.Hull;
-            for (var i = 0; i < 30 * 2; i++) weather.Step(sim, events);
+            for (var i = 0; i < 30 * 2; i++)
+            {
+                ship.X = strike.X; // Standing still, even if a wind tunnel happens to run through here.
+                ship.Z = strike.Z;
+                weather.Step(sim, events);
+            }
             Assert.Less(ship.Hull, hull, "Standing where the warning was costs you");
         }
 
@@ -521,29 +528,245 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void SinkingTheTargetSkipsItsDeckAndChoice()
+        public void TheMainEnemyCantBeSunkAndOnlyBoardsBelowAQuarterHull()
         {
-            var save = Started();
-            var mission = new MissionDef
-            {
-                id = "m",
-                phases = new[]
-                {
-                    new PhaseDef { kind = "sky", objective = "capture", weather = "heist", enemies = new[] { new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true } } },
-                    new PhaseDef { kind = "deck", boardOnly = true, crew = new DeckSpawn[0] },
-                    new PhaseDef { kind = "choice", boardOnly = true, shipId = "scrap_raider" },
-                },
-            };
-            var run = new CampaignRun(content, save, mission);
-            var encounter = new SkyEncounter(run.BuildSky(mission.phases[0], 3));
-            encounter.Target.Ship.Hull = 1f;
-            encounter.Target.Ship.TakeDamage(10f);
+            var encounter = Sky("capture", new SkySpawn { key = "main", shipId = "scrap_raider", name = "Main", target = true }, new SkySpawn { key = "escort", shipId = "scrap_raider", name = "Escort" });
+            var main = encounter.Main.Ship;
+            var escort = encounter.Enemies[1].Ship;
+            var rules = content.skyRules;
+            Assert.AreEqual(0.25f, rules.mainBoardHullShare);
+            main.X = encounter.Player.X;
+            main.Y = encounter.Player.Y;
+            main.Z = encounter.Player.Z + 30f;
+            escort.X = encounter.Player.X + 20f;
+            escort.Y = encounter.Player.Y;
+            escort.Z = encounter.Player.Z + 30f;
+
+            main.Hull = main.Loadout.Hull * rules.mainBoardHullShare;
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, main), "Exactly a quarter isn't less than a quarter");
+            main.Engines = 0f;
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, main), "Dead engines no longer open the way");
+            main.Hull = main.Loadout.Hull * rules.mainBoardHullShare - 1f;
+            Assert.IsTrue(encounter.Sim.CanBoard(encounter.Player, main));
+
+            escort.Hull = 1f;
+            escort.Engines = 0f;
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, escort), "Others can only be shot down");
+
+            main.TakeDamage(main.Loadout.Hull * 10f);
+            Assert.AreEqual(1f, main.Hull, "Always keeps 1 hull");
+            Assert.IsTrue(main.Alive);
+            escort.TakeDamage(10f);
+            Assert.IsFalse(escort.Alive, "Everyone else can be sunk");
             encounter.Step(default);
-            Assert.AreEqual(SkyOutcome.TargetSunk, encounter.Outcome);
-            Assert.IsTrue(run.FinishSky(encounter));
-            run.Advance();
-            Assert.IsTrue(run.Finished);
-            Assert.IsTrue(run.TargetLost);
+            Assert.AreEqual(SkyOutcome.Ongoing, encounter.Outcome, "Only boarding ends the fight");
+            encounter.Step(new ShipCommand { Grapple = true });
+            Assert.AreEqual(SkyOutcome.Boarded, encounter.Outcome);
+            Assert.AreEqual("main", encounter.BoardedKey);
+        }
+
+        [Test]
+        public void SinkingTheEscortsDoesntEndTheChapter()
+        {
+            var encounter = Sky("capture", new SkySpawn { key = "main", shipId = "scrap_raider", name = "Main", target = true }, new SkySpawn { key = "escort", shipId = "scrap_raider", name = "Escort" });
+            encounter.Enemies[1].Ship.TakeDamage(99999f);
+            for (var i = 0; i < 30; i++) encounter.Step(default);
+            Assert.AreEqual(SkyOutcome.Ongoing, encounter.Outcome);
+        }
+
+        [Test]
+        public void ChaptersWithAFightToWinHaveOneMainEnemyToBoard()
+        {
+            foreach (var mission in content.campaign.missions)
+            {
+                for (var i = 0; i < mission.phases.Length; i++)
+                {
+                    var phase = mission.phases[i];
+                    if (phase.kind != "sky") continue;
+                    if (phase.objective == "capture")
+                    {
+                        Assert.AreEqual(1, System.Array.FindAll(phase.enemies, e => e.target && !e.ally).Length, $"{mission.id} needs exactly one main enemy");
+                        Assert.Less(i + 1, mission.phases.Length, mission.id);
+                        Assert.AreEqual("deck", mission.phases[i + 1].kind, $"{mission.id}: boarding leads to a deck fight");
+                    }
+                    else if (phase.objective == "sink_all")
+                    {
+                        Assert.AreEqual("p_mutiny", mission.id, $"{mission.id} is a fight with no main enemy");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void EveryPaintedPortraitExists()
+        {
+            foreach (var look in content.looks)
+            {
+                if (string.IsNullOrEmpty(look.portrait)) continue;
+                Assert.NotNull(Resources.Load<Texture2D>($"Art/Portraits/T_Portrait_{look.portrait}_HQ"), look.portrait);
+                Assert.NotNull(Resources.Load<Texture2D>($"Art/Portraits/T_Portrait_{look.portrait}_LQ"), look.portrait);
+            }
+            foreach (var speaker in content.campaign.speakers)
+            {
+                var portrait = !string.IsNullOrEmpty(speaker.portrait) ? speaker.portrait : content.Look(speaker.look)?.portrait;
+                Assert.IsFalse(string.IsNullOrEmpty(portrait), $"{speaker.name} has no painted portrait");
+                Assert.NotNull(Resources.Load<Sprite>($"Art/Portraits/T_Portrait_{portrait}_HQ"), $"{portrait} must import as a sprite");
+            }
+        }
+
+        [Test]
+        public void TheTorpedoOutrunsEveryShipButCanBeSeenInFlight()
+        {
+            var tube = content.Cannon(Encounter.PlayerBowCannon);
+            Assert.AreEqual("Torpedo", tube.name);
+            foreach (var ship in content.ships) Assert.Greater(tube.projectileSpeed, ship.speed, ship.id);
+            Assert.Less(tube.projectileSpeed, content.Cannon("bow_chaser").projectileSpeed * 0.6f, "Slow enough to watch");
+            Assert.GreaterOrEqual(tube.range / tube.projectileSpeed, 4f, "Stays in the air long enough to watch");
+            Assert.Greater(tube.damage, content.Cannon("bow_chaser").damage * 5f);
+
+            var save = Started();
+            Assert.AreEqual(tube, Encounter.PlayerLoadout(content, save, "rust_wing").Bow);
+            Assert.AreEqual(content.Cannon("bow_chaser"), Encounter.EnemyLoadout(content, "rust_wing", 0).Bow, "Enemies keep their own guns");
+        }
+
+        [Test]
+        public void ATorpedoHomesInAndHitsLikeAHeavyShot()
+        {
+            var encounter = Sky("capture", new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true });
+            var player = encounter.Player;
+            player.Loadout = Encounter.PlayerLoadout(content, Started(), "rust_wing");
+            var target = encounter.Target.Ship;
+            target.X = player.X + 12f;
+            target.Y = player.Y;
+            target.Z = player.Z + 120f;
+            target.Loadout.Speed = 0f;
+            target.Speed = 0f;
+            var before = target.Hull;
+
+            var hit = false;
+            encounter.Step(new ShipCommand { FireBow = true, Throttle = 0.35f });
+            ProjectileState torpedo = null;
+            foreach (var shot in encounter.Sim.Projectiles)
+            {
+                if (shot.AmmoId == "torpedo") torpedo = shot;
+            }
+            Assert.NotNull(torpedo);
+            Assert.IsTrue(torpedo.Heavy);
+            Assert.AreEqual(target.Id, torpedo.HomingOn);
+            for (var i = 0; i < 30 * 6 && !hit; i++)
+            {
+                encounter.Step(default);
+                foreach (var e in encounter.Sim.Events) hit |= e.Kind == DogfightEventKind.Hit && e.AmmoId == "torpedo" && e.ShipId == target.Id;
+            }
+            Assert.IsTrue(hit);
+            Assert.Less(target.Hull, before - 40f);
+        }
+
+        [Test]
+        public void ATorpedoBarelyBendsSoItStillTakesAim()
+        {
+            var tube = content.Cannon(Encounter.PlayerBowCannon);
+            Assert.LessOrEqual(tube.aimAssistDegrees, 10f, "The nose has to be nearly on target");
+
+            var encounter = Sky("capture", new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true });
+            var player = encounter.Player;
+            player.Loadout = Encounter.PlayerLoadout(content, Started(), "rust_wing");
+            var target = encounter.Target.Ship;
+            target.Loadout.Speed = 0f;
+            target.Speed = 0f;
+            target.X = player.X;
+            target.Y = player.Y;
+            target.Z = player.Z + 200f;
+            encounter.Step(new ShipCommand { FireBow = true, Throttle = 0.35f });
+            ProjectileState torpedo = null;
+            foreach (var shot in encounter.Sim.Projectiles)
+            {
+                if (shot.AmmoId == "torpedo") torpedo = shot;
+            }
+            Assert.NotNull(torpedo);
+            Assert.AreEqual(target.Id, torpedo.HomingOn);
+            var start = new Vector3(torpedo.VelocityX, torpedo.VelocityY, torpedo.VelocityZ);
+
+            // The target dodges well off the line, and the torpedo can't follow it.
+            target.X += 70f;
+            var hit = false;
+            var turned = 0f;
+            for (var i = 0; i < 30 * 4 && !hit; i++)
+            {
+                encounter.Step(default);
+                foreach (var e in encounter.Sim.Events) hit |= e.Kind == DogfightEventKind.Hit && e.AmmoId == "torpedo" && e.ShipId == target.Id;
+                turned = Mathf.Max(turned, Vector3.Angle(start, new Vector3(torpedo.VelocityX, torpedo.VelocityY, torpedo.VelocityZ)));
+            }
+            Assert.IsFalse(hit, "A real dodge beats it");
+            Assert.Greater(turned, 0.5f, "It does bend a little");
+            Assert.Less(turned, 20f, "But not much");
+        }
+
+        [Test]
+        public void ATorpedoLeavesItsOwnShipBehindEvenAtFullBurn()
+        {
+            var encounter = Sky("capture", new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true });
+            var player = encounter.Player;
+            player.Loadout = Encounter.PlayerLoadout(content, Started(), "mirage");
+            player.Speed = 180f;
+            encounter.Step(new ShipCommand { FireBow = true, Throttle = 1f });
+            ProjectileState torpedo = null;
+            foreach (var shot in encounter.Sim.Projectiles)
+            {
+                if (shot.AmmoId == "torpedo") torpedo = shot;
+            }
+            Assert.NotNull(torpedo);
+            var speed = Mathf.Sqrt(torpedo.VelocityX * torpedo.VelocityX + torpedo.VelocityZ * torpedo.VelocityZ + torpedo.VelocityY * torpedo.VelocityY);
+            Assert.Greater(speed, player.Speed);
+        }
+
+        static IEnumerable<float[]> PhoneShapes()
+        {
+            // Width and height in pixels, then the left and right cutout insets.
+            yield return new float[] { 1280f, 720f, 0f, 0f }; // 16:9
+            yield return new float[] { 2160f, 1080f, 80f, 0f }; // 18:9
+            yield return new float[] { 2340f, 1080f, 90f, 90f }; // 19.5:9
+            yield return new float[] { 2400f, 1080f, 100f, 0f }; // 20:9
+            yield return new float[] { 2992f, 1344f, 120f, 0f }; // Pixel 10 Pro XL
+            yield return new float[] { 3200f, 1440f, 0f, 120f }; // 20:9, cutout on the other side
+            yield return new float[] { 2520f, 1080f, 100f, 100f }; // 21:9
+        }
+
+        [Test]
+        public void TheWholeCrewFitsBesideTheMenusOnEveryPhoneShape()
+        {
+            // Where the six crew stand in the game: Vane, Rook, Lyra, Sable, Thorne, Morrow.
+            var spots = new[] { new Vector2(-1.3f, 2f), new Vector2(5.1f, 3.3f), new Vector2(-2.6f, 1f), new Vector2(-7f, 3.6f), new Vector2(6f, -1f), new Vector2(-3.2f, -2f) };
+            foreach (var phone in PhoneShapes())
+            {
+                var scale = 1080f / phone[1];
+                var width = phone[0] * scale;
+                var left = (phone[2] * scale + 40f) / width;
+                var right = ((phone[0] - phone[3]) * scale - 28f - 760f - 40f) / width;
+                var points = new List<HubPoint>();
+                foreach (var spot in spots)
+                {
+                    points.Add(new HubPoint(spot.x - 0.7f, 0f, spot.y));
+                    points.Add(new HubPoint(spot.x + 0.7f, 2.2f, spot.y));
+                }
+                var frame = HubFraming.Fit(points, phone[0] / phone[1], 46f, new HubClearArea(left, right, HubFraming.ClearBottom, HubFraming.ClearTop));
+                Assert.IsTrue(frame.Fits, $"{phone[0]}x{phone[1]}");
+                Assert.Greater(frame.CameraZ, -22f, "Close enough to still see their faces");
+
+                // Independent check of the same camera with Unity's own projection maths.
+                var view = Matrix4x4.LookAt(new Vector3(frame.CameraX, frame.CameraY, frame.CameraZ), new Vector3(frame.LookX, frame.LookY, frame.LookZ), Vector3.up);
+                var eye = Quaternion.Inverse(view.rotation);
+                var at = new Vector3(frame.CameraX, frame.CameraY, frame.CameraZ);
+                var tall = Mathf.Tan(23f * Mathf.Deg2Rad);
+                var wide = tall * phone[0] / phone[1];
+                foreach (var point in points)
+                {
+                    var local = eye * (new Vector3(point.X, point.Y, point.Z) - at);
+                    var screenX = (local.x / local.z / wide + 1f) * 0.5f;
+                    Assert.GreaterOrEqual(screenX, left - 0.001f, $"{phone[0]}x{phone[1]}");
+                    Assert.LessOrEqual(screenX, right + 0.001f, $"{phone[0]}x{phone[1]}");
+                }
+            }
         }
 
         [Test]
@@ -626,7 +849,7 @@ namespace Airships.Tests
         public void FireShotWoundsTheCrewYouMeetOnDeck()
         {
             var save = Started();
-            var mission = new MissionDef { id = "m", phases = new[] { new PhaseDef { kind = "sky", weather = "heist", objective = "capture", enemies = new[] { new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true, unsinkable = true, easyToBoard = true } } } } };
+            var mission = new MissionDef { id = "m", phases = new[] { new PhaseDef { kind = "sky", weather = "heist", objective = "capture", enemies = new[] { new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true, unsinkable = true, startHullShare = 0.2f } } } } };
             var run = new CampaignRun(content, save, mission);
             var encounter = new SkyEncounter(run.BuildSky(mission.phases[0], 3));
             encounter.Target.Ship.DeckDamage = encounter.Target.Ship.Loadout.Hull * 0.2f;
@@ -664,19 +887,20 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void AFleeingCaptainEscapesAndBecomesANemesis()
+        public void AMainEnemyRunsWhenBeatenButCantGetAway()
         {
             var save = Started();
             var mission = new MissionDef { id = "m", act = 1, phases = new[] { new PhaseDef { kind = "sky", weather = "heist", objective = "capture", enemies = new[] { new SkySpawn { key = "g", shipId = "scrap_raider", name = "Gorse", captain = "gorse", target = true, flees = true } } } } };
             var run = new CampaignRun(content, save, mission);
             var encounter = new SkyEncounter(run.BuildSky(mission.phases[0], 3));
-            encounter.Target.Ship.Hull = encounter.Target.Ship.Loadout.Hull * 0.1f;
-            encounter.Target.Ship.Engines = encounter.Target.Ship.MaxSubsystem;
+            var main = encounter.Target.Ship;
+            main.Hull = main.Loadout.Hull * 0.1f;
             for (var i = 0; i < 30 * 40 && encounter.Outcome == SkyOutcome.Ongoing; i++) encounter.Step(default);
-            Assert.AreEqual(SkyOutcome.TargetEscaped, encounter.Outcome);
-            Assert.IsTrue(run.FinishSky(encounter));
-            Assert.AreEqual("gorse", save.campaign.nemeses[0].id);
-            Assert.IsTrue(run.TargetLost);
+            Assert.IsTrue(encounter.Target.Escaping, "They still make a run for it");
+            Assert.IsTrue(main.Alive);
+            Assert.AreNotEqual(SkyOutcome.TargetEscaped, encounter.Outcome);
+            Assert.IsFalse(main.Departed);
+            Assert.Less(main.Speed, main.Loadout.Speed * 0.75f, "And the player can catch them");
         }
 
         [Test]
@@ -857,6 +1081,330 @@ namespace Airships.Tests
             foreach (var ship in content.ships) largest = Mathf.Max(largest, ship.radius);
             Assert.GreaterOrEqual(moved, largest * 3f, "Even the Gale ends up well outside where the shots were aimed");
             Assert.GreaterOrEqual(content.skyRules.evadeImmunity, content.skyRules.evadeSeconds, "Nothing lands mid-roll");
+        }
+
+        [Test]
+        public void ARollGoesWhicheverWayTheStickIsPushedFurthest()
+        {
+            void Check(float turn, float climb, float side, float lift)
+            {
+                DogfightSim.RollDirection(turn, climb, out var gotSide, out var gotLift);
+                Assert.AreEqual(side, gotSide, $"side at {turn},{climb}");
+                Assert.AreEqual(lift, gotLift, $"lift at {turn},{climb}");
+            }
+            Check(0f, 0.8f, 0f, 1f);
+            Check(0f, -0.8f, 0f, -1f);
+            Check(0.3f, 0.8f, 0f, 1f);
+            Check(-0.3f, -0.8f, 0f, -1f);
+            Check(-0.8f, 0f, -1f, 0f);
+            Check(0.8f, 0f, 1f, 0f);
+            Check(-0.8f, 0.3f, -1f, 0f);
+            Check(0.8f, -0.3f, 1f, 0f);
+            Check(0f, 0f, 1f, 0f);
+        }
+
+        [Test]
+        public void ARollUpOrDownMovesAsFarAsARollSideways()
+        {
+            float[] Roll(float side, float lift, out ShipState ship)
+            {
+                var sim = Duel(out ship, out var other, 300f);
+                ship.Heading = 0f;
+                ship.Loadout.Speed = 0f;
+                ship.Speed = 0f;
+                ship.Y = 10f; // Mid-sky, so neither direction reaches a limit.
+                other.Y = 10f;
+                var before = new[] { ship.X, ship.Y, ship.Z };
+                sim.Step(new List<ShipCommand> { new ShipCommand { Evade = side, EvadeLift = lift }, default });
+                Assert.Greater(ship.ImmuneTimer, 0f, "Any roll gives the same immunity");
+                Assert.Greater(ship.EvadeCooldown, 0f, "Any roll starts the same cooldown");
+                Run(sim, content.skyRules.evadeSeconds + 0.1f);
+                return new[] { ship.X - before[0], ship.Y - before[1], ship.Z - before[2] };
+            }
+
+            var up = Roll(0f, 1f, out _);
+            var down = Roll(0f, -1f, out _);
+            var right = Roll(1f, 0f, out _);
+            Assert.Greater(up[1], 0f);
+            Assert.Less(down[1], 0f);
+            Assert.AreEqual(0f, up[0], 0.01f, "A roll up doesn't also go sideways");
+            Assert.AreEqual(0f, right[1], 0.01f, "A roll sideways doesn't also climb");
+            Assert.AreEqual(Mathf.Abs(right[0]), up[1], 0.01f);
+            Assert.AreEqual(up[1], -down[1], 0.01f);
+        }
+
+        [Test]
+        public void AShipThatCantClimbRollsSidewaysInstead()
+        {
+            var sim = Duel(out var a, out var b, 300f);
+            a.AltitudeLocked = true;
+            a.Y = 0f;
+            var x = a.X;
+            sim.Step(new List<ShipCommand> { new ShipCommand { EvadeLift = 1f }, default });
+            Run(sim, 0.2f);
+            Assert.AreEqual(0f, a.Y, 0.01f, "Altitude stays locked");
+            Assert.AreNotEqual(x, a.X, "The button still rolls");
+
+            var high = Duel(out var c, out var d, 300f);
+            c.Y = DogfightSim.MaxAltitude - 1f;
+            high.Step(new List<ShipCommand> { new ShipCommand { EvadeLift = 1f }, default });
+            Run(high, content.skyRules.evadeSeconds + 0.1f);
+            Assert.LessOrEqual(c.Y, DogfightSim.MaxAltitude, "A roll can't leave the sky");
+        }
+
+        [Test]
+        public void EveryChapterAfterTheFirstHasASkyWhale()
+        {
+            foreach (var mission in content.campaign.missions)
+            {
+                foreach (var phase in mission.phases)
+                {
+                    if (phase.kind != "sky") continue;
+                    if (mission.id == "p_mutiny") Assert.AreEqual(0, phase.whales, "The first level is for learning");
+                    else if (mission.id == "s_currents") Assert.GreaterOrEqual(phase.whales, 3, "Lyra's Currents is the whale level");
+                    else Assert.GreaterOrEqual(phase.whales, 1, mission.id);
+                }
+            }
+        }
+
+        [Test]
+        public void ThreeWhalesComeFromAllSidesAndOnlyOneHuntsAtATime()
+        {
+            var def = JsonUtility.FromJson<HazardDef>(JsonUtility.ToJson(content.hazards));
+            def.rockCount = def.debrisCount = def.jellyfishCount = def.fishCount = 0;
+            def.whaleSenseRange = 100000f;
+            var sim = Duel(out var a, out var b, 300f);
+            var field = sim.AddHazards(def, -1, 5);
+            Assert.AreEqual(0, field.Whales.Count);
+            field.AddWhales(3);
+            Assert.AreEqual(3, field.Whales.Count);
+            Assert.Greater(field.Whales[1].Timer, field.Whales[0].Timer, "They wait their turns");
+            Assert.Greater(field.Whales[2].Timer, field.Whales[1].Timer, "They wait their turns");
+
+            foreach (var whale in field.Whales)
+            {
+                whale.Mode = WhaleMode.Roaming;
+                whale.Timer = 0f;
+                whale.Y = 500f; // Well out of reach, so nobody gets eaten during the count.
+            }
+            var seen = new HashSet<WhaleState>();
+            for (var i = 0; i < 30 * 200 && seen.Count < 3; i++)
+            {
+                a.HuntedByWhale = true;
+                sim.Step(new List<ShipCommand> { default, default });
+                var hunting = 0;
+                foreach (var whale in field.Whales)
+                {
+                    whale.Y = 500f;
+                    if (whale.MouthOpen)
+                    {
+                        hunting++;
+                        seen.Add(whale);
+                    }
+                }
+                Assert.LessOrEqual(hunting, 1);
+            }
+            Assert.AreEqual(3, seen.Count, "Every whale gets its turn");
+        }
+
+        [Test]
+        public void ARollSlipsOutOfAWhalesMouth()
+        {
+            var sim = Duel(out var a, out var b, 300f);
+            var def = JsonUtility.FromJson<HazardDef>(JsonUtility.ToJson(content.hazards));
+            def.rockCount = def.debrisCount = def.jellyfishCount = def.fishCount = 0;
+            var field = sim.AddHazards(def, -1, 5);
+            field.AddWhales(1);
+            var whale = field.Whale;
+            whale.Mode = WhaleMode.Lunging;
+            whale.Timer = 2f;
+            whale.X = a.X;
+            whale.Y = a.Y;
+            whale.Z = a.Z;
+            a.ImmuneTimer = 1f;
+            sim.Step(new List<ShipCommand> { default, default });
+            Assert.IsFalse(a.Eaten);
+        }
+
+        [Test]
+        public void AWhalesJawsOpenWiderTheCloserItGets()
+        {
+            var whale = new WhaleState { Mode = WhaleMode.Roaming };
+            Assert.AreEqual(0f, whale.Gape(10f), "Shut while it isn't hunting, however close");
+            whale.Mode = WhaleMode.Stalking;
+            Assert.Greater(whale.Gape(500f), 0f, "Parted as soon as it hunts");
+            Assert.Less(whale.Gape(500f), 0.5f);
+            whale.Mode = WhaleMode.Lunging;
+            Assert.Greater(whale.Gape(90f), whale.Gape(140f));
+            Assert.AreEqual(1f, whale.Gape(20f), "Wide open by the time it reaches you");
+        }
+
+        [Test]
+        public void JellyfishSwimAroundTheSkyAndStayInIt()
+        {
+            var sim = Duel(out var a, out var b, 300f);
+            var def = JsonUtility.FromJson<HazardDef>(JsonUtility.ToJson(content.hazards));
+            def.rockCount = def.debrisCount = def.fishCount = 0;
+            def.jellyfishCount = 14;
+            var field = sim.AddHazards(def, -1, 5);
+            a.Y = 5000f; // Out of the way, so nothing pops them.
+            b.Y = 5000f;
+            var startX = new float[field.Hazards.Count];
+            var startZ = new float[field.Hazards.Count];
+            for (var i = 0; i < field.Hazards.Count; i++)
+            {
+                startX[i] = field.Hazards[i].X;
+                startZ[i] = field.Hazards[i].Z;
+            }
+            var lowest = new float[field.Hazards.Count];
+            var highest = new float[field.Hazards.Count];
+            for (var i = 0; i < field.Hazards.Count; i++) { lowest[i] = float.MaxValue; highest[i] = float.MinValue; }
+
+            for (var tick = 0; tick < 30 * 10; tick++)
+            {
+                field.Step(sim.Ships, new List<DogfightEvent>());
+                for (var i = 0; i < field.Hazards.Count; i++)
+                {
+                    lowest[i] = Mathf.Min(lowest[i], field.Hazards[i].Y);
+                    highest[i] = Mathf.Max(highest[i], field.Hazards[i].Y);
+                }
+            }
+            for (var i = 0; i < field.Hazards.Count; i++)
+            {
+                var moved = Mathf.Sqrt(DogfightSim.DistanceSquared(field.Hazards[i].X, field.Hazards[i].Z, startX[i], startZ[i]));
+                Assert.Greater(moved, 15f, "Even swimming in a curve, in ten seconds a jellyfish has gone somewhere");
+                Assert.Greater(highest[i] - lowest[i], 18f, "And up and down");
+            }
+
+            for (var tick = 0; tick < 30 * 600; tick++) field.Step(sim.Ships, new List<DogfightEvent>());
+            foreach (var jelly in field.Hazards)
+            {
+                Assert.Less(Mathf.Sqrt(jelly.X * jelly.X + jelly.Z * jelly.Z), DogfightSim.ArenaRadius, "Ten minutes on, still in the arena");
+            }
+        }
+
+        [Test]
+        public void ABadlyHurtShipPullsLeftAndRightAtRandomMoments()
+        {
+            var sim = Duel(out var a, out var b, 280f);
+            a.DriftsWhenHurt = true;
+            b.HuntedByWhale = false;
+
+            // Healthy, or just above the line, it flies true.
+            a.Hull = a.Loadout.Hull * (content.skyRules.damagedDriftHullShare + 0.01f);
+            var heading = a.Heading;
+            Run(sim, 10f);
+            Assert.AreEqual(heading, a.Heading, 0.001f);
+
+            a.Hull = a.Loadout.Hull * (content.skyRules.damagedDriftHullShare - 0.01f);
+            var pulls = new List<float>();
+            var gaps = new List<int>();
+            var sinceLast = 0;
+            for (var tick = 0; tick < 30 * 120; tick++)
+            {
+                a.X = 0f;
+                a.Z = 0f;
+                a.Heading = Mathf.PI * 0.5f;
+                var before = a.DriftSide;
+                sim.Step(new List<ShipCommand> { default, default });
+                sinceLast++;
+                if (a.DriftSide != 0f && before == 0f)
+                {
+                    pulls.Add(a.DriftSide);
+                    gaps.Add(sinceLast);
+                    sinceLast = 0;
+                }
+            }
+            Assert.Greater(pulls.Count, 15, "It keeps happening");
+            Assert.Contains(1f, pulls);
+            Assert.Contains(-1f, pulls);
+            gaps.RemoveAt(0);
+            gaps.Sort();
+            Assert.Greater(gaps[gaps.Count - 1], gaps[0], "Not on a steady beat");
+
+            // Repairs fix it.
+            a.Hull = a.Loadout.Hull;
+            sim.Step(new List<ShipCommand> { default, default });
+            Assert.AreEqual(0f, a.DriftSide);
+
+            // Only the player's ship does this, and a full stick still beats the pull.
+            Assert.IsFalse(b.DriftsWhenHurt);
+            Assert.Less(content.skyRules.damagedDriftTurnShare, 1f);
+        }
+
+        [Test]
+        public void FightsOpenWithTheEnemyOutOfRangeAndNotDeadAhead()
+        {
+            var range = content.Cannon(Encounter.PlayerBowCannon).range;
+            var lone = Sky("capture", new SkySpawn { key = "e", shipId = "scrap_raider", name = "E", target = true });
+            var player = lone.Player;
+            foreach (var count in new[] { 1, 2, 3, 7 })
+            {
+                var spawns = new SkySpawn[count];
+                for (var i = 0; i < count; i++) spawns[i] = new SkySpawn { key = "e" + i, shipId = "scrap_raider", name = "E" + i };
+                var encounter = Sky("sink_all", spawns);
+                foreach (var enemy in encounter.Enemies)
+                {
+                    var distance = Mathf.Sqrt(DogfightSim.DistanceSquared(encounter.Player.X, encounter.Player.Z, enemy.Ship.X, enemy.Ship.Z));
+                    Assert.Greater(distance, range, $"{count} enemies");
+                }
+            }
+            var bearing = Mathf.Atan2(lone.Target.Ship.X - player.X, lone.Target.Ship.Z - player.Z) * Mathf.Rad2Deg;
+            Assert.Greater(Mathf.Abs(bearing), content.Cannon(Encounter.PlayerBowCannon).aimAssistDegrees, "A first shot has to be lined up");
+        }
+
+        [Test]
+        public void AWindTunnelIsARoundTubeThatPushesShipsThroughIt()
+        {
+            var weather = new SkyWeather(content.Weather("maelstrom"), content.skyRules, 4);
+            var sim = new DogfightSim(4, content.skyRules);
+            var ship = sim.AddShip(0, Encounter.PlayerLoadout(content, Started(), "rust_wing"), 0f, 0f, 0f);
+            sim.AddShip(1, Encounter.EnemyLoadout(content, "scrap_raider", 0), 300f, 300f, 0f);
+            sim.SetWeather(weather);
+            var scale = content.skyRules.windSpeedScale;
+            var tube = new List<SkyZone>(weather.Zones).Find(z => z.Kind == SkyZoneKind.Wind);
+            var forward = new Vector2(Mathf.Sin(tube.Heading), Mathf.Cos(tube.Heading));
+
+            void Put(float along, float up, float side)
+            {
+                ship.X = tube.X + forward.x * along + forward.y * side;
+                ship.Z = tube.Z + forward.y * along - forward.x * side;
+                ship.Y = tube.Y + up;
+                ship.Heading = tube.Heading;
+            }
+            Put(0f, 0f, 0f);
+            Assert.AreEqual(scale, weather.WindScale(ship, scale), "Middle of the tube");
+            Put(0f, tube.Radius * 0.7f, 0f);
+            Assert.AreEqual(scale, weather.WindScale(ship, scale), "Near the top");
+            Put(0f, tube.Radius + 1f, 0f);
+            Assert.AreEqual(1f, weather.WindScale(ship, scale), "Just above it, out of the wind");
+            Put(0f, -tube.Radius - 1f, 0f);
+            Assert.AreEqual(1f, weather.WindScale(ship, scale), "Just below it");
+            Put(0f, 0f, tube.Radius + 1f);
+            Assert.AreEqual(1f, weather.WindScale(ship, scale), "Off to the side");
+            Put(tube.Length * 0.5f + 1f, 0f, 0f);
+            Assert.AreEqual(1f, weather.WindScale(ship, scale), "Past the end");
+
+            // Inside, the wind carries the ship further along than it flies by itself.
+            float Carried()
+            {
+                ship.Speed = 0f;
+                var startX = ship.X;
+                var startZ = ship.Z;
+                for (var i = 0; i < 15; i++) sim.Step(new List<ShipCommand> { default, default });
+                return (ship.X - startX) * forward.x + (ship.Z - startZ) * forward.y;
+            }
+            Put(-tube.Length * 0.25f, 0f, 0f);
+            var inside = Carried();
+            Put(0f, tube.Radius + 10f, 0f);
+            var outside = Carried();
+            Assert.Greater(inside, outside + 5f, "Felt the moment you're in it");
+
+            var ground = new SkyWeather(content.Weather("maelstrom"), content.skyRules, 4, true);
+            foreach (var zone in ground.Zones)
+            {
+                if (zone.Kind == SkyZoneKind.Wind) Assert.AreEqual(0f, zone.Y, "Reachable when ships can't climb");
+            }
         }
 
         [Test]
@@ -1270,6 +1818,7 @@ namespace Airships.Tests
                 Assert.NotNull(Resources.Load<AudioClip>($"Music/{song}_base_loop"), song);
             }
             Assert.NotNull(Resources.Load<AudioClip>("Music/" + GameMusic.Victory));
+            Assert.NotNull(Resources.Load<AudioClip>("Music/" + GameMusic.Defeat));
             foreach (var mission in content.campaign.missions)
             {
                 foreach (var phase in mission.phases)
@@ -1282,6 +1831,16 @@ namespace Airships.Tests
                 var song = GameMusic.For(state, null);
                 if (song != null) CollectionAssert.Contains(GameMusic.Songs, song);
             }
+        }
+
+        [Test]
+        public void EverySoundEffectClipExists()
+        {
+            foreach (Sfx sound in System.Enum.GetValues(typeof(Sfx)))
+            {
+                if (sound >= AudioBank.FirstClipSound) Assert.NotNull(Resources.Load<AudioClip>("Sfx/" + sound), sound.ToString());
+            }
+            Assert.NotNull(Resources.Load<AudioClip>("Sfx/" + AudioBank.EngineLoopClip));
         }
 
         [Test]
@@ -1342,7 +1901,7 @@ namespace Airships.Tests
                 bot.ChooseAmmo(encounter, ammo);
                 encounter.Step(bot.Think(encounter));
             }
-            Assert.AreNotEqual(SkyOutcome.Ongoing, encounter.Outcome, $"{run.Mission.id} never ended");
+            Assert.AreNotEqual(SkyOutcome.Ongoing, encounter.Outcome, $"{run.Mission.id} never ended: player {encounter.Player.Hull:F0}/{encounter.Player.Loadout.Hull:F0}, target {encounter.Target?.Ship.Hull:F0}/{encounter.Target?.Ship.Loadout.Hull:F0}, seed {seed}");
             return run.FinishSky(encounter);
         }
 
