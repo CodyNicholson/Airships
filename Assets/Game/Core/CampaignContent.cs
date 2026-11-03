@@ -29,7 +29,7 @@ namespace Airships.Core
     [Serializable]
     public class TeachDef
     {
-        public string control; // broadside, bow, boost, altitude, grapple, aim, ammo, signature, patch, overdrive, stick.
+        public string control; // broadside, torpedo, boost, altitude, grapple, aim, ammo, signature, patch, stick.
         public string speaker;
         public string text;
         public float delay;

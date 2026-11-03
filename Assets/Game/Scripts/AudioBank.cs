@@ -9,7 +9,7 @@ namespace Airships.Game
 
         // From here on, each sound is a clip in Resources/Sfx with the same name, rendered by the music project.
         ShipRoll, BoostIgnite, NearMiss, ShotWhiz, FlakBurst, MortarBurst, TimberBreak, JellyPop, Raked, WarHorn, DangerSting,
-        HullCreak, ShipFlyby, GliderLaunch, HookThrow, HookLand, RopeSnap, ChainTaut, MissileLaunch, Overdrive, SignatureFire,
+        HullCreak, ShipFlyby, GliderLaunch, HookThrow, HookLand, RopeSnap, ChainTaut, MissileLaunch, SignatureFire,
         Pickup, WhaleGulp, ThunderRumble, LightningCrack, ThunderDistant, VolleyWarning, HullAlarm, Pistol, MagicCast, GuardUp,
         BladeClash, BodyFall, Burn, StatusHit, Stunned, BossRoar, Revive, GrappleSwing, Plunder, CoinPurchase, AmmoLoad, LevelUp,
     }

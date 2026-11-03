@@ -62,7 +62,6 @@ namespace Airships.Core
     public static class BattleSetup
     {
         public const int MaxPartySize = 3;
-        public const int MaxFullCrew = 6;
 
         public static List<Combatant> BuildParty(GameContent content, SaveData save)
         {

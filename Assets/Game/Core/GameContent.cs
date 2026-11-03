@@ -53,6 +53,7 @@ namespace Airships.Core
         public float statusChance;
         public int hits; // Above one, it strikes this many times.
         public bool revive; // Brings a fallen ally back.
+        public bool companion; // Done by the character's companion, rather than by them.
 
         public SkillKind Kind => (SkillKind)Enum.Parse(typeof(SkillKind), kind);
         public SkillTarget Target => (SkillTarget)Enum.Parse(typeof(SkillTarget), target);
@@ -82,6 +83,7 @@ namespace Airships.Core
         public string gunR;
         public string gunL;
         public string portrait;
+        public string companion; // A model that goes everywhere this character goes.
     }
 
     // Used from a deck battle's menu. Bought in port or found as loot.
@@ -112,7 +114,7 @@ namespace Airships.Core
     {
         public string id;
         public string name;
-        public string mount; // "Bow" fires forward, "Broadside" fires from the side facing the target.
+        public string mount; // "Forward" fires forward, "Broadside" fires from the side facing the target.
         public float damage;
         public float reload;
         public int shots;
@@ -170,7 +172,8 @@ namespace Airships.Core
         public float speed;
         public float turnDegrees;
         public float radius;
-        public string bowCannon;
+        public string chaseCannon;
+        public bool noTorpedo;
         public string broadsideCannon;
         public string model; // Sloop, Brigantine or Galleon.
         public string faction; // The kit palette: Crimson, Azure, Emerald or Obsidian.
@@ -191,6 +194,7 @@ namespace Airships.Core
         public float hullScale;
         public float engineScale;
         public float gunScale;
+        public float envelopeScale;
         public float deckScale; // Share of the damage that wounds the crew they'll meet on deck.
         public float burnSeconds;
         public float burnPerSecond;
@@ -231,8 +235,6 @@ namespace Airships.Core
         public float subsystemHullShare;
         public float disabledSpeedScale;
         public float disabledReloadScale;
-        public float aimHullScale;
-        public float aimSubsystemScale;
         public float grappleRange;
         public float grappleAltitude;
         public float grappleHullShare;
@@ -244,11 +246,6 @@ namespace Airships.Core
         public float tetherSinkSpeed;
         public float crushPerSecond;
         public float patchShare;
-        public float overdriveSeconds;
-        public float overdriveCooldown;
-        public float overdriveSpeedScale;
-        public float overdriveReloadScale;
-        public float overdriveHullCost;
         public float ambushScale;
         public float weakPointScale;
         public float windSpeedScale;
@@ -304,7 +301,8 @@ namespace Airships.Core
         public bool whale;
         public int windCount;
         public int cloudCount;
-        public int updraftCount;
+        public int tornadoUpCount;
+        public int tornadoDownCount;
         public int toxicCount;
         public float lightningEvery;
         public string sky; // The panorama and light from the art kit.
@@ -318,7 +316,7 @@ namespace Airships.Core
         public string id;
         public string name;
         public string description;
-        public string stat; // hull, armor, speed, turn, bowDamage, broadsideDamage
+        public string stat; // hull, armor, speed, turn, torpedoDamage, broadsideDamage
         public float perLevel;
         public int maxLevel;
         public int baseCost;

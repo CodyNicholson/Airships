@@ -110,7 +110,8 @@
       "SM_Prop_SableDagger",
       "SM_Prop_Spyglass",
       "SM_Prop_BigWrench",
-      "SM_Prop_ArmadaHalberd"
+      "SM_Prop_ArmadaHalberd",
+      "SM_Prop_ShadowStaff"
     ],
     "weapon.L": [
       "SM_Prop_Cutlass",
@@ -123,7 +124,8 @@
       "SM_Prop_SableDagger",
       "SM_Prop_Spyglass",
       "SM_Prop_BigWrench",
-      "SM_Prop_ArmadaHalberd"
+      "SM_Prop_ArmadaHalberd",
+      "SM_Prop_ShadowStaff"
     ],
     "gun.R": [
       "SM_Prop_Flintlock",
@@ -170,6 +172,10 @@
     "Warden": {
       "HQ": "T_Palette_Warden_HQ.png",
       "LQ": "T_Palette_Warden_LQ.png"
+    },
+    "Sorcerer": {
+      "HQ": "T_Palette_Sorcerer_HQ.png",
+      "LQ": "T_Palette_Sorcerer_LQ.png"
     }
   },
   "emissive_atlas": {
@@ -8130,6 +8136,45 @@
         }
       }
     },
+    "SM_Prop_ShadowStaff": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 136
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 68
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0114,
+            1.2,
+            0.0
+          ],
+          "trail_tip": [
+            -0.0114,
+            1.8,
+            0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.0,
+            1.2,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            1.8,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Sorcerer"
+    },
     "SM_Prop_ArmadaHalberd": {
       "variants": {
         "HQ": {
@@ -10201,46 +10246,46 @@
       "variants": {
         "HQ": {
           "tier": "hero",
-          "tris": 1772
+          "tris": 2444
         },
         "LQ": {
           "tier": "hero_low",
-          "tris": 564
+          "tris": 776
         }
       },
       "sockets": {
         "HQ": {
           "chest_centre": [
             0.0,
-            1.2,
-            0.0004
+            1.344,
+            -0.0011
           ],
           "head_top": [
             0.0,
-            1.85,
-            0.0004
+            2.072,
+            -0.0011
           ],
           "portrait_look_at": [
             0.0,
-            1.56,
-            0.0004
+            1.7472,
+            -0.0011
           ]
         },
         "LQ": {
           "chest_centre": [
             0.0,
-            1.2,
-            -0.0184
+            1.344,
+            -0.0102
           ],
           "head_top": [
             0.0,
-            1.85,
-            -0.0184
+            2.072,
+            -0.0102
           ],
           "portrait_look_at": [
             0.0,
-            1.56,
-            -0.0184
+            1.7472,
+            -0.0102
           ]
         }
       }
@@ -10345,49 +10390,50 @@
       "variants": {
         "HQ": {
           "tier": "hero",
-          "tris": 1628
+          "tris": 2220
         },
         "LQ": {
           "tier": "hero_low",
-          "tris": 552
+          "tris": 860
         }
       },
       "sockets": {
         "HQ": {
           "chest_centre": [
             0.0,
-            1.2,
-            -0.0072
+            1.272,
+            -0.008
           ],
           "head_top": [
             0.0,
-            1.85,
-            -0.0072
+            1.961,
+            -0.008
           ],
           "portrait_look_at": [
             0.0,
-            1.56,
-            -0.0072
+            1.6536,
+            -0.008
           ]
         },
         "LQ": {
           "chest_centre": [
             0.0,
-            1.2,
-            -0.0007
+            1.272,
+            -0.008
           ],
           "head_top": [
             0.0,
-            1.85,
-            -0.0007
+            1.961,
+            -0.008
           ],
           "portrait_look_at": [
             0.0,
-            1.56,
-            -0.0007
+            1.6536,
+            -0.008
           ]
         }
-      }
+      },
+      "default_faction": "Sorcerer"
     },
     "SK_Krag": {
       "variants": {
@@ -10731,6 +10777,111 @@
         }
       },
       "default_faction": "Gilded"
+    },
+    "SK_Cinder": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 736,
+          "clips": {
+            "Idle": {
+              "loop": true,
+              "frames": 48,
+              "seconds": 2.0
+            },
+            "Walk": {
+              "loop": true,
+              "frames": 24,
+              "seconds": 1.0
+            },
+            "Fire": {
+              "loop": false,
+              "frames": 40,
+              "seconds": 1.667
+            }
+          }
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 520,
+          "clips": {
+            "Idle": {
+              "loop": true,
+              "frames": 48,
+              "seconds": 2.0
+            },
+            "Walk": {
+              "loop": true,
+              "frames": 24,
+              "seconds": 1.0
+            },
+            "Fire": {
+              "loop": false,
+              "frames": 40,
+              "seconds": 1.667
+            }
+          }
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            0.6,
+            -0.0501
+          ],
+          "head_top": [
+            0.0,
+            1.0,
+            0.3499
+          ],
+          "muzzle": [
+            0.0,
+            0.73,
+            0.8599
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            0.6,
+            -0.0501
+          ],
+          "head_top": [
+            0.0,
+            1.0,
+            0.3499
+          ],
+          "muzzle": [
+            0.0,
+            0.73,
+            0.8599
+          ]
+        }
+      },
+      "skeleton": [
+        "root",
+        "hips",
+        "chest",
+        "neck",
+        "head",
+        "jaw",
+        "muzzle",
+        "tail.1",
+        "tail.2",
+        "upper_leg.FL",
+        "lower_leg.FL",
+        "foot.FL",
+        "upper_leg.FR",
+        "lower_leg.FR",
+        "foot.FR",
+        "upper_leg.BL",
+        "lower_leg.BL",
+        "foot.BL",
+        "upper_leg.BR",
+        "lower_leg.BR",
+        "foot.BR"
+      ]
     }
   }
 }

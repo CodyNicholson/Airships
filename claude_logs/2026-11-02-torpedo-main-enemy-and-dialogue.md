@@ -22,6 +22,18 @@ Cody asked for:
 - Much weaker torpedo homing, so hitting still takes aim.
 - Round wind tunnels in place of the flat wind currents, propelling ships flying through them.
 - Ships that start farther apart in every level.
+- Enemy torpedoes with the player's homing, slow early and fast late, that a roll can dodge.
+- Tornadoes that carry a ship all the way up, and new upside-down ones that carry it all the way down.
+- Every "bow" name in the code changed to torpedo.
+- Wind tunnels and tornadoes kept farther apart and spread evenly, because crowded skies were confusing.
+- Dr. Thorne redesigned as a dark, quiet sorcerer who heals and revives, with high health and defense and low attack.
+- Rook redesigned as a huge, muscular gunner, with a robot dog that breathes fire from a cannon mouth.
+- A closer quarterdeck group, because the crew stood too far apart.
+- Three characters at most in party combat, with everyone else defending the ship.
+- AIM removed from dogfights: every shot hits the hull, and crippling comes from the ammo.
+- Overdrive removed from dogfights, since ships already have a speed attachment.
+- Battle tap controls only on the right of the screen, by the enemies.
+- Tapping the middle of the control pad to stop and start the engines, with looking around while stopped.
 - A ship below 40% hull that drifts left or right at random moments.
 - A blue dot on the radar for each sky whale. The radar itself still arrives with Morrow, as Cody decided.
 
@@ -49,6 +61,26 @@ Claude's choices, all open to change:
 | Spawn distance | Ships start about 470 m apart, up from about 220 m, and a lone enemy starts off to one side. Krag keeps the old 220 m, as Cody decided | Beyond the torpedo's 360 m range and outside its 10 degree lock, so a first shot has to be earned. Reinforcement waves still arrive at their old distance |
 | The Bastion's hull | Scale cut from 0.75 to 0.55 | With the weaker torpedo the bot needed 5.4 minutes for this fight, and at most 3.5 for any other |
 | Wind tunnels | Built in code: 240 m long tubes, 26 m in radius, of hoops and spiral strands that flow the way the wind blows. Doubled speed plus an instant 26 m/s push, all ships, always visible | The old `SM_Env_WindCurrent` model is flat, and was hidden until a mechanic unlocked, while its speed-up still worked |
+| Enemy torpedoes | Speeds of 50, 62, 76 and 92 m/s for acts 1 to 4, each with a 5 s flight, 7.5 to 9 s reloads and the player's 0.1 homing and 10 degree lock. Enemies also keep their guns | Cody asked for slow early and fast late. Their guns are most of their damage, so removing them would have made fights easier |
+| No enemy torpedoes | The first level, gliders and allies | The first level is for learning, gliders are too small, and allied ones would only add clutter |
+| Forward guns | Named Chase Guns: `chase_guns`, `chaseCannon`, `FireChaseGuns` | They aren't torpedoes, so renaming them "torpedo" would have been wrong. "bowsprit" in one line of dialogue is a real word, and stays |
+| Old saves | Save version 3 converts the `bow` upgrade and mechanic ids to `torpedo` | So nobody loses their upgrades. These are the only remaining uses of the word in game code |
+| Tornadoes | Caught on contact at any height, carried at 45 m/s to the top or bottom, with the stick locked out until then. All ships. No effect in fights where ships can't change height | "All the way" |
+| Thorne's name and story | Keeps "Dr. Thorne", and is still recruited at the Citadel, now a prisoner bound to its locks rather than its Chief Engineer. Lines cut to a few words each | Cody asked for a dark character who says little. Renaming wasn't asked for |
+| Thorne's kit | New `sorcerer` class: most health and defense, least attack of the crew. Dark Mending, Veil of Life, Raise the Fallen. A new Sorcerer palette and black staff | The shared atlas is full, so a new faction palette carries purple and green. Wren keeps the old `surgeon` class |
+| Rook's dog | Cinder is now `SK_Cinder`, with its own 21-bone four-legged skeleton and Idle, Walk and Fire clips, replacing the static prop. Sharp steel jaws with fangs close around a brass cannon barrel, and a `muzzle` bone follows its tip. It walks whenever it's moving, walks out and fires for Cinder's Flame: 9 MP, all enemies, 75% chance to burn for 2 turns | Cody asked for a skeleton and a sharp metal jaw |
+| Battle formation | Fighters stand in one spaced row on the furthest slot, up to 2.1 m apart, narrower when the screen or arena requires it. It applies to enemies too. Cinder stands directly in front of Rook | The old diagonal hid the third character |
+| Final deck fight | Four enemies down to three | The bot couldn't win it with three characters |
+| Quarterdeck group | Sable, Lyra, Morrow, Rook and Thorne stand on set spots below the helm, away from their station props. The camera moves in by itself | Cody found the view too empty. Their props stay where they were, as dressing |
+| Three in combat | The final battle was the only fight that took the whole crew, so it now takes the chosen three. Its opening line changed to match. The crew screen says "defending the ship" instead of "in reserve". The captain still always fights | Cody decided. Defending was already the default for anyone not in the party |
+| AIM removed | Chain damages engines, Mortar damages guns and engines, and Flak now damages balloons (a share equal to 60% of the shot), since nothing else would. The enemy part bars show once you have more than one ammo type | Cody decided. Balloon damage would otherwise have left the game |
+| Overdrive removed | Button, rules, the `overdrive` mechanic and its teach line are gone, and Thorne's two lines mentioning it were reworded. `Overdrive.wav` is still in `Resources/Sfx`, now unused | Cody decided. Deleting the sound wasn't asked for |
+| Upside-down tornado color | Dark grey ribbons and rings, as Cody decided after seeing red | White for up and dark grey for down tells them apart |
+| Sky layout | Tunnels and tornadoes share evenly spaced slots around one ring, taking turns, with each tunnel running along the ring. At least 40 m of open sky between any two | Random placement could stack them |
+| How many | Tunnels, up tornadoes and down tornadoes: cyclone 2, 1, 1. Storm 2, 1, 1. Maelstrom 2, 1, 1. Jetstream 3, 0, 0. Citadel 2, 0, 0. Down from as many as 7 in one sky (cyclone's 5 tunnels and 2 tornadoes) | Cody found some levels overwhelming, and four is the most a ring holds with room to spare |
+| Battle tap controls | Every left-hand beat, at 14% across the screen, moved to 66%. The `left_right` pattern is now `side_step`. A test holds all beats and drags to the right 45% of the screen | Cody found watching both sides at once too hard |
+| Stopping the engines | Tap under 0.25 s, moving under 30 units, within 75 units of the pad's rest center. The knob reads STOP or START. X does the same on a keyboard | A longer press or a drag still steers |
+| While stopped | Left and right turn the ship, up and down tilt the view up to about 34 degrees, without changing height. Shots with no lock go where it's looking. Wind and tornadoes still move it. Rolls still work | "Look" has to do something a player can use. A stopped ship is an easy target |
 | Jellyfish | Swim 8 to 15 m/s in wide curves, pulsing, and bob twice as far | Before, they only bobbed up and down in place |
 
 ## What changed
@@ -63,9 +95,10 @@ Claude's choices, all open to change:
 
 ## Verified
 
-- All 143 EditMode tests pass, including the bot campaign playthroughs.
+- All 152 EditMode tests pass, including the bot campaign playthroughs.
 - Quarterdeck captured at 16:9, 18:9, 19.5:9, 20:9 and 21:9 before the crew spacing change, and at 20:9 (Pixel 10 Pro XL shape) after it. The unit test covers the same camera on phone shapes with cutouts, but cutouts weren't rendered.
-- A full campaign ran in a Mac player from a fresh save, at 2x speed, on the final code. All 26 missions finished in about 27.5 minutes with 0 errors or exceptions, including the new deck fights in a1_leak, a4_coalition and s_lyra. The bot was swallowed once.
+- A full campaign ran in a Mac player from a fresh save, at 2x speed, on the final code. All 26 missions finished in about 29 minutes with 0 errors or exceptions, including the new deck fights in a1_leak, a4_coalition and s_lyra. The bot was swallowed once.
+- Thorne, his staff, Rook and Cinder passed the Blender project's budget gate and `validate_production.py`. Thorne's and Rook's redesigns were checked on all 14 animation clips (Rook's after the last chest fix on arms only). The quarterdeck and Cinder's Flame were checked in screenshots at Pixel 10 Pro XL shape.
 - In a Mac player at Pixel 10 Pro XL shape:
   - Story text stayed on the same shot for 30 s without a tap.
   - Boss hull and its bar matched at every reading.
@@ -82,13 +115,20 @@ Claude's choices, all open to change:
 - **Real phone:** nothing ran on a phone by Claude. The Android build wasn't rebuilt, and three whales plus up to five tunnels haven't been measured on one.
 - **Damage drift:** covered by a unit test only. It wasn't watched running.
 - **Spawn distance:** covered by a unit test and bot campaigns. It wasn't reviewed in screenshots at the start of a fight with enemies.
-- **Touch input:** rolls were driven by a simulated keyboard and the BOOST tap branch, not by a real thumb on the stick.
+- **Touch input:** rolls were driven by a simulated keyboard and the BOOST tap branch, not by a real thumb on the stick. The engine tap was triggered at its flag, so the pad's tap detection itself has not been run.
 - **Difficulty:** bots only. A whale ends the attempt outright, so a whale in every chapter may be much harder for people. The Krag tether is riskier too, since nothing lifts the hull above 25% there.
 
 ## Known issues
 
+- **Blender gate method:** the `mobile-asset-optimizer` agent isn't registered in Claude Code here and the Blender MCP tools aren't available, so a general-purpose agent followed that agent's written steps using the same enforcer script in a headless Blender.
+- **Cinder at the screen edge:** in interiors, its feet can touch the Momentum panel when Rook is in the middle of the row. Its walk is only a trot, with no run.
+- **Thorne's lower robe:** the leg panels are rigid, so a raised knee in Surrender, Grapple or Work swings a panel out like a stiff wing.
+- **`short_jacket` and `long_coat`:** their front opening sits half a segment off centre on other characters. Thorne and Rook no longer use them, and the others weren't changed.
+- **Old props:** `SM_Prop_BigWrench` is now unused.
+
 - Afterburner can briefly outrun a torpedo. The 72 m/s speed beats every ship's full throttle of up to 48, but not a 96 m/s burst.
 - A roll up at the ceiling or down at the floor gets cut short, but still gives immunity.
+- Pink quads on the Undertow disc show in the Maelstrom sky when looking down. They vanished when that model was hidden, so they come from the disc's art and not from this work.
 - `SM_Env_WindCurrent` is no longer used by the game.
 - Wind tunnels are opaque hoops and strands with no see-through wall, to avoid transparency cost on phones. They can overlap each other, and rocks can sit inside them.
 - Some code is now mostly unused: `TargetLost`, `boardOnly`, `TargetEscaped` in `FinishSky`, and the "Scrap only" results.

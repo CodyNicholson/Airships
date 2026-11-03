@@ -13,8 +13,11 @@ namespace Airships.Game
     {
         const float DangerHealthShare = 0.4f;
         const float CharacterScale = 1.25f;
-        const float FrontLineX = 2.6f;
-        const float LineSpacingX = 1.35f;
+        const float FrontLineX = 2.2f;
+        const float RowSpacingX = 2.1f;
+        const float RowStagger = 0.45f;
+        const float RowEdgeMargin = 1.3f;
+        const float BattleFieldOfView = 46f;
 
         // The kit's attack clips land their blow or shot on this frame of 24 per second.
         const float StrikeMoment = 14f / 24f;
@@ -78,7 +81,7 @@ namespace Airships.Game
             setup = director.Deck;
             var party = setup.Party;
             var enemies = setup.Enemies;
-            Battle = new PartyBattle(party, enemies, director.Seed, director.Content.timing, BattleSetup.MaxFullCrew)
+            Battle = new PartyBattle(party, enemies, director.Seed, director.Content.timing)
             {
                 SpareTarget = setup.Spare,
                 SurrenderAfterRound = setup.SurrenderAfterRound,
@@ -101,7 +104,7 @@ namespace Airships.Game
             lookTarget.SetParent(transform, false);
             GetCamera(setup.Arena, out var cameraOffset, out var lookHeight);
             lookTarget.position = new Vector3(0f, lookHeight, 0f);
-            director.Stage.FrameTarget(cameraRig, lookTarget, cameraOffset, 46f, 0f);
+            director.Stage.FrameTarget(cameraRig, lookTarget, cameraOffset, BattleFieldOfView, 0f);
 
             var arrowKit = new MeshKit();
             arrowKit.Cylinder(new Vector3(0f, 0.55f, 0f), Vector3.zero, 0.3f, 0f, 4, Palette.Accent);
@@ -208,6 +211,17 @@ namespace Airships.Game
             }
         }
 
+        // As wide as the camera can see on this screen, up to a comfortable gap.
+        float RowSpacing(int count, float rowZ)
+        {
+            if (count <= 1) return RowSpacingX;
+            GetCamera(setup.Arena, out var offset, out _);
+            var depth = rowZ - offset.z;
+            var halfWidth = depth * Mathf.Tan(BattleFieldOfView * 0.5f * Mathf.Deg2Rad) * Screen.width / Screen.height;
+            var room = (halfWidth - RowEdgeMargin - FrontLineX) / (count - 1);
+            return Mathf.Min(RowSpacingX, room);
+        }
+
         void BuildFighters(List<Combatant> combatants, string slotPrefix, float yaw)
         {
             for (var i = 0; i < combatants.Count; i++)
@@ -215,13 +229,14 @@ namespace Airships.Game
                 var combatant = combatants[i];
                 var model = Models.CreateCharacter(combatant.Name, string.IsNullOrEmpty(combatant.Look) ? combatant.ClassId : combatant.Look, deck);
 
-                // Enemy leaders are tall, so they stand at the back. The kit's slots set each fighter's
-                // depth, and a diagonal line across the deck keeps everyone visible from this camera.
+                // Enemy leaders are tall, so they stand at the back. Everyone stands in a row across the
+                // deck, far enough apart that nobody hides anybody from this camera. A slight stagger keeps
+                // it from looking like a parade line.
                 var slot = yaw < 0f ? combatants.Count - 1 - i : i;
-                var home = deckModel.Spot($"{slotPrefix}{Mathf.Min(slot + 1, 3)}");
-                var spacing = combatants.Count > 3 ? LineSpacingX * 3f / combatants.Count : LineSpacingX;
+                var home = deckModel.Spot($"{slotPrefix}3"); // The slot furthest from the camera, so a row fits.
+                var spacing = RowSpacing(combatants.Count, home.z);
                 home.x = Mathf.Sign(home.x) * (FrontLineX + slot * spacing);
-                if (slot >= 3) home.z += (slot - 2) * 0.6f;
+                home.z -= slot % 2 == 1 ? RowStagger : 0f;
 
                 // The chamber's Lift-Core fills the middle of the room, so the fight is in front of it.
                 if (setup.Arena == "SM_Env_LiftCoreChamber") home = new Vector3(Mathf.Sign(home.x) * (3.4f + slot * spacing), home.y, -6.6f - slot * 0.5f);
@@ -229,6 +244,12 @@ namespace Airships.Game
                 model.Root.transform.localPosition = home;
                 model.Root.transform.localRotation = rotation;
                 model.Root.transform.localScale = Vector3.one * CharacterScale;
+                if (model.Companion != null)
+                {
+                    // Right in front of its owner and nearer the camera, so it only overlaps its owner's boots.
+                    model.Companion.Root.transform.position = model.Root.transform.position
+                        + new Vector3(-Mathf.Sign(home.x) * CompanionFormationForward, 0f, -CompanionFormationNear);
+                }
                 model.Animation.Loop("Idle", fighters.Count * 0.37f);
                 var fighter = new Fighter { Combatant = combatant, Model = model, Home = home, HomeRotation = rotation };
                 fighters.Add(fighter);
@@ -508,7 +529,11 @@ namespace Airships.Game
             var lead = Mathf.Max(0f, pattern.Length - StrikeMoment);
             if (lead > 0f) yield return new WaitForSeconds(lead);
 
-            if (isHeal || isMagic || isRanged)
+            if (action.Kind == BattleActionKind.Skill && action.Skill.companion && fighter.Model.Companion != null)
+            {
+                yield return CompanionAttack(fighter, action);
+            }
+            else if (isHeal || isMagic || isRanged)
             {
                 yield return CastOrShoot(fighter, action, isMagic, isHeal);
             }
@@ -541,6 +566,14 @@ namespace Airships.Game
         }
 
         // The tip of what someone's holding, or their chest if it has none.
+        const float CompanionFormationForward = 0f;
+        const float CompanionFormationNear = 1.9f;
+        const float CompanionWalkSeconds = 0.6f;
+        const float CompanionStepForward = 2f;
+        const float CompanionFlameDelay = 0.5f; // The clip's jaws are open by here.
+        const float CompanionFlameSeconds = 0.8f;
+        const float CompanionFlameHeight = 1f;
+
         static Vector3 WeaponPoint(Fighter fighter, string socket)
         {
             foreach (var held in fighter.Model.Held)
@@ -591,6 +624,70 @@ namespace Airships.Game
             var direction = target.Home - fighter.Home;
             direction.y = 0f;
             fighter.Model.Root.transform.localRotation = Quaternion.LookRotation(direction);
+        }
+
+        // The character whistles, and their companion steps up and does it instead.
+        IEnumerator CompanionAttack(Fighter fighter, BattleAction action)
+        {
+            var companion = fighter.Model.Companion;
+            var dog = companion.Root.transform;
+            var gait = companion.Root.GetComponent<CompanionGait>();
+            var home = dog.position;
+            var homeRotation = dog.localRotation;
+            var foes = Battle.Opponents(fighter.Combatant).FindAll(c => c.Alive);
+            var aim = Vector3.zero;
+            foreach (var foe in foes) aim += byCombatant[foe].Model.Root.transform.position;
+            aim = aim / Mathf.Max(1, foes.Count) + Vector3.up * CompanionFlameHeight;
+
+            // It walks out in front of the line, so nothing is in the way of the fire.
+            fighter.Model.Animation.PlayThenReturn("Taunt");
+            var flat = aim - home;
+            flat.y = 0f;
+            dog.rotation = Quaternion.LookRotation(flat);
+            var stand = home + flat.normalized * CompanionStepForward;
+            for (var t = 0f; t < 1f; t += Time.deltaTime / CompanionWalkSeconds)
+            {
+                dog.position = Vector3.Lerp(home, stand, t);
+                yield return null;
+            }
+            dog.position = stand;
+
+            yield return ResolveStrike(action);
+            gait.Busy = true;
+            companion.Animation.PlayThenReturn("Fire");
+            yield return new WaitForSeconds(CompanionFlameDelay);
+            AudioBank.Play(Sfx.Cannon, 0.7f);
+            AudioBank.Play(Sfx.Burn, 0.9f);
+            var muzzle = KitArt.FindDeep(dog, "muzzle");
+            Effects.Play("CannonFire", muzzle.position, 0.5f);
+            for (var t = 0f; t < 1f; t += Time.deltaTime / CompanionFlameSeconds)
+            {
+                var mouth = muzzle.position;
+                for (var i = 0; i < 3; i++)
+                {
+                    var along = UnityEngine.Random.value;
+                    var color = Color.Lerp(Palette.Accent, Palette.Danger, along);
+                    var spread = UnityEngine.Random.insideUnitSphere * (0.15f + along * 0.9f);
+                    Fx.Burst(Vector3.Lerp(mouth, aim, along * Mathf.Min(1f, t * 1.6f)) + spread, color, 1, 0.8f, 0.45f + along * 0.5f, 0.28f);
+                }
+                yield return null;
+            }
+            foreach (var foe in foes) Effects.Play("HullFire", byCombatant[foe].Model.Root.transform.position + Vector3.up, 0.6f);
+            yield return ApplyResults(strikeResults);
+            gait.Busy = false;
+
+            var back = home - dog.position;
+            back.y = 0f;
+            if (back.sqrMagnitude > 0.01f) dog.rotation = Quaternion.LookRotation(back);
+            var from = dog.position;
+            for (var t = 0f; t < 1f; t += Time.deltaTime / CompanionWalkSeconds)
+            {
+                dog.position = Vector3.Lerp(from, home, t);
+                yield return null;
+            }
+            dog.position = home;
+            dog.localRotation = homeRotation;
+            fighter.Model.Root.transform.localRotation = fighter.HomeRotation;
         }
 
         IEnumerator CastOrShoot(Fighter fighter, BattleAction action, bool isMagic, bool isHeal)

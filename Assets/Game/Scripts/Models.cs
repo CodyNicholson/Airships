@@ -24,6 +24,7 @@ namespace Airships.Game
         public string Faction;
         public Material Body;
         public List<GameObject> Held = new List<GameObject>();
+        public CharacterModel Companion;
 
         public void SetEmission(Color color)
         {
@@ -132,6 +133,12 @@ namespace Airships.Game
                 Hold(character, look.weaponL, "weapon.L");
                 Hold(character, look.gunR, "gun.R");
                 Hold(character, look.gunL, "gun.L");
+                if (!string.IsNullOrEmpty(look.companion))
+                {
+                    character.Companion = Character(look.companion, look.companion, KitArt.Crimson, character.Root.transform);
+                    character.Companion.Root.transform.localPosition = CompanionSpot;
+                    character.Companion.Root.AddComponent<CompanionGait>().Animation = character.Companion.Animation;
+                }
                 return character;
             }
 
@@ -186,6 +193,8 @@ namespace Airships.Game
         }
 
         // The kit's rule: no rotation offset, and a local position of the negative grip.
+        static readonly Vector3 CompanionSpot = new Vector3(1.3f, 0f, 0.7f); // At heel, on the side that faces the camera in a battle.
+
         static void Hold(CharacterModel character, string prop, string bone)
         {
             if (string.IsNullOrEmpty(prop)) return;

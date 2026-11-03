@@ -50,7 +50,7 @@ namespace Airships.Tests
             foreach (var enemy in content.enemies) Assert.NotNull(content.Class(enemy.classId));
             foreach (var ship in content.ships)
             {
-                Assert.NotNull(content.Cannon(ship.bowCannon));
+                Assert.NotNull(content.Cannon(ship.chaseCannon));
                 Assert.NotNull(content.Cannon(ship.broadsideCannon));
             }
         }
@@ -240,14 +240,14 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void BroadsideCantReachBeyondItsElevationButBowCan()
+        public void BroadsideCantReachBeyondItsElevationButTorpedoCan()
         {
             var sim = TwoShips(3, out var a, out var b);
             b.X = 0f;
             b.Z = 60f;
             b.Y = 40f;
             Assert.IsFalse(DogfightSim.CanElevate(a, b, a.Loadout.Broadside));
-            Assert.IsTrue(DogfightSim.CanElevate(a, b, a.Loadout.Bow));
+            Assert.IsTrue(DogfightSim.CanElevate(a, b, a.Loadout.Torpedo));
 
             b.Y = 5f;
             Assert.IsTrue(DogfightSim.CanElevate(a, b, a.Loadout.Broadside));
@@ -350,7 +350,7 @@ namespace Airships.Tests
             b.Z = 70f;
             SingleHazard(sim, HazardKind.Rock, 10f, 10f, 0f, 0f, 35f);
             var hull = b.Hull;
-            var commands = new List<ShipCommand> { new ShipCommand { Throttle = 0f, FireBow = true }, new ShipCommand { Throttle = 0f } };
+            var commands = new List<ShipCommand> { new ShipCommand { Throttle = 0f, FireTorpedo = true }, new ShipCommand { Throttle = 0f } };
             for (var i = 0; i < DogfightSim.TicksPerSecond * 2; i++)
             {
                 sim.Step(commands);
@@ -605,7 +605,7 @@ namespace Airships.Tests
             Combatant surgeon = null;
             foreach (var member in battle.Party)
             {
-                if (member.ClassId == "surgeon") surgeon = member;
+                if (member.ClassId == "sorcerer") surgeon = member;
             }
             Assert.IsNotNull(surgeon, "The default party should include a healer");
             var ally = battle.Party[0];
@@ -788,7 +788,7 @@ namespace Airships.Tests
                 var save = CrewedSave();
                 var party = BattleSetup.BuildParty(content, save);
                 var battle = new PartyBattle(party, BattleSetup.BuildEnemies(content, 0), 5, content.timing);
-                var surgeon = party.Find(c => c.ClassId == "surgeon");
+                var surgeon = party.Find(c => c.ClassId == "sorcerer");
                 WaitForTurn(battle, surgeon);
                 var ally = party[0];
                 ally.Hp = 1;
@@ -841,7 +841,7 @@ namespace Airships.Tests
                 var save = CrewedSave();
                 var party = BattleSetup.BuildParty(content, save);
                 var battle = new PartyBattle(party, BattleSetup.BuildEnemies(content, 0), 5, withTiming ? content.timing : null);
-                var surgeon = party.Find(c => c.ClassId == "surgeon");
+                var surgeon = party.Find(c => c.ClassId == "sorcerer");
                 WaitForTurn(battle, surgeon);
                 party[0].Hp = 1;
                 battle.Submit(new BattleAction { Kind = BattleActionKind.Skill, Skill = content.Skill("patch_up"), Target = party[0], Timing = TimingGrade.Miss });
@@ -1078,7 +1078,8 @@ namespace Airships.Tests
                     Assert.Greater(beat.at, previous, $"{pattern.id} beats must run in order");
                     Assert.GreaterOrEqual(beat.at - beat.ring, -0.001f, $"{pattern.id} ring can't start before the pattern");
                     Assert.Greater(beat.ring, timing.goodWindow, $"{pattern.id} ring must be visible before its window opens");
-                    Assert.That(beat.x, Is.InRange(0f, 1f));
+                    Assert.That(beat.x, Is.InRange(0.55f, 1f), $"{pattern.id}: every tap stays on the enemies' side of the screen");
+                    if (beat.kind == "drag") Assert.That(beat.endX, Is.InRange(0.55f, 1f), $"{pattern.id}: drags too");
                     Assert.That(beat.y, Is.InRange(0f, 1f));
                     if (beat.IsSwipe) Assert.AreEqual(1f, Mathf.Abs(beat.DirX) + Mathf.Abs(beat.DirY), $"{pattern.id} swipe needs a direction");
                     if (beat.IsDrag)

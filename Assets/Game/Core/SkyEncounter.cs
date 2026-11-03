@@ -148,7 +148,7 @@ namespace Airships.Core
         public bool IsTeaching(string control) => CurrentTeach(control) != null && !usedControls.Contains(control);
         public bool HasControl(string control) => config.AllControls && IsBasicControl(control) || config.Mechanics.Contains(control) || CurrentTeach(control) != null;
 
-        static bool IsBasicControl(string control) => control == "broadside" || control == "bow" || control == "boost" || control == "altitude" || control == "stick";
+        static bool IsBasicControl(string control) => control == "broadside" || control == "torpedo" || control == "boost" || control == "altitude" || control == "stick";
 
         TeachDef CurrentTeach(string control)
         {
@@ -173,11 +173,13 @@ namespace Airships.Core
             loadout.Hull *= spawn.HullScale;
             loadout.Armor += spawn.armorBonus;
             var story = config.Phase != null ? content.skyRules.campaignEnemyDamage : 1f;
-            loadout.BowDamageScale *= spawn.DamageScale * story;
+            loadout.TorpedoDamageScale *= spawn.DamageScale * story;
+            loadout.ChaseDamageScale *= spawn.DamageScale * story;
             loadout.BroadsideDamageScale *= spawn.DamageScale * story;
             var signature = content.Ship(spawn.shipId).signature;
             if (!string.IsNullOrEmpty(signature)) loadout.Signature = content.Signature(signature);
 
+            if (spawn.ally) loadout.Torpedo = null;
             var spread = count <= 1 ? LoneEnemyOffset : (index - (count - 1) * 0.5f) * 90f;
             var ally = spawn.ally;
             var ship = ally
@@ -190,6 +192,7 @@ namespace Airships.Core
             }
             ship.HuntedByWhale = false;
             ship.AltitudeLocked = Player.AltitudeLocked;
+            if (loadout.Torpedo != null) ship.TorpedoCooldown = loadout.Torpedo.reload * random.Range(0.3f, 1f);
             var isMain = config.Phase != null && config.Objective == "capture" && spawn.target && !ally;
             ship.HullFloor = spawn.unsinkable || isMain ? 1f : 0f;
             if (config.Phase != null) ship.Boarding = isMain ? BoardingRule.Main : BoardingRule.Never;
@@ -343,7 +346,8 @@ namespace Airships.Core
                 var away = (float)Math.Atan2(ship.X - Player.X, ship.Z - Player.Z);
                 command.Turn = DogfightSim.WrapAngle(away - ship.Heading) * 2.2f;
                 command.Throttle = enemy.IsMain ? MainFleeThrottle : 1f;
-                command.FireBow = false;
+                command.FireTorpedo = false;
+                command.FireChaseGuns = false;
                 command.FireBroadside = false;
                 return command;
             }
@@ -602,6 +606,17 @@ namespace Airships.Core
     // produces the commands a player could, so whatever it wins, a person can win too.
     public class AutoCaptain
     {
+        const float TorpedoDodgeRange = 70f;
+
+        static bool TorpedoClose(DogfightSim sim, ShipState ship)
+        {
+            foreach (var shot in sim.Projectiles)
+            {
+                if (shot.Team != ship.Team && shot.HomingOn == ship.Id && DogfightSim.DistanceSquared(shot.X, shot.Z, ship.X, ship.Z) < TorpedoDodgeRange * TorpedoDodgeRange) return true;
+            }
+            return false;
+        }
+
         readonly DogfightAi pilot;
         readonly GameRandom random;
         readonly float evadeSkill;
@@ -637,7 +652,7 @@ namespace Airships.Core
             var target = encounter.Target?.Ship;
 
             // Roll out of the way of an announced volley, when the roll is ready.
-            if (encounter.VolleyIncoming && ship.EvadeCooldown <= 0f && random.Value() < evadeSkill) command.Evade = random.Value() < 0.5f ? -1f : 1f;
+            if ((encounter.VolleyIncoming || TorpedoClose(sim, ship)) && ship.EvadeCooldown <= 0f && random.Value() < evadeSkill) command.Evade = random.Value() < 0.5f ? -1f : 1f;
 
             // Fly to the nearest thing that still needs collecting.
             if (objective == "collect")
@@ -664,11 +679,6 @@ namespace Airships.Core
 
             var wantsBoard = encounter.HasControl("grapple") && target != null && target.Alive && (objective == "capture" || sim.IsBoardable(target));
 
-            if (encounter.HasControl("aim"))
-            {
-                ship.Aim = objective == "disable_engines" ? ShipPart.Engines : ShipPart.Hull;
-                encounter.MarkUsed("aim");
-            }
             if (encounter.HasControl("signature") && ship.Loadout.Signature != null)
             {
                 var signature = ship.Loadout.Signature;
@@ -680,11 +690,6 @@ namespace Airships.Core
             {
                 command.Patch = true;
                 encounter.MarkUsed("patch");
-            }
-            if (encounter.HasControl("overdrive") && ship.Hull > ship.Loadout.Hull * 0.6f)
-            {
-                command.Overdrive = true;
-                encounter.MarkUsed("overdrive");
             }
 
             // Once a ship can be boarded, fly straight at it and throw hooks.

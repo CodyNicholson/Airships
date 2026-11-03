@@ -86,7 +86,10 @@ namespace Airships.Game
         float bobTime;
 
         bool swallowing;
+        bool enginesStopped;
         bool wasRiding;
+        float lookHeight;
+        const float LookCameraScale = 1.1f; // Enough to see up and down, and still keep the ship on screen.
         Transform cameraProxy;
         Transform cameraLook;
         float cameraYaw;
@@ -121,27 +124,24 @@ namespace Airships.Game
         RawImage rain;
         float boostHeld;
         Image boostCooldown;
-        Image aimIcon;
         Image ammoIcon;
         Bar enemyEnvelope;
 
         VirtualStick stick;
         RectTransform stickZone;
         RectTransform safeArea;
-        HoldButton bowButton;
+        HoldButton torpedoButton;
         HoldButton broadsideButton;
         HoldButton boostButton;
         HoldButton grappleButton;
         HoldButton signatureButton;
-        Image bowCooldown;
+        Image torpedoCooldown;
         Image broadsideCooldown;
         Image signatureCooldown;
         Image grappleCooldown;
         TextMeshProUGUI grappleLabel;
-        GameButton aimButton;
         GameButton ammoButton;
         GameButton patchButton;
-        GameButton overdriveButton;
         Bar playerHull;
         Bar enemyHull;
         Bar enemyEngines;
@@ -173,7 +173,6 @@ namespace Airships.Game
         List<AmmoDef> ammoChoices;
         int ammoIndex;
         bool patchPressed;
-        bool overdrivePressed;
 
         void Start()
         {
@@ -226,6 +225,7 @@ namespace Airships.Game
             cameraProxy.SetPositionAndRotation(playerView.Model.Root.transform.position, Quaternion.Euler(0f, cameraYaw, 0f));
             var cameraScale = CameraScaleFor(playerView.Model);
             cameraLook.localPosition = new Vector3(0f, 3f * cameraScale, 24f);
+            lookHeight = 3f * cameraScale;
             director.Stage.FrameTarget(cameraProxy, cameraLook, new Vector3(0f, 19f * cameraScale, -54f * cameraScale), 52f, 0.35f);
 
             var phase = config.Phase;
@@ -467,7 +467,7 @@ namespace Airships.Game
             {
                 command = ReadPlayerCommand();
             }
-            AudioBank.SetEngine(command.Throttle > DefaultThrottle ? 1f : EngineCruiseLevel);
+            AudioBank.SetEngine(command.EnginesStopped ? 0f : command.Throttle > DefaultThrottle ? 1f : EngineCruiseLevel);
             Encounter.Step(command);
 
             foreach (var simEvent in Sim.Events) Present(simEvent);
@@ -503,7 +503,8 @@ namespace Airships.Game
             // A small dead zone keeps steering from nudging the altitude.
             var climb = Mathf.Abs(stick.Value.y) < ClimbDeadZone ? 0f : stick.Value.y;
             var boosting = boostButton.Held;
-            var fireBow = bowButton.Held;
+            var fireTorpedo = torpedoButton.Held;
+            var toggleEngines = stick.ConsumeCenterTap();
             var fireBroadside = broadsideButton.ConsumeTap() || broadsideButton.Held;
             var grapple = grappleButton.ConsumeTap() || grappleButton.Held;
             var signature = signatureButton.ConsumeTap();
@@ -528,12 +529,15 @@ namespace Airships.Game
                 if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) climb = 1f;
                 if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) climb = -1f;
                 boosting |= keyboard.leftShiftKey.isPressed;
-                fireBow |= keyboard.spaceKey.isPressed;
+                fireTorpedo |= keyboard.spaceKey.isPressed;
                 fireBroadside |= keyboard.eKey.isPressed;
                 grapple |= keyboard.gKey.isPressed;
                 roll |= keyboard.qKey.wasPressedThisFrame;
+                toggleEngines |= keyboard.xKey.wasPressedThisFrame;
                 signature |= keyboard.rKey.wasPressedThisFrame;
             }
+
+            if (toggleEngines && Encounter.HasControl("stick")) ToggleEngines();
 
             var evade = 0f;
             var evadeLift = 0f;
@@ -545,7 +549,7 @@ namespace Airships.Game
             if (Mathf.Abs(turn) > 0.1f) Encounter.MarkUsed("stick");
             if (Mathf.Abs(climb) > 0.1f) Encounter.MarkUsed("altitude");
             if (boosting) Encounter.MarkUsed("boost");
-            if (fireBow) Encounter.MarkUsed("bow");
+            if (fireTorpedo) Encounter.MarkUsed("torpedo");
             if (fireBroadside) Encounter.MarkUsed("broadside");
             if (grapple) Encounter.MarkUsed("grapple");
             if (signature) Encounter.MarkUsed("signature");
@@ -555,17 +559,16 @@ namespace Airships.Game
                 Turn = turn,
                 Throttle = boosting ? 1f : DefaultThrottle,
                 Climb = climb,
-                FireBow = fireBow && Encounter.HasControl("bow"),
+                FireTorpedo = fireTorpedo && Encounter.HasControl("torpedo"),
                 FireBroadside = fireBroadside && Encounter.HasControl("broadside"),
                 Grapple = grapple && Encounter.HasControl("grapple"),
                 Signature = signature && Encounter.HasControl("signature"),
                 Patch = patchPressed,
-                Overdrive = overdrivePressed,
                 Evade = evade,
                 EvadeLift = evadeLift,
+                EnginesStopped = enginesStopped,
             };
             patchPressed = false;
-            overdrivePressed = false;
             return command;
         }
 
@@ -668,6 +671,13 @@ namespace Airships.Game
                     AudioBank.Play(Sfx.ShipRoll, e.ShipId == player.Id ? 0.9f : 0.3f);
                     Encounter.MarkUsed("evade");
                     break;
+                case DogfightEventKind.TornadoCaught:
+                    if (e.ShipId == player.Id)
+                    {
+                        AudioBank.Play(Sfx.ThunderRumble, 0.8f);
+                        director.Stage.Shake(0.8f);
+                    }
+                    break;
                 case DogfightEventKind.DamageDrift:
                     AudioBank.Play(Sfx.HullCreak, 0.6f);
                     director.Stage.Shake(0.3f);
@@ -748,10 +758,6 @@ namespace Airships.Game
                 case DogfightEventKind.Patched:
                     Fx.Burst(new Vector3(e.X, e.Y + ProjectileHeight, e.Z), Palette.Heal, 22, 8f, 1.2f, 0.8f, 3f);
                     AudioBank.Play(Sfx.Heal);
-                    break;
-                case DogfightEventKind.Overdrive:
-                    director.ScreenFx.Flash(Palette.Storm, 0.2f);
-                    AudioBank.Play(Sfx.Overdrive, 0.75f);
                     break;
                 case DogfightEventKind.Crushing:
                     AudioBank.Play(Sfx.HullCreak, 0.9f);
@@ -1075,6 +1081,14 @@ namespace Airships.Game
             board.Press();
         }
 
+        // Stopping the engines hangs the ship in the air to look around. Starting them flies on.
+        void ToggleEngines()
+        {
+            enginesStopped = !enginesStopped;
+            stick.SetKnobLabel(enginesStopped ? "START" : "STOP", enginesStopped ? Palette.WithAlpha(Palette.Danger, 0.9f) : Palette.WithAlpha(Palette.Accent, 0.9f));
+            AudioBank.Play(enginesStopped ? Sfx.HullCreak : Sfx.BoostIgnite, 0.7f);
+        }
+
         void UpdateVisuals()
         {
             var alpha = Mathf.Clamp01(accumulator / DogfightSim.TickSeconds);
@@ -1098,6 +1112,7 @@ namespace Airships.Game
                 var playerRoot = playerView.Model.Root.transform;
                 cameraYaw = Mathf.LerpAngle(cameraYaw, playerRoot.eulerAngles.y, 1f - Mathf.Exp(-3f * Time.deltaTime));
                 cameraProxy.SetPositionAndRotation(playerRoot.position, Quaternion.Euler(0f, cameraYaw, 0f));
+                cameraLook.localPosition = new Vector3(0f, lookHeight + Mathf.Tan(player.LookPitch) * cameraLook.localPosition.z * LookCameraScale, cameraLook.localPosition.z);
             }
 
             foreach (var projectile in Sim.Projectiles)
@@ -1168,7 +1183,7 @@ namespace Airships.Game
             SetActive(view.Embers, burning);
             SetActive(view.Smoke, burning || (alive && share < 0.5f));
             SetActive(view.Exhaust, alive && state.Speed > state.Loadout.Speed * 0.85f);
-            SetActive(view.Burners, alive && (state.BoostTimer > 0f || state.OverdriveTimer > 0f));
+            SetActive(view.Burners, alive && (state.BoostTimer > 0f));
             SetActive(view.Leaks, alive && state.EnvelopeOut);
         }
 
@@ -1257,7 +1272,7 @@ namespace Airships.Game
 
             // A roll spins the way it throws the ship: over the side, or nose up or nose down and over.
             var rollSpin = ship.EvadeTimer > 0f ? (1f - ship.EvadeTimer / director.Content.skyRules.evadeSeconds) * 360f : 0f;
-            model.Body.localRotation = Quaternion.Euler(pitch - ship.EvadeLift * rollSpin, 0f, roll - ship.EvadeSide * rollSpin);
+            model.Body.localRotation = Quaternion.Euler(pitch - ship.LookPitch * Mathf.Rad2Deg - ship.EvadeLift * rollSpin, 0f, roll - ship.EvadeSide * rollSpin);
 
             var sink = alive ? 0f : -2.4f;
             var height = Mathf.Sin(bobTime * 1.1f + ship.Id) * 0.5f + sink;
@@ -1281,33 +1296,30 @@ namespace Airships.Game
             stickZone.offsetMin = Vector2.zero;
             stickZone.offsetMax = Vector2.zero;
             stick = VirtualStick.Create(stickZone);
+            stick.SetKnobLabel("STOP", Palette.WithAlpha(Palette.Accent, 0.9f));
             AddStickLabel(stickZone, "CLIMB", 118f, "Hud_AltitudeUp");
             AddStickLabel(stickZone, "DIVE", -118f, "Hud_AltitudeDown");
             Teachable("stick", stickZone.Find("Stick Base"));
 
-            bowButton = BuildFireButton(safe, "TORPEDO", "Ammo_Missile", new Vector2(-30f, 250f), 200f, Palette.PanelLight, out bowCooldown);
+            torpedoButton = BuildFireButton(safe, "TORPEDO", "Ammo_Missile", new Vector2(-30f, 250f), 200f, Palette.PanelLight, out torpedoCooldown);
             broadsideButton = BuildFireButton(safe, "BROADSIDE", "Hud_FireBroadside", new Vector2(-250f, 40f), 250f, Palette.PlayerPaint, out broadsideCooldown);
             boostButton = BuildFireButton(safe, "BOOST / ROLL", "Hud_ThrottleUp", new Vector2(-30f, 40f), 190f, Palette.PanelLight, out boostCooldown);
             grappleButton = BuildFireButton(safe, "GRAPPLE", "Hud_Grapple", new Vector2(-270f, 300f), 190f, Palette.Brass, out grappleCooldown);
             grappleLabel = grappleButton.transform.Find("Label").GetComponent<TextMeshProUGUI>();
             var signatureName = player.Loadout.Signature != null ? player.Loadout.Signature.name : "";
             signatureButton = BuildFireButton(safe, signatureName, SignatureIcon(player.Loadout.Signature), new Vector2(-30f, 460f), 170f, Palette.Storm, out signatureCooldown);
-            Teachable("bow", bowButton.transform);
+            Teachable("torpedo", torpedoButton.transform);
             Teachable("broadside", broadsideButton.transform);
             Teachable("boost", boostButton.transform);
             Teachable("grapple", grappleButton.transform);
             Teachable("multihook", grappleButton.transform);
             Teachable("signature", signatureButton.transform);
 
-            aimButton = SmallButton(safe, "AIM: HULL", "Target_Reticle", new Vector2(-250f, 500f), new Vector2(230f, 84f), CycleAim, out aimIcon);
             ammoButton = SmallButton(safe, "AMMO", "Ammo_Round", new Vector2(-30f, 640f), new Vector2(250f, 84f), CycleAmmo, out ammoIcon);
             ammoButton.ClickSound = Sfx.AmmoLoad;
-            patchButton = SmallButton(safe, "PATCH", "Hud_Repair", new Vector2(-540f, 640f), new Vector2(200f, 84f), () => { patchPressed = true; Encounter.MarkUsed("patch"); }, out _);
-            overdriveButton = SmallButton(safe, "OVERDRIVE", "Module_LiftCore", new Vector2(-290f, 640f), new Vector2(240f, 84f), () => { overdrivePressed = true; Encounter.MarkUsed("overdrive"); }, out _);
-            Teachable("aim", aimButton.transform);
+            patchButton = SmallButton(safe, "PATCH", "Hud_Repair", new Vector2(-290f, 640f), new Vector2(200f, 84f), () => { patchPressed = true; Encounter.MarkUsed("patch"); }, out _);
             Teachable("ammo", ammoButton.transform);
             Teachable("patch", patchButton.transform);
-            Teachable("overdrive", overdriveButton.transform);
             RefreshAmmoLabel();
 
             BuildAltitudeGauge(safe);
@@ -1374,7 +1386,6 @@ namespace Airships.Game
         void BuildCrewAbilities(RectTransform safe)
         {
             var badges = new List<string>();
-            if (Encounter.HasControl("aim")) badges.Add("Ability_RookPrecision");
             if (Encounter.HasControl("winds")) badges.Add("Ability_LyraWinds");
             if (Encounter.HasControl("clouds")) badges.Add("Ability_LyraCloudStealth");
             if (Encounter.HasControl("sabotage")) badges.Add("Ability_SableSabotage");
@@ -1431,15 +1442,6 @@ namespace Airships.Game
             icon = UIKit.Icon("Icon", button.transform, iconName);
             UIKit.Place(icon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 0f), Vector2.one * 56f);
             return button;
-        }
-
-        void CycleAim()
-        {
-            var next = player.Aim == ShipPart.Hull ? ShipPart.Engines : player.Aim == ShipPart.Engines ? ShipPart.Guns : player.Aim == ShipPart.Guns ? ShipPart.Envelope : ShipPart.Hull;
-            player.Aim = next;
-            aimButton.Label.text = next == ShipPart.Hull ? "AIM: HULL" : next == ShipPart.Engines ? "AIM: ENGINES" : next == ShipPart.Guns ? "AIM: GUNS" : "AIM: BALLOON";
-            aimIcon.sprite = KitArt.Icon(next == ShipPart.Hull ? "Target_Reticle" : next == ShipPart.Engines ? "Target_Sails" : next == ShipPart.Guns ? "Target_Guns" : "Target_Envelope");
-            Encounter.MarkUsed("aim");
         }
 
         void CycleAmmo()
@@ -1540,15 +1542,13 @@ namespace Airships.Game
         void RefreshControls()
         {
             stickZone.Find("Stick Base").gameObject.SetActive(Encounter.HasControl("stick") || GameDirector.Autoplay);
-            bowButton.gameObject.SetActive(Encounter.HasControl("bow"));
+            torpedoButton.gameObject.SetActive(Encounter.HasControl("torpedo"));
             broadsideButton.gameObject.SetActive(Encounter.HasControl("broadside"));
             boostButton.gameObject.SetActive(Encounter.HasControl("boost"));
             grappleButton.gameObject.SetActive(Encounter.HasControl("grapple"));
             signatureButton.gameObject.SetActive(Encounter.HasControl("signature") && player.Loadout.Signature != null);
-            aimButton.gameObject.SetActive(Encounter.HasControl("aim"));
             ammoButton.gameObject.SetActive(Encounter.HasControl("ammo") || ammoChoices.Count > 1);
             patchButton.gameObject.SetActive(Encounter.HasControl("patch"));
-            overdriveButton.gameObject.SetActive(Encounter.HasControl("overdrive"));
             altitudeGauge.SetActive(Encounter.CanClimb);
             var altitudeLabels = stickZone.Find("Stick Base");
             foreach (Transform child in altitudeLabels)
@@ -1667,7 +1667,7 @@ namespace Airships.Game
                 playerHull.Set(player.Hull / player.Loadout.Hull);
             }
             playerHullText.text = Mathf.CeilToInt(player.Hull).ToString();
-            bowCooldown.fillAmount = player.BowCooldown / player.Loadout.Bow.reload;
+            torpedoCooldown.fillAmount = player.TorpedoCooldown / player.Loadout.Torpedo.reload;
             broadsideCooldown.fillAmount = Mathf.Clamp01(player.BroadsideCooldown / player.Loadout.Broadside.reload);
             if (player.Loadout.Signature != null) signatureCooldown.fillAmount = player.SignatureCooldown / Mathf.Max(0.01f, player.Loadout.Signature.cooldown);
             boostCooldown.fillAmount = player.EvadeCooldown / Mathf.Max(0.01f, director.Content.skyRules.evadeCooldown);
@@ -1681,7 +1681,6 @@ namespace Airships.Game
             UpdateWhaleHud();
             patchButton.Interactable = player.PatchesLeft > 0;
             patchButton.Label.text = player.PatchesLeft > 0 ? "PATCH" : "PATCHED";
-            overdriveButton.Interactable = player.OverdriveCooldown <= 0f;
         }
 
         // The enemy bar follows the objective's ship, or whoever's closest once that's settled.
@@ -1701,7 +1700,7 @@ namespace Airships.Game
             boardLine.gameObject.SetActive(focus.Boarding == BoardingRule.Main);
             enemyHullText.text = focus.Boarding == BoardingRule.Main && Sim.IsBoardable(focus) ? "BOARD!" : $"{Mathf.CeilToInt(hullShare * 100f)}%";
             PlaceAltitudeTick(enemyAltitudeTick, focus.Y);
-            enemyParts.SetActive(Encounter.HasControl("aim"));
+            enemyParts.SetActive(ammoChoices.Count > 1); // Only special ammo can damage them.
             if (enemyParts.activeSelf)
             {
                 enemyEngines.Set(focus.Engines / focus.MaxSubsystem);
@@ -1765,13 +1764,16 @@ namespace Airships.Game
             var icon = (string)null;
             statusText.color = Palette.Storm;
             var incomingMissile = false;
+            var incomingTorpedo = false;
             foreach (var projectile in Sim.Projectiles)
             {
-                if (projectile.HomingOn == player.Id) incomingMissile = true;
+                if (projectile.HomingOn != player.Id) continue;
+                incomingMissile = true;
+                if (projectile.AmmoId == Torpedo) incomingTorpedo = true;
             }
             if (incomingMissile || Encounter.VolleyIncoming)
             {
-                text = (incomingMissile ? "MISSILE!" : "INCOMING!") + (player.EvadeCooldown <= 0f ? " TAP BOOST TO ROLL" : "");
+                text = (incomingTorpedo ? "TORPEDO!" : incomingMissile ? "MISSILE!" : "INCOMING!") + (player.EvadeCooldown <= 0f ? " TAP BOOST TO ROLL" : "");
                 icon = incomingMissile ? "Ammo_Missile" : "Hud_FireBroadside";
                 statusText.color = Palette.Danger;
             }
@@ -1787,10 +1789,16 @@ namespace Airships.Game
                 icon = "Hazard_ToxicCloud";
                 statusText.color = Palette.Danger;
             }
-            else if (InZone(SkyZoneKind.Updraft))
+            else if (player.TornadoDrag != 0f)
             {
-                text = "UPDRAFT";
+                text = player.TornadoDrag > 0f ? "TORNADO! THROWN TO THE TOP OF THE SKY" : "TORNADO! DRAGGED TO THE BOTTOM OF THE SKY";
                 icon = "Hazard_Updraft";
+                statusText.color = Palette.Danger;
+            }
+            else if (enginesStopped)
+            {
+                text = "ENGINES STOPPED: TAP THE MIDDLE OF THE PAD TO START THEM";
+                statusText.color = Palette.Accent;
             }
             else if (Sim.Weather.Strikes.Count > 0)
             {
@@ -1803,7 +1811,6 @@ namespace Airships.Game
                 text = "HIDDEN IN CLOUD: AMBUSH READY";
                 icon = "Ability_LyraCloudStealth";
             }
-            else if (player.OverdriveTimer > 0f) text = "OVERDRIVE!";
             else if (Sim.Weather != null && Sim.Weather.WindScale(player, 2f) > 1f)
             {
                 text = "RIDING THE WIND";

@@ -159,21 +159,11 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void AimingAtEnginesDamagesThemAndLessHull()
-        {
-            var aimed = FireOneVolley(ShipPart.Engines, "round");
-            var plain = FireOneVolley(ShipPart.Hull, "round");
-            Assert.Less(aimed.Engines, aimed.MaxSubsystem);
-            Assert.AreEqual(plain.MaxSubsystem, plain.Engines);
-            Assert.Greater(aimed.Hull, plain.Hull, "Aiming trades hull damage for part damage");
-        }
-
-        [Test]
         public void AmmoTypesDoDifferentJobs()
         {
-            var chain = FireOneVolley(ShipPart.Hull, "chain");
-            var round = FireOneVolley(ShipPart.Hull, "round");
-            var fire = FireOneVolley(ShipPart.Hull, "fire");
+            var chain = FireOneVolley("chain");
+            var round = FireOneVolley("round");
+            var fire = FireOneVolley("fire");
             Assert.Less(chain.Engines, chain.MaxSubsystem, "Chain-shot wrecks sails");
             Assert.Greater(chain.Hull, round.Hull, "Chain-shot barely hurts the hull");
             Assert.Greater(fire.DeckDamage, 0f, "Fire-shot wounds the crew on deck");
@@ -181,10 +171,9 @@ namespace Airships.Tests
             Assert.AreEqual(0f, round.DeckDamage);
         }
 
-        ShipState FireOneVolley(ShipPart aim, string ammo)
+        ShipState FireOneVolley(string ammo)
         {
             var sim = Duel(out var a, out var b, 30f);
-            a.Aim = aim;
             a.Ammo = content.Ammo(ammo);
             Run(sim, 0.1f, new ShipCommand { FireBroadside = true });
             Run(sim, 1.5f);
@@ -347,7 +336,7 @@ namespace Airships.Tests
             ship.Heading = wind.Heading + Mathf.PI;
             Assert.AreEqual(1f, weather.WindScale(ship, content.skyRules.windSpeedScale), "Against the wind");
 
-            var updraft = new List<SkyZone>(weather.Zones).Find(z => z.Kind == SkyZoneKind.Updraft);
+            var updraft = new List<SkyZone>(weather.Zones).Find(z => z.Kind == SkyZoneKind.TornadoUp);
             ship.X = updraft.X;
             ship.Z = updraft.Z;
             ship.Y = 0f;
@@ -400,7 +389,7 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void ThornesAbilitiesPatchOnceAndOverdriveCosts()
+        public void ThornesPatchWorksOncePerFight()
         {
             var sim = Duel(out var a, out _);
             a.PatchesLeft = 1;
@@ -410,12 +399,6 @@ namespace Airships.Tests
             var patched = a.Hull;
             Run(sim, 0.1f, new ShipCommand { Patch = true });
             Assert.AreEqual(patched, a.Hull, 1f, "Only one patch per fight");
-
-            var driven = Duel(out var c, out _);
-            var hull = c.Hull;
-            Run(driven, 0.1f, new ShipCommand { Overdrive = true });
-            Assert.Greater(c.OverdriveTimer, 0f);
-            Assert.Less(c.Hull, hull, "Overdrive costs hull");
         }
 
         [Test]
@@ -430,13 +413,13 @@ namespace Airships.Tests
                 b.Loadout.Speed = 0f;
                 b.Speed = 0f;
                 var before = b.Hull;
-                a.Loadout.BowDamageScale = 3f;
-                Run(sim, 0.1f, new ShipCommand { FireBow = true });
+                a.Loadout.TorpedoDamageScale = 3f;
+                Run(sim, 0.1f, new ShipCommand { FireTorpedo = true });
                 Run(sim, 0.5f);
                 return before - b.Hull;
             }
             Assert.Greater(Damage(true, true), Damage(true, false), "A shot at the stern finds the weak point");
-            Assert.AreEqual(Damage(false, false), Damage(false, true), 0.5f, "A shot at the bow doesn't");
+            Assert.AreEqual(Damage(false, false), Damage(false, true), 0.5f, "A shot at the nose doesn't");
         }
 
         [Test]
@@ -617,16 +600,16 @@ namespace Airships.Tests
         [Test]
         public void TheTorpedoOutrunsEveryShipButCanBeSeenInFlight()
         {
-            var tube = content.Cannon(Encounter.PlayerBowCannon);
+            var tube = content.Cannon(Encounter.PlayerTorpedoCannon);
             Assert.AreEqual("Torpedo", tube.name);
             foreach (var ship in content.ships) Assert.Greater(tube.projectileSpeed, ship.speed, ship.id);
-            Assert.Less(tube.projectileSpeed, content.Cannon("bow_chaser").projectileSpeed * 0.6f, "Slow enough to watch");
+            Assert.Less(tube.projectileSpeed, content.Cannon("chase_guns").projectileSpeed * 0.6f, "Slow enough to watch");
             Assert.GreaterOrEqual(tube.range / tube.projectileSpeed, 4f, "Stays in the air long enough to watch");
-            Assert.Greater(tube.damage, content.Cannon("bow_chaser").damage * 5f);
+            Assert.Greater(tube.damage, content.Cannon("chase_guns").damage * 5f);
 
             var save = Started();
-            Assert.AreEqual(tube, Encounter.PlayerLoadout(content, save, "rust_wing").Bow);
-            Assert.AreEqual(content.Cannon("bow_chaser"), Encounter.EnemyLoadout(content, "rust_wing", 0).Bow, "Enemies keep their own guns");
+            Assert.AreEqual(tube, Encounter.PlayerLoadout(content, save, "rust_wing").Torpedo);
+            Assert.AreEqual(content.Cannon("chase_guns"), Encounter.EnemyLoadout(content, "rust_wing", 0).ChaseGuns, "Enemies keep their own guns");
         }
 
         [Test]
@@ -644,7 +627,7 @@ namespace Airships.Tests
             var before = target.Hull;
 
             var hit = false;
-            encounter.Step(new ShipCommand { FireBow = true, Throttle = 0.35f });
+            encounter.Step(new ShipCommand { FireTorpedo = true, Throttle = 0.35f });
             ProjectileState torpedo = null;
             foreach (var shot in encounter.Sim.Projectiles)
             {
@@ -665,7 +648,7 @@ namespace Airships.Tests
         [Test]
         public void ATorpedoBarelyBendsSoItStillTakesAim()
         {
-            var tube = content.Cannon(Encounter.PlayerBowCannon);
+            var tube = content.Cannon(Encounter.PlayerTorpedoCannon);
             Assert.LessOrEqual(tube.aimAssistDegrees, 10f, "The nose has to be nearly on target");
 
             var encounter = Sky("capture", new SkySpawn { key = "t", shipId = "scrap_raider", name = "T", target = true });
@@ -677,7 +660,7 @@ namespace Airships.Tests
             target.X = player.X;
             target.Y = player.Y;
             target.Z = player.Z + 200f;
-            encounter.Step(new ShipCommand { FireBow = true, Throttle = 0.35f });
+            encounter.Step(new ShipCommand { FireTorpedo = true, Throttle = 0.35f });
             ProjectileState torpedo = null;
             foreach (var shot in encounter.Sim.Projectiles)
             {
@@ -709,7 +692,7 @@ namespace Airships.Tests
             var player = encounter.Player;
             player.Loadout = Encounter.PlayerLoadout(content, Started(), "mirage");
             player.Speed = 180f;
-            encounter.Step(new ShipCommand { FireBow = true, Throttle = 1f });
+            encounter.Step(new ShipCommand { FireTorpedo = true, Throttle = 1f });
             ProjectileState torpedo = null;
             foreach (var shot in encounter.Sim.Projectiles)
             {
@@ -735,8 +718,8 @@ namespace Airships.Tests
         [Test]
         public void TheWholeCrewFitsBesideTheMenusOnEveryPhoneShape()
         {
-            // Where the six crew stand in the game: Vane, Rook, Lyra, Sable, Thorne, Morrow.
-            var spots = new[] { new Vector2(-1.3f, 2f), new Vector2(5.1f, 3.3f), new Vector2(-2.6f, 1f), new Vector2(-7f, 3.6f), new Vector2(6f, -1f), new Vector2(-3.2f, -2f) };
+            // Where the crew stand in the game: Vane, Rook, Lyra, Sable, Thorne, Morrow, and Cinder.
+            var spots = new[] { new Vector2(-1.3f, 2f), new Vector2(0.9f, 0.5f), new Vector2(-2.7f, 0.6f), new Vector2(-5.5f, 0.9f), new Vector2(2.6f, -0.8f), new Vector2(-3f, -1.6f), new Vector2(-0.3f, -1.5f) };
             foreach (var phone in PhoneShapes())
             {
                 var scale = 1080f / phone[1];
@@ -818,7 +801,30 @@ namespace Airships.Tests
             var boarders = run.BuildDeckParty(new PhaseDef { party = "boarding" });
             Assert.IsFalse(boarders.Exists(c => c.Id == "thorne"));
             Assert.AreEqual(1, run.BuildDeckParty(new PhaseDef { party = "solo" }).Count);
-            Assert.AreEqual(3, run.BuildDeckParty(new PhaseDef { party = "full" }).Count);
+        }
+
+        [Test]
+        public void NoMoreThanThreeFightAndTheRestDefendTheShip()
+        {
+            var save = Started();
+            foreach (var id in new[] { "rook", "lyra", "sable", "thorne", "morrow" }) Campaign.Recruit(save, content, id, 1);
+            Assert.AreEqual(BattleSetup.MaxPartySize, save.party.Count);
+            Assert.AreEqual(3, BattleSetup.MaxPartySize);
+            var run = new CampaignRun(content, save, content.campaign.missions[0]);
+            var boarders = run.BuildDeckParty(new PhaseDef { party = "boarding" });
+            var defenders = run.BuildDeckParty(new PhaseDef { party = "defending" });
+            Assert.AreEqual(3, boarders.Count);
+            Assert.AreEqual(3, defenders.Count, "Everyone left behind defends");
+            foreach (var defender in defenders) Assert.IsFalse(boarders.Exists(b => b.Id == defender.Id));
+
+            foreach (var mission in content.campaign.missions)
+            {
+                foreach (var phase in mission.phases)
+                {
+                    if (phase.kind != "deck") continue;
+                    Assert.Contains(phase.party, new[] { "boarding", "defending", "solo" }, $"{mission.id}");
+                }
+            }
         }
 
         [Test]
@@ -1060,7 +1066,7 @@ namespace Airships.Tests
             c.Heading = 0f;
             d.ImmuneTimer = 5f;
             var hull = d.Hull;
-            Run(shot, 0.1f, new ShipCommand { FireBow = true });
+            Run(shot, 0.1f, new ShipCommand { FireTorpedo = true });
             Run(shot, 1f);
             Assert.AreEqual(hull, d.Hull, "Nothing lands during the roll");
         }
@@ -1335,7 +1341,7 @@ namespace Airships.Tests
         [Test]
         public void FightsOpenWithTheEnemyOutOfRangeAndNotDeadAhead()
         {
-            var range = content.Cannon(Encounter.PlayerBowCannon).range;
+            var range = content.Cannon(Encounter.PlayerTorpedoCannon).range;
             var lone = Sky("capture", new SkySpawn { key = "e", shipId = "scrap_raider", name = "E", target = true });
             var player = lone.Player;
             foreach (var count in new[] { 1, 2, 3, 7 })
@@ -1350,7 +1356,7 @@ namespace Airships.Tests
                 }
             }
             var bearing = Mathf.Atan2(lone.Target.Ship.X - player.X, lone.Target.Ship.Z - player.Z) * Mathf.Rad2Deg;
-            Assert.Greater(Mathf.Abs(bearing), content.Cannon(Encounter.PlayerBowCannon).aimAssistDegrees, "A first shot has to be lined up");
+            Assert.Greater(Mathf.Abs(bearing), content.Cannon(Encounter.PlayerTorpedoCannon).aimAssistDegrees, "A first shot has to be lined up");
         }
 
         [Test]
@@ -1408,6 +1414,232 @@ namespace Airships.Tests
         }
 
         [Test]
+        public void OldSavesKeepTheirTorpedoUpgrades()
+        {
+            var save = Started();
+            save.version = 2;
+            save.upgrades.Add(new UpgradeProgress { id = "bow", level = 3 });
+            save.campaign.mechanics.Add("bow");
+            Campaign.Migrate(save, content);
+            Assert.AreEqual(3, save.UpgradeLevel("torpedo"));
+            Assert.IsTrue(save.campaign.mechanics.Contains("torpedo"));
+            Assert.IsFalse(save.campaign.mechanics.Contains("bow"));
+        }
+
+        [Test]
+        public void EnemyTorpedoesGetFasterThroughTheGameWithThePlayersHoming()
+        {
+            var tube = content.Cannon(Encounter.PlayerTorpedoCannon);
+            Assert.IsNull(Encounter.EnemyLoadout(content, "scrap_raider", 0).Torpedo, "None in the first level");
+            Assert.IsNull(Encounter.EnemyLoadout(content, "assault_glider", 7).Torpedo, "Gliders are too small");
+            var last = 0f;
+            foreach (var tier in new[] { 1, 3, 5, 7 })
+            {
+                var torpedo = Encounter.EnemyLoadout(content, "scrap_raider", tier).Torpedo;
+                Assert.Greater(torpedo.projectileSpeed, last, $"tier {tier}");
+                last = torpedo.projectileSpeed;
+                Assert.AreEqual(tube.homingTurn, torpedo.homingTurn, "Same homing as the player's");
+                Assert.AreEqual(tube.aimAssistDegrees, torpedo.aimAssistDegrees);
+                Assert.AreEqual(torpedo.projectileSpeed * 5f, torpedo.range, 0.01f, "Five seconds of flight");
+            }
+        }
+
+        [Test]
+        public void AnEnemyTorpedoHomesOnThePlayerAndARollDodgesIt()
+        {
+            ShipState Fire(DogfightSim sim, out ShipState enemy)
+            {
+                var player = sim.AddShip(0, Encounter.PlayerLoadout(content, Started(), "rust_wing"), 0f, 0f, 0f);
+                enemy = sim.AddShip(1, Encounter.EnemyLoadout(content, "scrap_raider", 3), 0f, 120f, Mathf.PI);
+                player.Loadout.Speed = 0f;
+                enemy.Loadout.Speed = 0f;
+                sim.Step(new List<ShipCommand> { default, new ShipCommand { FireTorpedo = true } });
+                return player;
+            }
+
+            var first = new DogfightSim(5, content.skyRules);
+            var hit = Fire(first, out var shooter);
+            var torpedo = new List<ProjectileState>(first.Projectiles).Find(p => p.AmmoId == "torpedo");
+            Assert.NotNull(torpedo, "It fires one");
+            Assert.AreEqual(hit.Id, torpedo.HomingOn);
+            Assert.AreEqual(content.Cannon("torpedo_steady").homingTurn, torpedo.HomingTurn);
+            var hull = hit.Hull;
+            Run(first, 3f);
+            Assert.Less(hit.Hull, hull, "Standing still, it lands");
+
+            var second = new DogfightSim(5, content.skyRules);
+            var dodger = Fire(second, out _);
+            var whole = dodger.Hull;
+            var seconds = 120f / content.Cannon("torpedo_steady").projectileSpeed;
+            Run(second, seconds - 0.8f);
+            second.Step(new List<ShipCommand> { new ShipCommand { Evade = 1f }, default });
+            Run(second, 3f);
+            Assert.AreEqual(whole, dodger.Hull, "A roll at the last moment beats it");
+        }
+
+        [Test]
+        public void TornadoesCarryAShipAllTheWayUpOrDown()
+        {
+            var def = content.Weather("maelstrom");
+            Assert.Greater(def.tornadoUpCount, 0);
+            Assert.Greater(def.tornadoDownCount, 0);
+            float After(SkyZoneKind kind, out ShipState ship)
+            {
+                var weather = new SkyWeather(def, content.skyRules, 4);
+                var sim = new DogfightSim(4, content.skyRules) { HoldOpen = true };
+                ship = sim.AddShip(0, Encounter.PlayerLoadout(content, Started(), "rust_wing"), 0f, 0f, 0f);
+                sim.AddShip(1, Encounter.EnemyLoadout(content, "scrap_raider", 0), 900f, 900f, 0f);
+                sim.SetWeather(weather);
+                var zone = new List<SkyZone>(weather.Zones).Find(z => z.Kind == kind);
+                ship.X = zone.X;
+                ship.Z = zone.Z;
+                ship.Y = 0f;
+                weather.Step(sim, new List<DogfightEvent>());
+                Assert.AreNotEqual(0f, ship.TornadoDrag, "Caught");
+
+                // Thrown clear of the funnel straight away, and it still goes all the way, even diving against it.
+                ship.X += zone.Radius * 1.5f;
+                ship.Heading = (float)Math.Atan2(ship.X - zone.X, ship.Z - zone.Z);
+                var climb = kind == SkyZoneKind.TornadoUp ? -1f : 1f;
+                for (var i = 0; i < 30 * 3 && ship.TornadoDrag != 0f; i++)
+                {
+                    sim.Step(new List<ShipCommand> { new ShipCommand { Climb = climb }, default });
+                    if (i == 0) ship.Speed = 0f;
+                }
+                return ship.Y;
+            }
+            Assert.AreEqual(DogfightSim.MaxAltitude, After(SkyZoneKind.TornadoUp, out var up), 0.01f);
+            Assert.AreEqual(0f, up.TornadoDrag, "Lets go at the top");
+            Assert.AreEqual(DogfightSim.MinAltitude, After(SkyZoneKind.TornadoDown, out var down), 0.01f);
+            Assert.AreEqual(0f, down.TornadoDrag, "Lets go at the bottom");
+
+            var flat = new SkyWeather(def, content.skyRules, 4);
+            var locked = new DogfightSim(4, content.skyRules);
+            var grounded = locked.AddShip(0, Encounter.PlayerLoadout(content, Started(), "rust_wing"), 0f, 0f, 0f);
+            locked.SetWeather(flat);
+            grounded.AltitudeLocked = true;
+            var funnel = new List<SkyZone>(flat.Zones).Find(z => z.Kind == SkyZoneKind.TornadoUp);
+            grounded.X = funnel.X;
+            grounded.Z = funnel.Z;
+            flat.Step(locked, new List<DogfightEvent>());
+            Assert.AreEqual(0f, grounded.TornadoDrag, "No effect in a fight where ships can't change height");
+        }
+
+        [Test]
+        public void StoppingTheEnginesHoldsTheShipSoItCanLookAround()
+        {
+            var sim = Duel(out var a, out var b, 300f);
+            a.Y = 0f;
+            Run(sim, 2f);
+            Assert.Greater(a.Speed, 0f);
+
+            var stopped = new ShipCommand { EnginesStopped = true, Throttle = 1f };
+            for (var i = 0; i < 60; i++) sim.Step(new List<ShipCommand> { stopped, default });
+            Assert.AreEqual(0f, a.Speed, "Stops, whatever the throttle");
+            var x = a.X;
+            var z = a.Z;
+            var y = a.Y;
+            var heading = a.Heading;
+
+            var looking = new ShipCommand { EnginesStopped = true, Turn = 1f, Climb = 1f };
+            for (var i = 0; i < 30; i++) sim.Step(new List<ShipCommand> { looking, default });
+            Assert.AreEqual(x, a.X, 0.01f, "Holds position");
+            Assert.AreEqual(z, a.Z, 0.01f);
+            Assert.AreEqual(y, a.Y, 0.01f, "The stick looks up instead of climbing");
+            Assert.AreNotEqual(heading, a.Heading, "Looks right");
+            Assert.Greater(a.LookPitch, 0f, "Looks up");
+            for (var i = 0; i < 30 * 5; i++) sim.Step(new List<ShipCommand> { looking, default });
+            Assert.LessOrEqual(a.LookPitch, DogfightSim.MaxLookPitch, "Only so far");
+
+            sim.Step(new List<ShipCommand> { new ShipCommand { EnginesStopped = true, Climb = -1f }, default });
+            Assert.Less(a.LookPitch, DogfightSim.MaxLookPitch, "And back down");
+
+            // A shot with no lock goes where it's looking.
+            a.TorpedoCooldown = 0f;
+            a.Heading = b.Heading;
+            sim.Step(new List<ShipCommand> { new ShipCommand { EnginesStopped = true, FireTorpedo = true }, default });
+            var shot = new List<ProjectileState>(sim.Projectiles).Find(p => p.OwnerId == a.Id);
+            Assert.Greater(shot.VelocityY, 0f, "Fired upward");
+
+            Run(sim, 3f, new ShipCommand { Throttle = 1f });
+            for (var i = 0; i < 30; i++) sim.Step(new List<ShipCommand> { new ShipCommand { Throttle = 1f }, default });
+            Assert.Greater(a.Speed, 0f, "Starting the engines flies on");
+            Assert.AreEqual(0f, a.LookPitch, 0.01f, "And the view levels out");
+        }
+
+        [Test]
+        public void TunnelsAndTornadoesAreSpreadEvenlyAroundTheSky()
+        {
+            // Points along a zone: the length of a tunnel, or the one spot of a tornado.
+            static List<Vector2> Points(SkyZone zone)
+            {
+                var points = new List<Vector2>();
+                var steps = zone.Length > 0f ? 24 : 0;
+                for (var i = 0; i <= steps; i++)
+                {
+                    var along = steps == 0 ? 0f : (i / (float)steps - 0.5f) * zone.Length;
+                    points.Add(new Vector2(zone.X + Mathf.Sin(zone.Heading) * along, zone.Z + Mathf.Cos(zone.Heading) * along));
+                }
+                return points;
+            }
+
+            foreach (var def in content.weathers)
+            {
+                var total = def.windCount + def.tornadoUpCount + def.tornadoDownCount;
+                Assert.LessOrEqual(total, 4, def.id);
+                if (total < 2) continue;
+                for (var seed = 0; seed < 50; seed++)
+                {
+                    var big = new List<SkyZone>(new SkyWeather(def, content.skyRules, seed).Zones).FindAll(z => z.Kind == SkyZoneKind.Wind || z.Kind == SkyZoneKind.TornadoUp || z.Kind == SkyZoneKind.TornadoDown);
+                    Assert.AreEqual(total, big.Count, def.id);
+
+                    var angles = new List<float>();
+                    foreach (var zone in big) angles.Add(Mathf.Repeat(Mathf.Atan2(zone.X, zone.Z), Mathf.PI * 2f));
+                    angles.Sort();
+                    for (var i = 0; i < angles.Count; i++)
+                    {
+                        var gap = Mathf.Repeat(angles[(i + 1) % angles.Count] - angles[i], Mathf.PI * 2f);
+                        Assert.Greater(gap, Mathf.PI * 2f / total * 0.8f, $"{def.id} seed {seed}: evenly around the sky");
+                    }
+
+                    for (var i = 0; i < big.Count; i++)
+                    {
+                        for (var j = i + 1; j < big.Count; j++)
+                        {
+                            var closest = float.MaxValue;
+                            foreach (var a in Points(big[i]))
+                            {
+                                foreach (var b in Points(big[j])) closest = Mathf.Min(closest, (a - b).magnitude);
+                            }
+                            Assert.Greater(closest - big[i].Radius - big[j].Radius, 40f, $"{def.id} seed {seed}: open sky between them");
+                        }
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void CripplingComesFromTheAmmoYouLoad()
+        {
+            var round = FireOneVolley("round");
+            Assert.AreEqual(round.MaxSubsystem, round.Engines, "Round only hurts the hull");
+            Assert.AreEqual(round.MaxSubsystem, round.Guns);
+            Assert.AreEqual(round.MaxSubsystem, round.Envelope);
+
+            var chain = FireOneVolley("chain");
+            Assert.Less(chain.Engines, chain.MaxSubsystem, "Chain wrecks engines");
+            Assert.AreEqual(chain.MaxSubsystem, chain.Guns);
+
+            var flak = FireOneVolley("flak");
+            Assert.Less(flak.Envelope, flak.MaxSubsystem, "Flak shreds balloons");
+            Assert.AreEqual(flak.MaxSubsystem, flak.Engines);
+
+            var mortar = FireOneVolley("mortar");
+            Assert.Less(mortar.Guns, mortar.MaxSubsystem, "Mortars wreck guns");
+            Assert.Less(mortar.Engines, mortar.MaxSubsystem, "And engines");
+        }
+
+        [Test]
         public void EnemyVolleysAreAnnouncedBeforeTheyFire()
         {
             var encounter = Sky("sink_all", new SkySpawn { key = "e", shipId = "scrap_raider", name = "E", accuracy = 1f });
@@ -1454,7 +1686,7 @@ namespace Airships.Tests
                 return false;
             }
             Assert.IsTrue(Raked(true), "Hitting the stern rakes");
-            Assert.IsFalse(Raked(false), "Hitting the bow doesn't");
+            Assert.IsFalse(Raked(false), "Hitting the nose doesn't");
             Assert.Greater(content.skyRules.rakeScale, 1f);
         }
 
@@ -1467,7 +1699,7 @@ namespace Airships.Tests
             Run(sim, 1f);
             Assert.Less(b.Y, 20f);
             var aimed = Duel(out var c, out var d, 30f);
-            c.Aim = ShipPart.Envelope;
+            c.Ammo = content.Ammo("flak");
             Run(aimed, 0.1f, new ShipCommand { FireBroadside = true });
             Run(aimed, 1.5f);
             Assert.Less(d.Envelope, d.MaxSubsystem);
@@ -1724,9 +1956,41 @@ namespace Airships.Tests
         }
 
         [Test]
+        public void RooksHoundBreathesFireOnEveryEnemy()
+        {
+            Assert.AreEqual("SK_Cinder", content.Look("rook").companion);
+            var rook = Combatant.Create("rook", "Rook", content.Class("gunner"), content.Crew("rook").baseStats, 2, content, true, 0);
+            rook.AddSignature(content.Crew("rook").signature, content);
+            var skill = rook.Skills.Find(s => s.id == "cinder_flame");
+            Assert.NotNull(skill, "Rook has it as soon as he joins");
+            Assert.IsTrue(skill.companion);
+            Assert.AreEqual(SkillTarget.AllEnemies, skill.Target);
+            Assert.AreEqual("burn", skill.status);
+        }
+
+        [Test]
+        public void ThorneIsATankWhoHealsAndHitsSoftly()
+        {
+            var thorne = content.Crew("thorne");
+            Assert.AreEqual("sorcerer", thorne.classId);
+            foreach (var other in content.crew)
+            {
+                if (other.id == "thorne") continue;
+                Assert.Greater(thorne.baseStats.hp, other.baseStats.hp, $"More health than {other.id}");
+                Assert.Greater(thorne.baseStats.defense, other.baseStats.defense, $"More defense than {other.id}");
+                Assert.Less(thorne.baseStats.attack, other.baseStats.attack, $"Less attack than {other.id}");
+            }
+            var combatant = Combatant.Create("thorne", "Thorne", content.Class("sorcerer"), thorne.baseStats, 5, content, true, 0);
+            combatant.AddSignature(thorne.signature, content);
+            Assert.IsTrue(combatant.Skills.Exists(s => s.revive), "Can bring back the fallen");
+            Assert.IsTrue(combatant.Skills.Exists(s => s.kind == "Heal" && s.target == "Ally" && !s.revive), "Can heal one ally");
+            Assert.IsTrue(combatant.Skills.Exists(s => s.target == "AllAllies"), "Can heal everyone");
+        }
+
+        [Test]
         public void ThorneCanBringBackTheFallen()
         {
-            var thorne = Combatant.Create("thorne", "Thorne", content.Class("surgeon"), content.Crew("thorne").baseStats, 5, content, true, 0);
+            var thorne = Combatant.Create("thorne", "Thorne", content.Class("sorcerer"), content.Crew("thorne").baseStats, 5, content, true, 0);
             thorne.AddSignature(content.Crew("thorne").signature, content);
             var ally = Combatant.Create("vane", "Vane", content.Class("buccaneer"), content.Crew("vane").baseStats, 5, content, true, 1);
             var foe = Combatant.Create("foe", "Foe", content.Class("brigand"), content.Class("brigand").baseStats, 1, content, false, 0);
@@ -1909,7 +2173,7 @@ namespace Airships.Tests
         {
             var party = run.BuildDeckParty(phase);
             var enemies = run.BuildDeckEnemies(phase);
-            var battle = new PartyBattle(party, enemies, seed, content.timing, BattleSetup.MaxFullCrew)
+            var battle = new PartyBattle(party, enemies, seed, content.timing)
             {
                 SpareTarget = run.SpareIn(phase, enemies),
                 SurrenderAfterRound = run.SabotageRounds(party, phase),

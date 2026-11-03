@@ -10,9 +10,11 @@ namespace Airships.Core
         public float Speed;
         public float TurnDegrees;
         public float Radius;
-        public CannonDef Bow;
+        public CannonDef Torpedo; // Null on ships that don't carry any.
+        public CannonDef ChaseGuns; // Enemy ships' forward guns. The player's ships have torpedoes instead.
+        public float ChaseDamageScale = 1f;
         public CannonDef Broadside;
-        public float BowDamageScale = 1f;
+        public float TorpedoDamageScale = 1f;
         public float BroadsideDamageScale = 1f;
         public SignatureDef Signature;
     }
@@ -24,12 +26,13 @@ namespace Airships.Core
         public float Turn;     // -1 left .. 1 right
         public float Throttle; // 0 .. 1
         public float Climb;    // -1 dive .. 1 climb
-        public bool FireBow;
+        public bool FireTorpedo;
+        public bool FireChaseGuns;
+        public bool EnginesStopped; // The ship hangs in the air. Turn still turns it, and Climb looks up or down.
         public bool FireBroadside;
         public bool Signature;
         public bool Grapple;
         public bool Patch;
-        public bool Overdrive;
         public float Evade; // -1 rolls left, 1 rolls right.
         public float EvadeLift; // -1 rolls down, 1 rolls up. Takes priority over Evade.
     }
@@ -52,7 +55,10 @@ namespace Airships.Core
         public float ClimbRate; // Meters per second, positive climbing.
         public float TurnRate; // Radians per second this tick, used for visual banking.
         public float Hull;
-        public float BowCooldown;
+        public float TorpedoCooldown;
+        public float ChaseCooldown;
+        public float TornadoDrag; // 1 while a tornado carries the ship up, -1 down, until it reaches the end of the sky.
+        public float LookPitch; // Radians up from level, while the engines are stopped.
         public float BroadsideCooldown;
         public float CollisionCooldown; // Grace period after a crash, so one rock can't hit every tick.
         public bool Eaten;
@@ -71,7 +77,6 @@ namespace Airships.Core
         public float EvadeLift;
         public float EvadeCooldown;
         public float ImmuneTimer;
-        public ShipPart Aim;
         public AmmoDef Ammo;
         public float HullFloor; // Above zero, this ship can be crippled but never sunk.
         public bool AltitudeLocked;
@@ -94,8 +99,6 @@ namespace Airships.Core
         public float BurnPerSecond;
         public float DeckDamage;
         public int PatchesLeft;
-        public float OverdriveTimer;
-        public float OverdriveCooldown;
 
         public bool Alive => Hull > 0f && !Departed;
         public bool EnginesOut => Engines <= 0f;
@@ -136,7 +139,7 @@ namespace Airships.Core
         public float HomingTurn;
     }
 
-    public enum DogfightEventKind { Fired, Hit, Missed, Destroyed, HazardHit, HazardBroken, ShotBlocked, ShipBump, WhaleAlert, WhaleLunge, Eaten, PartDisabled, HookLanded, HooksSnapped, Boarded, Tethered, SignatureFired, BoarderLanded, Departed, Patched, Overdrive, Crushing, LightningWarning, LightningStrike, GliderLaunched, Evaded, DamageDrift, VolleyWarning, Raked, MissileLaunched, MineBlast, PickupTaken, WaveArrived }
+    public enum DogfightEventKind { Fired, Hit, Missed, Destroyed, HazardHit, HazardBroken, ShotBlocked, ShipBump, WhaleAlert, WhaleLunge, Eaten, PartDisabled, HookLanded, HooksSnapped, Boarded, Tethered, SignatureFired, BoarderLanded, Departed, Patched, Crushing, LightningWarning, LightningStrike, GliderLaunched, Evaded, DamageDrift, TornadoCaught, VolleyWarning, Raked, MissileLaunched, MineBlast, PickupTaken, WaveArrived }
 
     public struct DogfightEvent
     {
@@ -165,6 +168,9 @@ namespace Airships.Core
         public const float MinAltitude = -45f;
         public const float MaxAltitude = 65f;
         public const float ClimbSpeed = 18f;
+        public const float MaxLookPitch = 0.6f;
+        const float LookRate = 0.9f;
+        const float StopDeceleration = 60f;
         public const int NoWinner = -2;
         const float ProjectileRadius = 1f;
         const float HullHalfHeight = 6f;
@@ -430,13 +436,6 @@ namespace Airships.Core
                 ship.Hull = Math.Min(ship.Loadout.Hull, ship.Hull + amount);
                 events.Add(new DogfightEvent { Kind = DogfightEventKind.Patched, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z, Amount = amount });
             }
-            if (command.Overdrive && ship.OverdriveCooldown <= 0f)
-            {
-                ship.OverdriveTimer = Rules.overdriveSeconds;
-                ship.OverdriveCooldown = Rules.overdriveCooldown;
-                ship.TakeDamage(ship.Loadout.Hull * Rules.overdriveHullCost);
-                events.Add(new DogfightEvent { Kind = DogfightEventKind.Overdrive, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
-            }
         }
 
         // Below a share of its hull, a ship pulls to one side at random moments. Returns how hard it's
@@ -555,7 +554,6 @@ namespace Airships.Core
             var scale = ship.EnginesOut ? Rules.disabledSpeedScale : 1f;
             if (ship.Hooks > 0) scale *= Rules.hookedSpeedScale;
             if (ship.BoostTimer > 0f) scale *= ship.BoostScale;
-            if (ship.OverdriveTimer > 0f) scale *= Rules.overdriveSpeedScale;
             if (Weather != null) scale *= Weather.WindScale(ship, Rules.windSpeedScale);
             return scale;
         }
@@ -564,7 +562,6 @@ namespace Airships.Core
         {
             if (Rules == null) return 1f;
             var scale = ship.GunsOut ? Rules.disabledReloadScale : 1f;
-            if (ship.OverdriveTimer > 0f) scale *= Rules.overdriveReloadScale;
             return scale;
         }
 
@@ -681,7 +678,9 @@ namespace Airships.Core
                 ship.Z -= ship.ForwardX * drift * Rules.damagedDriftSlip * TickSeconds;
             }
 
-            var climb = ship.AltitudeLocked ? 0f : Clamp(command.Climb, -1f, 1f);
+            var climb = ship.AltitudeLocked || ship.TornadoDrag != 0f || command.EnginesStopped ? 0f : Clamp(command.Climb, -1f, 1f);
+            var lookGoal = command.EnginesStopped ? ship.LookPitch + Clamp(command.Climb, -1f, 1f) * LookRate * TickSeconds : 0f;
+            ship.LookPitch = command.EnginesStopped ? Clamp(lookGoal, -MaxLookPitch, MaxLookPitch) : MoveTowards(ship.LookPitch, 0f, LookRate * 2f * TickSeconds);
             if (Rules != null && ship.EnvelopeOut) climb = -Rules.envelopeSinkSpeed / ClimbSpeed;
             ship.ClimbRate = MoveTowards(ship.ClimbRate, climb * ClimbSpeed, ClimbAcceleration * TickSeconds);
             var altitude = ship.Y + ship.ClimbRate * TickSeconds;
@@ -691,17 +690,17 @@ namespace Airships.Core
             var throttle = Clamp(command.Throttle, MinimumThrottle, 1f);
             var climbEffect = 1f - ClimbSpeedEffect * ship.ClimbRate / ClimbSpeed;
             var speedAcceleration = ship.BoostTimer > 0f ? Acceleration * 3f : Acceleration;
-            ship.Speed = MoveTowards(ship.Speed, loadout.Speed * throttle * climbEffect * SpeedScale(ship), speedAcceleration * TickSeconds);
+            var targetSpeed = command.EnginesStopped ? 0f : loadout.Speed * throttle * climbEffect * SpeedScale(ship);
+            ship.Speed = MoveTowards(ship.Speed, targetSpeed, (command.EnginesStopped ? StopDeceleration : speedAcceleration) * TickSeconds);
             ship.X += ship.ForwardX * ship.Speed * TickSeconds;
             ship.Z += ship.ForwardZ * ship.Speed * TickSeconds;
 
-            ship.BowCooldown = Math.Max(0f, ship.BowCooldown - TickSeconds);
+            ship.TorpedoCooldown = Math.Max(0f, ship.TorpedoCooldown - TickSeconds);
+            ship.ChaseCooldown = Math.Max(0f, ship.ChaseCooldown - TickSeconds);
             ship.BroadsideCooldown = Math.Max(0f, ship.BroadsideCooldown - TickSeconds);
             ship.CollisionCooldown = Math.Max(0f, ship.CollisionCooldown - TickSeconds);
             ship.GrappleCooldown = Math.Max(0f, ship.GrappleCooldown - TickSeconds);
             ship.SignatureCooldown = Math.Max(0f, ship.SignatureCooldown - TickSeconds);
-            ship.OverdriveTimer = Math.Max(0f, ship.OverdriveTimer - TickSeconds);
-            ship.OverdriveCooldown = Math.Max(0f, ship.OverdriveCooldown - TickSeconds);
             if (ship.BoostTimer > 0f)
             {
                 ship.BoostTimer -= TickSeconds;
@@ -718,7 +717,16 @@ namespace Airships.Core
                 }
             }
 
-            if (command.FireBow && ship.BowCooldown <= 0f) FireBow(ship);
+            if (command.FireTorpedo && ship.Loadout.Torpedo != null && ship.TorpedoCooldown <= 0f)
+            {
+                ship.TorpedoCooldown = ship.Loadout.Torpedo.reload * ReloadScale(ship);
+                FireForward(ship, ship.Loadout.Torpedo, ship.Loadout.TorpedoDamageScale);
+            }
+            if (command.FireChaseGuns && ship.Loadout.ChaseGuns != null && ship.ChaseCooldown <= 0f)
+            {
+                ship.ChaseCooldown = ship.Loadout.ChaseGuns.reload * ReloadScale(ship);
+                FireForward(ship, ship.Loadout.ChaseGuns, ship.Loadout.ChaseDamageScale);
+            }
             if (command.FireBroadside && ship.BroadsideCooldown <= 0f) FireBroadside(ship);
             if (Rules == null) return;
             UpdateEvade(ship, command);
@@ -727,14 +735,12 @@ namespace Airships.Core
             UseCrewAbilities(ship, command);
         }
 
-        void FireBow(ShipState ship)
+        void FireForward(ShipState ship, CannonDef cannon, float damageScale)
         {
-            var cannon = ship.Loadout.Bow;
-            ship.BowCooldown = cannon.reload * ReloadScale(ship);
             var aim = ship.Heading;
             var locked = -1;
 
-            // Gentle aim assist so firing works with thumbs: shots curve onto a target near the bow.
+            // Gentle aim assist so firing works with thumbs: shots curve onto a target near the nose.
             var target = Opponent(ship);
             if (target != null)
             {
@@ -745,7 +751,9 @@ namespace Airships.Core
                     locked = target.Id;
                 }
             }
-            FireVolley(ship, cannon, aim, PitchToward(ship, target, cannon), ship.Loadout.BowDamageScale, 0f, false, locked);
+            // A stopped ship looking up or down fires where it's looking, unless it has a lock.
+            var pitch = locked < 0 && ship.LookPitch != 0f ? ship.LookPitch : PitchToward(ship, target, cannon);
+            FireVolley(ship, cannon, aim, pitch, damageScale, 0f, false, locked);
         }
 
         // Guns angle toward a target's altitude only within their elevation limit. Beyond it they fire
@@ -804,7 +812,7 @@ namespace Airships.Core
                 var speed = torpedo ? Math.Max(cannon.projectileSpeed, ship.Speed * TorpedoLaunchMargin) : cannon.projectileSpeed;
                 var flatSpeed = speed * (float)Math.Cos(pitch);
 
-                // Broadside guns sit along the hull; bow guns sit at the front.
+                // Broadside guns sit along the hull; chase guns sit at the front.
                 var alongHull = heavy ? fraction * ship.Loadout.Radius * 1.4f : ship.Loadout.Radius;
                 var acrossHull = heavy ? side * ship.Loadout.Radius * 0.5f : 0f;
                 var startX = ship.X + ship.ForwardX * alongHull + ship.ForwardZ * acrossHull;
@@ -860,15 +868,8 @@ namespace Airships.Core
             var hull = ammo != null ? ammo.hullScale : 1f;
             var engines = ammo != null ? ammo.engineScale : 0f;
             var guns = ammo != null ? ammo.gunScale : 0f;
-            var envelope = 0f;
+            var envelope = ammo != null ? ammo.envelopeScale : 0f;
             projectile.AmmoId = ammo?.id;
-            if (ship.Aim != ShipPart.Hull)
-            {
-                hull *= Rules.aimHullScale;
-                if (ship.Aim == ShipPart.Engines) engines += Rules.aimSubsystemScale;
-                else if (ship.Aim == ShipPart.Guns) guns += Rules.aimSubsystemScale;
-                else envelope += Rules.aimSubsystemScale;
-            }
             if (ship.Hidden && heavy) hull *= Rules.ambushScale;
             projectile.Damage = damage * hull;
             projectile.EngineDamage = damage * engines;
@@ -1096,7 +1097,7 @@ namespace Airships.Core
             var side = relative >= 0f ? 1f : -1f;
             UpdatePhase(ship, distance);
 
-            // Attack runs instead of an endless orbit: close nose-on with the bow guns, turn to deliver
+            // Attack runs instead of an endless orbit: close nose-on with the chase guns, turn to deliver
             // a broadside, then break away to a new altitude and come around again.
             float desired;
             float throttle;
@@ -1104,7 +1105,7 @@ namespace Airships.Core
             switch (phase)
             {
                 case Phase.Attack:
-                    desired = DogfightSim.LeadAngle(ship, target, ship.Loadout.Bow.projectileSpeed) + jitter;
+                    desired = DogfightSim.LeadAngle(ship, target, (ship.Loadout.ChaseGuns ?? ship.Loadout.Torpedo).projectileSpeed) + jitter;
                     throttle = 1f;
                     altitudeGoal = target.Y + altitudeOffset * AttackAltitudeShare;
                     break;
@@ -1120,7 +1121,8 @@ namespace Airships.Core
                     break;
             }
 
-            var bow = ship.Loadout.Bow;
+            var guns = ship.Loadout.ChaseGuns;
+            var torpedo = ship.Loadout.Torpedo;
             var broadside = ship.Loadout.Broadside;
             var beamError = Math.Abs(Math.Abs(relative) - (float)Math.PI * 0.5f);
             var command = new ShipCommand
@@ -1128,15 +1130,20 @@ namespace Airships.Core
                 Turn = DogfightSim.WrapAngle(desired - ship.Heading) * 2.2f,
                 Throttle = throttle,
                 Climb = Clamp1((altitudeGoal - ship.Y) / 10f),
-                FireBow = distance < bow.range * 0.95f
-                    && Math.Abs(relative) <= bow.aimAssistDegrees * DegreesToRadians
-                    && DogfightSim.CanElevate(ship, target, bow),
+                FireTorpedo = torpedo != null
+                    && distance < torpedo.range * 0.95f
+                    && Math.Abs(relative) <= torpedo.aimAssistDegrees * DegreesToRadians
+                    && DogfightSim.CanElevate(ship, target, torpedo),
+                FireChaseGuns = guns != null
+                    && distance < guns.range * 0.95f
+                    && Math.Abs(relative) <= guns.aimAssistDegrees * DegreesToRadians
+                    && DogfightSim.CanElevate(ship, target, guns),
                 FireBroadside = distance < broadside.range * 0.85f
                     && beamError <= 30f * DegreesToRadians
                     && DogfightSim.CanElevate(ship, target, broadside),
             };
 
-            // A ship with an enemy on its tail weaves and changes altitude to throw off the bow guns.
+            // A ship with an enemy on its tail weaves and changes altitude to throw off forward guns.
             if (distance < TailedDistance && Math.Abs(relative) > TailedAngle)
             {
                 var weave = (int)(time / WeaveSeconds) % 2 == 0 ? 1f : -1f;

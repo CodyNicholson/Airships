@@ -337,7 +337,30 @@ namespace Airships.Game
     {
         const float Travel = 120f;
 
+        const float CenterTapRadius = 75f; // The middle of the pad, in canvas units.
+        const float CenterTapSeconds = 0.25f;
+        const float CenterTapMaxMove = 30f;
+
         public Vector2 Value { get; private set; }
+
+        bool pressedCenter;
+        bool centerTapped;
+        float pressedAt;
+        TextMeshProUGUI knobLabel;
+
+        // A quick tap on the middle of the pad, as opposed to steering with it.
+        public bool ConsumeCenterTap()
+        {
+            var tapped = centerTapped;
+            centerTapped = false;
+            return tapped;
+        }
+
+        public void SetKnobLabel(string label, Color knobColor)
+        {
+            knobLabel.text = label;
+            knob.GetComponent<Image>().color = knobColor;
+        }
 
         RectTransform baseRing;
         RectTransform knob;
@@ -365,6 +388,11 @@ namespace Airships.Game
             knobImage.raycastTarget = false;
             stick.knob = UIKit.Place(knobImage.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, Vector2.one * 120f);
 
+            stick.knobLabel = UIKit.Text("Knob Label", knobImage.transform, "", 24f, Palette.TextLight);
+            stick.knobLabel.outlineWidth = 0.2f;
+            stick.knobLabel.outlineColor = Palette.Ink;
+            UIKit.Place(stick.knobLabel.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, new Vector2(120f, 40f));
+
             stick.restPosition = stick.baseRing.anchoredPosition;
             stick.canvas = zone.GetComponentInParent<Canvas>();
             return stick;
@@ -374,13 +402,17 @@ namespace Airships.Game
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)transform, eventData.position, null, out var local);
             var rect = ((RectTransform)transform).rect;
-            baseRing.anchoredPosition = local - rect.min;
+            var pressed = local - rect.min;
+            pressedCenter = (pressed - restPosition).magnitude <= CenterTapRadius;
+            pressedAt = Time.unscaledTime;
+            baseRing.anchoredPosition = pressed;
             OnDrag(eventData);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(baseRing, eventData.position, null, out var local);
+            if (local.magnitude > CenterTapMaxMove) pressedCenter = false;
             var offset = Vector2.ClampMagnitude(local, Travel);
             knob.anchoredPosition = offset;
             Value = offset / Travel;
@@ -388,6 +420,8 @@ namespace Airships.Game
 
         public void OnPointerUp(PointerEventData eventData)
         {
+            if (pressedCenter && Time.unscaledTime - pressedAt <= CenterTapSeconds) centerTapped = true;
+            pressedCenter = false;
             Value = Vector2.zero;
             knob.anchoredPosition = Vector2.zero;
             baseRing.anchoredPosition = restPosition;

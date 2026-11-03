@@ -60,7 +60,7 @@
   {
    "id": "thorne",
    "name": "Dr. Thorne",
-   "classId": "surgeon",
+   "classId": "sorcerer",
    "look": "thorne"
   },
   {
@@ -2229,7 +2229,7 @@
     "stick",
     "broadside",
     "boost",
-    "bow",
+    "torpedo",
     "grapple"
    ]
   },
@@ -2468,7 +2468,11 @@
       },
       {
        "speaker": "rook",
-       "text": "I built half their gun drills. Hit the propellers, not the hull. A ship that can't run can't stop you walking onto it."
+       "text": "I built half their gun drills, and carried half their guns. Load FLAK and shred their balloons. A ship that can't climb can't stop you walking onto it."
+      },
+      {
+       "speaker": "rook",
+       "text": "The hound's Cinder. I built her out of what they threw away. Keep your hand off the mouth. It's a cannon, and it breathes fire."
       }
      ]
     }
@@ -2478,7 +2482,6 @@
    ],
    "recruitLevel": 2,
    "mechanics": [
-    "aim",
     "flak"
    ]
   },
@@ -2617,12 +2620,6 @@
       }
      ],
      "teach": [
-      {
-       "control": "aim",
-       "speaker": "rook",
-       "text": "Set AIM to ENGINES. Shoot the propellers and she can't run.",
-       "delay": 2
-      },
       {
        "control": "multihook",
        "speaker": "rook",
@@ -2780,7 +2777,7 @@
      "lines": [
       {
        "speaker": "rook",
-       "text": "Bruisers at the winch! Cut through them!",
+       "text": "Bruisers at the winch? I've lifted bigger. Cut through them!",
        "trigger": "start"
       }
      ],
@@ -3727,7 +3724,7 @@
       },
       {
        "speaker": "rook",
-       "text": "She's huge but she's slow. Stay out of her broadside.",
+       "text": "She's huge but she's slow. All size, no training. Stay out of her broadside.",
        "trigger": "time",
        "value": 10
       }
@@ -3925,11 +3922,11 @@
      "lines": [
       {
        "speaker": "thorne",
-       "text": "You! The one who just got sentenced to death! I'm the Chief Engineer of this prison, and I've had enough of it."
+       "text": "They sentenced you to die today. They have tried that with me."
       },
       {
        "speaker": "thorne",
-       "text": "I can overdrive any Lift-Core you've got and patch a hull under fire. Get me off this barge."
+       "text": "I mend what breaks. I raise what falls. Open this door."
       }
      ]
     }
@@ -3940,7 +3937,6 @@
    "recruitLevel": 6,
    "mechanics": [
     "patch",
-    "overdrive",
     "mortar"
    ]
   },
@@ -3961,7 +3957,7 @@
      "lines": [
       {
        "speaker": "thorne",
-       "text": "Assault gliders launching! They'll land on our deck and take the helm!"
+       "text": "Gliders. They are coming for the helm."
       },
       {
        "speaker": "vane",
@@ -3995,7 +3991,7 @@
       },
       {
        "speaker": "thorne",
-       "text": "Boarders on the stern! The defenders will have to hold!",
+       "text": "On the stern. Hold them.",
        "trigger": "boarder"
       },
       {
@@ -4008,14 +4004,8 @@
       {
        "control": "patch",
        "speaker": "thorne",
-       "text": "Hull taking a beating? Tap PATCH. I can do it once per fight.",
+       "text": "Your hull is failing. Tap PATCH. I will mend it. Once.",
        "delay": 16
-      },
-      {
-       "control": "overdrive",
-       "speaker": "thorne",
-       "text": "Tap OVERDRIVE to redline the Lift-Core. Faster guns, faster ship.",
-       "delay": 8
       }
      ],
      "gliders": 5,
@@ -4062,7 +4052,7 @@
      "lines": [
       {
        "speaker": "thorne",
-       "text": "They're on the deck! Defend the helm!",
+       "text": "On the deck. Defend the helm.",
        "trigger": "start"
       }
      ],
@@ -4195,7 +4185,7 @@
      "lines": [
       {
        "speaker": "thorne",
-       "text": "Gliders landed! We hold here while they board!",
+       "text": "They have landed. We hold.",
        "trigger": "start"
       }
      ],
@@ -4367,7 +4357,7 @@
       },
       {
        "speaker": "lyra",
-       "text": "Updrafts here too. They'll throw you upward if you fly through.",
+       "text": "Tornadoes here too. One throws you to the top of the sky, and an upside-down one drags you to the bottom.",
        "trigger": "time",
        "value": 12
       },
@@ -4559,7 +4549,7 @@
       },
       {
        "speaker": "thorne",
-       "text": "Ria's hull won't take much more of this.",
+       "text": "Ria's ship is dying.",
        "trigger": "time",
        "value": 40
       }
@@ -4874,7 +4864,7 @@
       },
       {
        "speaker": "vane",
-       "text": "Mortars on her engines. Set your AIM and keep firing.",
+       "text": "Mortars on her engines. Load CHAIN and keep firing.",
        "trigger": "time",
        "value": 3
       },
@@ -4976,14 +4966,6 @@
        "look": "royal_guard"
       },
       {
-       "id": "royal_b",
-       "name": "Royal Guard",
-       "classId": "armada_officer",
-       "level": 13,
-       "hpScale": 0.65,
-       "look": "royal_guard"
-      },
-      {
        "id": "royal_c",
        "name": "Royal Guard",
        "classId": "armada_guard",
@@ -4998,11 +4980,11 @@
        "look": "armada_soldier"
       }
      ],
-     "party": "full",
+     "party": "boarding",
      "lines": [
       {
        "speaker": "vane",
-       "text": "All of you, with me. This is our deck.",
+       "text": "You two, with me. The rest of you, hold our ship. This deck is ours.",
        "trigger": "start"
       },
       {
@@ -5065,7 +5047,7 @@
       },
       {
        "speaker": "thorne",
-       "text": "Lift-Core's holding! I don't know how, but she's holding!"
+       "text": "The Lift-Core holds. I am holding it."
       },
       {
        "speaker": "vane",
@@ -5150,7 +5132,7 @@
      "lines": [
       {
        "speaker": "rook",
-       "text": "Remember me, Commodore?",
+       "text": "Remember me, Commodore? I've had time to work out.",
        "trigger": "start"
       }
      ],
@@ -5446,7 +5428,7 @@
    "id": "s_thorne",
    "act": 3,
    "title": "Spare Parts",
-   "blurb": "Dr. Thorne wants the Lift-Core regulator from an Armada tender.",
+   "blurb": "Dr. Thorne wants the regulator from an Armada tender. He won't say why.",
    "kind": "side",
    "requires": "",
    "gold": 340,
@@ -5474,7 +5456,7 @@
      "lines": [
       {
        "speaker": "thorne",
-       "text": "Please don't shoot the part I need. It's near the engines. Well, shoot around it.",
+       "text": "There is a regulator near her engines. I need it whole.",
        "trigger": "start"
       }
      ],
@@ -5517,11 +5499,11 @@
    "id": "rook1",
    "crew": "rook",
    "after": "a1_rook",
-   "activity": "cleaning a cannon",
+   "activity": "lifting a cannon",
    "lines": [
     {
      "speaker": "rook",
-     "text": "Armada drills say hit the hull. Armada drills are written by people who've never had to fix one."
+     "text": "Armada drills say hit the hull. Armada drills are written by people who've never lifted one of these."
     },
     {
      "speaker": "vane",
@@ -5537,7 +5519,7 @@
    "id": "rook2",
    "crew": "rook",
    "after": "a1_krag",
-   "activity": "cleaning a cannon",
+   "activity": "lifting a cannon",
    "lines": [
     {
      "speaker": "rook",
@@ -5557,19 +5539,19 @@
    "id": "rook3",
    "crew": "rook",
    "after": "a2_twins",
-   "activity": "cleaning a cannon",
+   "activity": "lifting a cannon",
    "lines": [
     {
      "speaker": "rook",
-     "text": "I've been firing guns since I was nine. First time anyone's asked me where I think we should aim them."
+     "text": "I've been hauling guns since I was nine. First time anyone's asked me where we should aim them."
     },
     {
      "speaker": "vane",
-     "text": "You're good at it."
+     "text": "You're good at it. Also, that's a cannon. You're curling a cannon."
     },
     {
      "speaker": "rook",
-     "text": "I know. It's still nice to hear."
+     "text": "I know. Two more sets."
     }
    ]
   },
@@ -5597,7 +5579,7 @@
    "id": "rook4",
    "crew": "rook",
    "after": "a3_tartarus",
-   "activity": "cleaning a cannon",
+   "activity": "lifting a cannon",
    "lines": [
     {
      "speaker": "rook",
@@ -5717,11 +5699,11 @@
    "id": "thorne1",
    "crew": "thorne",
    "after": "a3_tartarus",
-   "activity": "tuning the Lift-Core",
+   "activity": "watching the Lift-Core",
    "lines": [
     {
      "speaker": "thorne",
-     "text": "Your Lift-Core is a disgrace. Who's been maintaining it?"
+     "text": "Your Lift-Core is dying. Who has been tending it?"
     },
     {
      "speaker": "vane",
@@ -5729,7 +5711,7 @@
     },
     {
      "speaker": "thorne",
-     "text": "That explains the smell."
+     "text": "It knows."
     }
    ]
   },
@@ -5737,11 +5719,11 @@
    "id": "thorne2",
    "crew": "thorne",
    "after": "a3_gliders",
-   "activity": "tuning the Lift-Core",
+   "activity": "watching the Lift-Core",
    "lines": [
     {
      "speaker": "thorne",
-     "text": "I built half the Citadel's locks. Told myself it was only engineering."
+     "text": "The Citadel's locks are bound with my work. They kept me to keep the rest shut."
     },
     {
      "speaker": "vane",
@@ -5749,7 +5731,7 @@
     },
     {
      "speaker": "thorne",
-     "text": "Now I'd like one good regulator and a clean conscience, in that order."
+     "text": "Now I have a debt."
     }
    ]
   },
@@ -5757,11 +5739,11 @@
    "id": "thorne3",
    "crew": "thorne",
    "after": "a3_malakor",
-   "activity": "tuning the Lift-Core",
+   "activity": "watching the Lift-Core",
    "lines": [
     {
      "speaker": "thorne",
-     "text": "Overdrive won't kill her. Probably. I'd stop short of testing that, mind you."
+     "text": "Your Lift-Core will not kill her. Not while I watch it."
     },
     {
      "speaker": "vane",
@@ -5769,7 +5751,7 @@
     },
     {
      "speaker": "thorne",
-     "text": "Don't be ridiculous. It's a very good ship."
+     "text": "No."
     }
    ]
   },
@@ -5810,7 +5792,7 @@
    "loyalty": 3,
    "name": "Rook's Warheads",
    "description": "+15% torpedo damage",
-   "stat": "bowDamage",
+   "stat": "torpedoDamage",
    "amount": 0.15
   },
   {
@@ -5853,7 +5835,7 @@
    "id": "thorne_bracing",
    "crew": "thorne",
    "loyalty": 1,
-   "name": "Thorne's Bracing",
+   "name": "Thorne's Wards",
    "description": "+8% hull",
    "stat": "hull",
    "amount": 0.08
@@ -5862,7 +5844,7 @@
    "id": "thorne_plating",
    "crew": "thorne",
    "loyalty": 3,
-   "name": "Thorne's Plating",
+   "name": "Thorne's Seals",
    "description": "+2 armor",
    "stat": "armor",
    "amount": 2

@@ -194,7 +194,7 @@ namespace Airships.Game
                 {
                     var active = director.Save.IsInParty(progress.id);
                     row.color = active ? rowColor : Palette.WithAlpha(Palette.Panel, 0.8f);
-                    role.text = active ? cls.name : $"{cls.name}  (in reserve)";
+                    role.text = active ? cls.name : $"{cls.name}  (defending the ship)";
                     if (swap != null)
                     {
                         swap.gameObject.SetActive(active);

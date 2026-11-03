@@ -422,6 +422,18 @@ namespace Airships.Core
                 Begin(save, content);
                 save.EnsureValidParty();
             }
+            if (save.version < 3)
+            {
+                // The bow gun became the torpedo.
+                foreach (var upgrade in save.upgrades)
+                {
+                    if (upgrade.id == "bow") upgrade.id = "torpedo";
+                }
+                var old = save.campaign.mechanics.IndexOf("bow");
+                if (old >= 0) save.campaign.mechanics[old] = "torpedo";
+                save.campaign.mechanics.Remove("overdrive"); // Overdrive and AIM were taken out of the game.
+                save.campaign.mechanics.Remove("aim");
+            }
             save.version = SaveData.CurrentVersion;
             return true;
         }
@@ -585,12 +597,6 @@ namespace Airships.Core
             {
                 case "solo":
                     ids.Add(Campaign.Protagonist);
-                    break;
-                case "full":
-                    foreach (var member in save.crew)
-                    {
-                        if (ids.Count < BattleSetup.MaxFullCrew) ids.Add(member.id);
-                    }
                     break;
                 case "defending":
                     foreach (var member in save.crew)

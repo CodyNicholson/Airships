@@ -37,7 +37,7 @@ namespace Airships.Core
     [Serializable]
     public class SaveData
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int version = CurrentVersion;
         public int gold;
@@ -235,7 +235,7 @@ namespace Airships.Core
         }
 
         // Applies the player's purchased upgrades to their ship definition.
-        public const string PlayerBowCannon = "torpedo_tube"; // Every ship the player flies mounts one. Enemies keep their ship's guns.
+        public const string PlayerTorpedoCannon = "torpedo_tube"; // Every ship the player flies mounts one. Enemies keep their ship's guns.
 
         public static ShipLoadout PlayerLoadout(GameContent content, SaveData save, string shipId)
         {
@@ -248,9 +248,9 @@ namespace Airships.Core
                 Speed = ship.speed,
                 TurnDegrees = ship.turnDegrees,
                 Radius = ship.radius,
-                Bow = content.Cannon(PlayerBowCannon),
+                Torpedo = content.Cannon(PlayerTorpedoCannon),
                 Broadside = content.Cannon(ship.broadsideCannon),
-                BowDamageScale = 1f,
+                TorpedoDamageScale = 1f,
                 BroadsideDamageScale = 1f,
                 Signature = !string.IsNullOrEmpty(signature) ? content.Signature(signature) : null,
             };
@@ -272,10 +272,17 @@ namespace Airships.Core
                 case "armor": loadout.Armor += amount; break;
                 case "speed": loadout.Speed *= 1f + amount; break;
                 case "turn": loadout.TurnDegrees *= 1f + amount; break;
-                case "bowDamage": loadout.BowDamageScale += amount; break;
+                case "torpedoDamage": loadout.TorpedoDamageScale += amount; break;
                 case "broadsideDamage": loadout.BroadsideDamageScale += amount; break;
                 default: throw new InvalidOperationException($"Unknown upgrade stat '{stat}'");
             }
+        }
+
+        // The later in the game, the faster the torpedoes coming at you. The first level has none.
+        public static CannonDef EnemyTorpedo(GameContent content, int tier)
+        {
+            if (tier <= 0) return null;
+            return content.Cannon(tier <= 1 ? "torpedo_slow" : tier <= 3 ? "torpedo_steady" : tier <= 5 ? "torpedo_fast" : "torpedo_rapid");
         }
 
         public static ShipLoadout EnemyLoadout(GameContent content, string shipId, int tier)
@@ -290,9 +297,11 @@ namespace Airships.Core
                 Speed = ship.speed,
                 TurnDegrees = ship.turnDegrees,
                 Radius = ship.radius,
-                Bow = content.Cannon(ship.bowCannon),
+                Torpedo = ship.noTorpedo ? null : EnemyTorpedo(content, tier),
+                ChaseGuns = content.Cannon(ship.chaseCannon),
                 Broadside = content.Cannon(ship.broadsideCannon),
-                BowDamageScale = damageScale,
+                TorpedoDamageScale = damageScale,
+                ChaseDamageScale = damageScale,
                 BroadsideDamageScale = damageScale,
             };
         }

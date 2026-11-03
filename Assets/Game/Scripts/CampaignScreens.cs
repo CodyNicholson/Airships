@@ -661,9 +661,17 @@ namespace Airships.Game
     {
         const int MaxCrewOnDeck = 7;
         static readonly Vector3 HelmStep = new Vector3(-1.3f, 0f, -0.4f); // Beside the wheel, not hidden behind it.
-        static readonly Vector3 MorrowStep = new Vector3(1.8f, 0f, 0f); // Out from in front of Sable.
-        static readonly Vector3 ThorneStep = new Vector3(1f, 0f, 0f); // Thorne and Rook stand a little apart.
-        static readonly Vector3 RookStep = new Vector3(-1f, 0f, 0f);
+        static readonly Vector3 CompanionHubStep = new Vector3(-1.2f, 0f, -2f); // Forward of its owner, where it can be seen.
+
+        // The crew gather below the helm, close enough to read as a crew rather than six strangers.
+        static readonly Dictionary<string, Vector2> DeckSpots = new Dictionary<string, Vector2>
+        {
+            { "sable", new Vector2(-5.5f, 0.9f) },
+            { "lyra", new Vector2(-2.7f, 0.6f) },
+            { "morrow", new Vector2(-3f, -1.6f) },
+            { "rook", new Vector2(0.9f, 0.5f) },
+            { "thorne", new Vector2(2.6f, -0.8f) },
+        };
         const float CardWidth = 760f;
         const float CardMargin = 28f;
         const float ClearMargin = 40f; // Between the crew and the screen's edge or the card.
@@ -857,9 +865,14 @@ namespace Airships.Game
                 var spot = station != null ? station : spare;
                 model.Root.transform.position = spot != null ? spot.position : deck.Root.transform.position;
                 if (crew[i].id == Campaign.Protagonist) model.Root.transform.position += HelmStep;
-                if (crew[i].id == "morrow") model.Root.transform.position += MorrowStep;
-                if (crew[i].id == "thorne") model.Root.transform.position += ThorneStep;
-                if (crew[i].id == "rook") model.Root.transform.position += RookStep;
+                if (DeckSpots.TryGetValue(crew[i].id, out var deckSpot))
+                {
+                    model.Root.transform.position = new Vector3(deckSpot.x, model.Root.transform.position.y, deckSpot.y);
+                }
+                var toDeck = new Vector3(0f, 0f, -12f) - model.Root.transform.position;
+                toDeck.y = 0f;
+                model.Root.transform.rotation = Quaternion.LookRotation(toDeck.sqrMagnitude > 0.01f ? toDeck : Vector3.back);
+                if (model.Companion != null) model.Companion.Root.transform.position = model.Root.transform.position + CompanionHubStep;
                 var toCamera = new Vector3(0f, 0f, -12f) - model.Root.transform.position;
                 toCamera.y = 0f;
                 model.Root.transform.rotation = Quaternion.LookRotation(toCamera.sqrMagnitude > 0.01f ? toCamera : Vector3.back);

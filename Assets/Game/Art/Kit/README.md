@@ -38,12 +38,24 @@ embed the atlas that suits them (`default_faction` in the manifest), so they loo
 | `SM_Ship_RustWing` | `Scrap` | *The Rust-Wing* after the theft |
 | `SM_Ship_SovereignGale` | `Crimson`, then `Gilded`, then `Crimson` | Your flagship, Cassian's Sky-Killer, and the ship you reclaim |
 | `SM_Ship_Mirage` | `Syndicate` and `Obsidian` | Vex's and Vesper's clippers |
+| `SK_Thorne`, `SM_Prop_ShadowStaff` | `Sorcerer` | Dr. Thorne: purple clothes and green eyes need this atlas |
+| `SK_Cinder` | Any | Rook's robot hound, on its own four-legged skeleton with `Idle`, `Walk` and `Fire` clips. A `muzzle` bone follows the barrel's tip |
 | `SK_ArmadaSoldier` | `Gilded` or `Warden` | Armada crews, or Tartarus prison guards |
 | `SK_PirateBrute`, `SK_PirateDeckhand`, `SK_PirateGunner` | `Scrap` or `Syndicate` | Krag's bruisers, Syndicate crews and bodyguards |
 
-**Portraits.** `textures/production/T_Portrait_<Name>_<HQ|LQ>.png` are the Aether-Comms busts, 512 px and
-256 px, rendered from the real models by `tools/blender/portraits.py`. Crew face right and rivals face
-left, so a comms exchange plays as a stand-off.
+**Portraits.** `textures/production/T_Portrait_<Name>_<HQ|LQ>.png` are the dialogue and Aether-Comms
+portraits, 512 px and 256 px. They are illustrated busts, not renders of the game models: each character has
+their own sculpted face, painted features, pose and background motif, drawn by `tools/blender/portraits.py`
+from the designs in `portrait_cast.py`. The busts are never exported, so they have no triangle budget. Crew
+face right and rivals face left, so a comms exchange plays as a stand-off. Cassian faces left as a pirate
+too, because he looks towards the crew he commands from the other side of the frame.
+
+| Group | Portraits |
+| :--- | :--- |
+| Crew | `Vane`, `Rook`, `Lyra`, `Sable`, `Thorne`, `Morrow`, `Brill`, `Hask`, `Wren`, `Ivo` |
+| Old crew and allies | `CassianPirate`, `Tobin`, `Mirren`, `Odessa`, `CaptainRia`, `Runner` |
+| Rivals | `Krag`, `Gorse`, `Scrapper`, `Ashgrave`, `Thrace`, `Vex`, `Vesper`, `Malakor`, `CassianAdmiral` |
+| Armada | `ArmadaOfficer`, `ArmadaSoldier`, `RoyalGuard` |
 
 **Hub stations.** `SM_Env_QuarterdeckHub` has a `station_<name>` socket for each tappable crew member.
 Stand them there on the `Work` clip, with `SM_Prop_SkyChartTable` at `station_lyra_table`. Recolour the
@@ -186,7 +198,7 @@ plus hips translation, so it plays in place and can be shared between every char
 `Idle`, `Walk`, `AttackMelee`, `AttackRanged`, `Hit`, `Block`, `Death`, `Victory`, `Run`, `Grapple`
 (the swing between ships), `Talk`, `Work` (hub tasks), `Surrender` (the Davy Jones' Choice), `Taunt`
 
-**Factions.** `textures/production/T_Palette_<Crimson|Azure|Emerald|Obsidian|Gilded|Scrap|Syndicate|Warden>_<HQ|LQ>.png` differ only
+**Factions.** `textures/production/T_Palette_<Crimson|Azure|Emerald|Obsidian|Gilded|Scrap|Syndicate|Warden|Sorcerer>_<HQ|LQ>.png` differ only
 in their accent colours. Swap the material's base colour texture to recolour any model, for example
 to tell player crews apart. The same swap can share a single texture across all models: import the
 atlas once, point every material at it, and discard the copy embedded in each `.glb`. Compress it as
@@ -210,8 +222,8 @@ Budgets live in `BUDGET_TIERS` in the gate script.
     python3 tools/blender/palette.py          # rebuild palette and emissive atlases
     python3 tools/validate_production.py      # check every .glb and image against budgets and the manifest
 
-Inside Blender, `catalog.write_manifest()` rebuilds `asset_manifest.json`, `portraits.render_all(scratch_dir)`
-re-renders the portraits, and `fx_flipbooks.generate_all()`, `fx_skies.generate_all()` and
+Inside Blender, `catalog.write_manifest()` rebuilds `asset_manifest.json`, `portraits.render_all()` re-renders the
+portraits in a temporary scene (pass a list of names for just those), and `fx_flipbooks.generate_all()`, `fx_skies.generate_all()` and
 `fx_icons.generate_all(scratch_dir)` rebuild the effects, skies and icons. Their contents are listed in
 `fx_catalog.py`. Art direction for each campaign asset is in
 the docstrings of `story_ships.py`, `story_characters.py`, `story_props.py` and `story_env.py`.

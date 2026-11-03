@@ -327,7 +327,7 @@ namespace Airships.Game
         }
     }
 
-    // Draws cloud banks, wind tunnels, updrafts, toxic smog and lightning with the kit's hazard models.
+    // Draws cloud banks, wind tunnels, tornadoes, toxic smog and lightning with the kit's hazard models.
     public class SkyZoneViews
     {
         const float BoltSeconds = 0.22f;
@@ -350,10 +350,21 @@ namespace Airships.Game
 
         readonly List<Tunnel> tunnels = new List<Tunnel>();
         Material tunnelMaterial;
+        float tornadoFlow;
 
         readonly SkyWeather weather;
         readonly Transform root;
-        readonly List<Transform> updrafts = new List<Transform>();
+        const float TornadoBase = -50f;
+        const int TornadoHoops = 4;
+        const float TornadoHoopSpeed = 38f;
+        const float TornadoHoopHigh = 75f;
+        const float TornadoHoopLow = -55f;
+        static readonly Color DownTornadoGrey = new Color(0.38f, 0.38f, 0.41f);
+        static Mesh downHoopMesh;
+        Material downTornadoMaterial;
+        readonly List<(Transform hoop, SkyZone zone, float direction, float offset)> tornadoHoops = new List<(Transform, SkyZone, float, float)>();
+        const float TornadoSpinDegrees = 40f;
+        readonly List<(Transform funnel, float spin)> tornadoes = new List<(Transform, float)>();
         readonly Material zoneMaterial;
         GameObject bolt;
         float boltTimer;
@@ -380,9 +391,13 @@ namespace Airships.Game
                     case SkyZoneKind.Wind:
                         PlaceTunnel(zone);
                         break;
-                    case SkyZoneKind.Updraft:
-                        var column = Place("SM_Env_UpdraftColumn", zone, zone.Radius / 9.5f, -50f);
-                        updrafts.Add(column.transform);
+                    case SkyZoneKind.TornadoUp:
+                        tornadoes.Add((Place("SM_Env_UpdraftColumn", zone, zone.Radius / 9.5f, TornadoBase).transform, 1f));
+                        AddTornadoHoops(zone, 1f);
+                        break;
+                    case SkyZoneKind.TornadoDown:
+                        tornadoes.Add((PlaceUpsideDownTornado(zone), -1f));
+                        AddTornadoHoops(zone, -1f);
                         break;
                 }
             }
@@ -396,6 +411,60 @@ namespace Airships.Game
             kit.transform.localScale = Vector3.one * scale;
             foreach (var renderer in kit.GetComponentsInChildren<Renderer>()) renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return kit;
+        }
+
+        // The same funnel flipped over, filling the same stretch of sky, with its wide end at the bottom.
+        Transform PlaceUpsideDownTornado(SkyZone zone)
+        {
+            var kit = Place("SM_Env_UpdraftColumn", zone, zone.Radius / 9.5f, TornadoBase);
+            if (downTornadoMaterial == null)
+            {
+                downTornadoMaterial = new Material(zoneMaterial) { name = "Upside-Down Tornado" };
+                downTornadoMaterial.SetColor("_BaseColor", DownTornadoGrey);
+                downTornadoMaterial.SetTexture("_GlowMap", Texture2D.blackTexture); // Glow would wash the grey out.
+            }
+            KitArt.Paint(kit, downTornadoMaterial);
+            var before = MiddleHeight(kit);
+            kit.transform.rotation = Quaternion.Euler(180f, 0f, 0f);
+            kit.transform.position += Vector3.up * (before - MiddleHeight(kit));
+            return kit.transform;
+        }
+
+        // Rings rising through a tornado, or sinking through an upside-down one, show which way it carries you.
+        void AddTornadoHoops(SkyZone zone, float direction)
+        {
+            BuildHoopMeshes();
+            if (tunnelMaterial == null) tunnelMaterial = Models.NewLitMaterial("Wind Tunnel", -0.6f, 0.3f);
+            for (var i = 0; i < TornadoHoops; i++)
+            {
+                var hoop = Models.Attach("Tornado Hoop", root, direction > 0f ? hoopMesh : downHoopMesh, tunnelMaterial, false).transform;
+                hoop.rotation = Quaternion.Euler(90f, 0f, 0f);
+                hoop.localScale = Vector3.one * zone.Radius;
+                tornadoHoops.Add((hoop, zone, direction, i / (float)TornadoHoops));
+            }
+        }
+
+        static void BuildHoopMeshes()
+        {
+            if (hoopMesh != null) return;
+            var hoop = new MeshKit();
+            AddHoop(hoop, 0f, 0.022f, Palette.Storm);
+            hoopMesh = hoop.Build("Wind Tunnel Hoop");
+            var down = new MeshKit();
+            AddHoop(down, 0f, 0.022f, DownTornadoGrey);
+            downHoopMesh = down.Build("Down Tornado Hoop");
+            var mouth = new MeshKit();
+            AddHoop(mouth, 0f, 0.05f, Palette.Cloud);
+            mouthMesh = mouth.Build("Wind Tunnel Mouth");
+            strandsMesh = BuildStrands();
+        }
+
+        static float MiddleHeight(GameObject kit)
+        {
+            var renderers = kit.GetComponentsInChildren<Renderer>();
+            var bounds = renderers[0].bounds;
+            foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+            return bounds.center.y;
         }
 
         // A ring of the given thickness, radius 1, facing along Z.
@@ -425,7 +494,7 @@ namespace Airships.Game
                     var b = (step + 1) / (float)Steps;
                     var from = new Vector3(Mathf.Cos(start + a * Mathf.PI), Mathf.Sin(start + a * Mathf.PI), a - 0.5f);
                     var to = new Vector3(Mathf.Cos(start + b * Mathf.PI), Mathf.Sin(start + b * Mathf.PI), b - 0.5f);
-                    kit.Cylinder(from, to, 0.016f, 0.016f, 4, Color.Lerp(Palette.Storm, Palette.Cloud, 0.6f));
+                    kit.Cylinder(from, to, 0.009f, 0.009f, 4, Color.Lerp(Palette.Storm, Palette.Cloud, 0.6f));
                 }
             }
             return kit.Build("Wind Tunnel Strands");
@@ -434,16 +503,7 @@ namespace Airships.Game
         // A round tube of hoops and spiral strands at the tunnel's height, flowing the way it blows.
         void PlaceTunnel(SkyZone zone)
         {
-            if (hoopMesh == null)
-            {
-                var hoop = new MeshKit();
-                AddHoop(hoop, 0f, 0.022f, Palette.Storm);
-                hoopMesh = hoop.Build("Wind Tunnel Hoop");
-                var mouth = new MeshKit();
-                AddHoop(mouth, 0f, 0.05f, Palette.Cloud);
-                mouthMesh = mouth.Build("Wind Tunnel Mouth");
-                strandsMesh = BuildStrands();
-            }
+            BuildHoopMeshes();
             if (tunnelMaterial == null) tunnelMaterial = Models.NewLitMaterial("Wind Tunnel", -0.6f, 0.3f);
 
             var body = new GameObject("Wind Tunnel").transform;
@@ -500,7 +560,15 @@ namespace Airships.Game
 
         public void Update(ShipState player)
         {
-            foreach (var column in updrafts) column.Rotate(0f, 40f * Time.deltaTime, 0f, Space.World);
+            foreach (var (funnel, spin) in tornadoes) funnel.Rotate(0f, spin * TornadoSpinDegrees * Time.deltaTime, 0f, Space.World);
+            tornadoFlow += TornadoHoopSpeed * Time.deltaTime;
+            foreach (var (hoop, zone, direction, offset) in tornadoHoops)
+            {
+                var span = TornadoHoopHigh - TornadoHoopLow;
+                var travelled = Mathf.Repeat(tornadoFlow + offset * span, span);
+                var height = direction > 0f ? TornadoHoopLow + travelled : TornadoHoopHigh - travelled;
+                hoop.position = new Vector3(zone.X, height, zone.Z);
+            }
             foreach (var tunnel in tunnels)
             {
                 tunnel.Strands.Rotate(0f, 0f, StrandSpinDegrees * Time.deltaTime, Space.Self);
