@@ -111,7 +111,8 @@
       "SM_Prop_Spyglass",
       "SM_Prop_BigWrench",
       "SM_Prop_ArmadaHalberd",
-      "SM_Prop_ShadowStaff"
+      "SM_Prop_ShadowStaff",
+      "SM_Prop_DriftwoodLyre"
     ],
     "weapon.L": [
       "SM_Prop_Cutlass",
@@ -125,7 +126,8 @@
       "SM_Prop_Spyglass",
       "SM_Prop_BigWrench",
       "SM_Prop_ArmadaHalberd",
-      "SM_Prop_ShadowStaff"
+      "SM_Prop_ShadowStaff",
+      "SM_Prop_DriftwoodLyre"
     ],
     "gun.R": [
       "SM_Prop_Flintlock",
@@ -176,6 +178,18 @@
     "Sorcerer": {
       "HQ": "T_Palette_Sorcerer_HQ.png",
       "LQ": "T_Palette_Sorcerer_LQ.png"
+    },
+    "Nomad": {
+      "HQ": "T_Palette_Nomad_HQ.png",
+      "LQ": "T_Palette_Nomad_LQ.png"
+    },
+    "Bosun": {
+      "HQ": "T_Palette_Bosun_HQ.png",
+      "LQ": "T_Palette_Bosun_LQ.png"
+    },
+    "Shadow": {
+      "HQ": "T_Palette_Shadow_HQ.png",
+      "LQ": "T_Palette_Shadow_LQ.png"
     }
   },
   "emissive_atlas": {
@@ -8036,7 +8050,7 @@
       "variants": {
         "HQ": {
           "tier": "prop",
-          "tris": 100
+          "tris": 108
         },
         "LQ": {
           "tier": "prop_low",
@@ -8068,7 +8082,8 @@
             -0.0
           ]
         }
-      }
+      },
+      "default_faction": "Shadow"
     },
     "SM_Prop_Spyglass": {
       "variants": {
@@ -8174,6 +8189,44 @@
         }
       },
       "default_faction": "Sorcerer"
+    },
+    "SM_Prop_DriftwoodLyre": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 268
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 156
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.0,
+            0.07,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            0.7,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.0,
+            0.07,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            0.7,
+            -0.0
+          ]
+        }
+      }
     },
     "SM_Prop_ArmadaHalberd": {
       "variants": {
@@ -10198,49 +10251,50 @@
       "variants": {
         "HQ": {
           "tier": "hero",
-          "tris": 1744
+          "tris": 2490
         },
         "LQ": {
           "tier": "hero_low",
-          "tris": 548
+          "tris": 1030
         }
       },
       "sockets": {
         "HQ": {
           "chest_centre": [
             0.0,
-            1.236,
-            0.0093
+            1.26,
+            -0.0268
           ],
           "head_top": [
             0.0,
-            1.9055,
-            0.0093
+            1.9425,
+            -0.0268
           ],
           "portrait_look_at": [
             0.0,
-            1.6068,
-            0.0093
+            1.638,
+            -0.0268
           ]
         },
         "LQ": {
           "chest_centre": [
             0.0,
-            1.236,
-            -0.0033
+            1.26,
+            -0.0394
           ],
           "head_top": [
             0.0,
-            1.9055,
-            -0.0033
+            1.9425,
+            -0.0394
           ],
           "portrait_look_at": [
             0.0,
-            1.6068,
-            -0.0033
+            1.638,
+            -0.0394
           ]
         }
-      }
+      },
+      "default_faction": "Emerald"
     },
     "SK_Rook": {
       "variants": {
@@ -10294,11 +10348,11 @@
       "variants": {
         "HQ": {
           "tier": "hero",
-          "tris": 1748
+          "tris": 2570
         },
         "LQ": {
           "tier": "hero_low",
-          "tris": 544
+          "tris": 1002
         }
       },
       "sockets": {
@@ -10306,85 +10360,136 @@
           "chest_centre": [
             0.0,
             1.2,
-            0.1708
+            0.0913
           ],
           "head_top": [
             0.0,
             1.85,
-            0.1708
+            0.0913
           ],
           "portrait_look_at": [
             0.0,
             1.56,
-            0.1708
+            0.0913
           ]
         },
         "LQ": {
           "chest_centre": [
-            -0.0004,
+            0.0,
             1.2,
-            0.1823
+            0.0988
           ],
           "head_top": [
-            -0.0004,
+            0.0,
             1.85,
-            0.1823
+            0.0988
           ],
           "portrait_look_at": [
-            -0.0004,
+            0.0,
             1.56,
-            0.1823
+            0.0988
           ]
         }
-      }
+      },
+      "default_faction": "Nomad"
     },
     "SK_Sable": {
       "variants": {
         "HQ": {
           "tier": "hero",
-          "tris": 1752
+          "tris": 2836
         },
         "LQ": {
           "tier": "hero_low",
-          "tris": 584
+          "tris": 1212
         }
       },
       "sockets": {
         "HQ": {
           "chest_centre": [
             0.0,
-            1.2,
-            0.0874
+            1.164,
+            0.0359
           ],
           "head_top": [
             0.0,
-            1.85,
-            0.0874
+            1.7945,
+            0.0359
           ],
           "portrait_look_at": [
             0.0,
-            1.56,
-            0.0874
+            1.5132,
+            0.0359
           ]
         },
         "LQ": {
           "chest_centre": [
             0.0,
-            1.2,
-            0.0989
+            1.164,
+            0.0383
           ],
           "head_top": [
             0.0,
-            1.85,
-            0.0989
+            1.7945,
+            0.0383
           ],
           "portrait_look_at": [
             0.0,
-            1.56,
-            0.0989
+            1.5132,
+            0.0383
           ]
         }
-      }
+      },
+      "default_faction": "Shadow"
+    },
+    "SK_Brill": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3854
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1386
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.14,
+            -0.0052
+          ],
+          "head_top": [
+            0.0,
+            1.7575,
+            -0.0052
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.482,
+            -0.0052
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.14,
+            -0.0327
+          ],
+          "head_top": [
+            0.0,
+            1.7575,
+            -0.0327
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.482,
+            -0.0327
+          ]
+        }
+      },
+      "default_faction": "Bosun"
     },
     "SK_Thorne": {
       "variants": {

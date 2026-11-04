@@ -115,6 +115,28 @@ namespace Airships.Tests
         }
 
         [Test]
+        public void JumpingToAChapterGivesWhatTheStoryWouldHaveByThen()
+        {
+            var save = SaveData.NewGame(content);
+            var target = System.Array.Find(content.campaign.missions, m => m.id == "a3_tartarus");
+            Campaign.FastForwardTo(save, content, target);
+            foreach (var mission in content.campaign.missions)
+            {
+                if (mission == target) break;
+                if (mission.IsStory) Assert.IsTrue(Campaign.IsDone(save, mission.id), mission.id);
+            }
+            Assert.IsFalse(Campaign.IsDone(save, target.id), "The chapter itself is still to play");
+            Assert.AreEqual(target, Campaign.NextStoryMission(save, content));
+            foreach (var crew in new[] { "rook", "lyra", "sable" }) Assert.IsNotNull(save.crew.Find(c => c.id == crew), crew);
+            Assert.IsNull(save.crew.Find(c => c.id == "thorne"), "Thorne joins in this chapter, not before it");
+            Assert.IsTrue(save.fleet.Exists(s => s.id == "rust_wing"));
+            Assert.IsNotNull(save.crew.Find(c => c.id == "brill"), "Officers from earlier choices come aboard");
+            var gold = save.gold;
+            Campaign.FastForwardTo(save, content, target);
+            Assert.AreEqual(gold, save.gold, "Jumping again doesn't pay out twice");
+        }
+
+        [Test]
         public void ThePlansActsAndRewardsAreAllPresent()
         {
             var acts = new HashSet<int>();

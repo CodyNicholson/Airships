@@ -164,7 +164,7 @@
    "id": "captain_ria",
    "name": "Captain Ria",
    "classId": "buccaneer",
-   "look": "brill",
+   "look": "ria",
    "portrait": "CaptainRia"
   }
  ],
@@ -5559,7 +5559,7 @@
    "id": "lyra1",
    "crew": "lyra",
    "after": "a2_lyra",
-   "activity": "studying a sky-chart",
+   "activity": "tuning her lyre",
    "lines": [
     {
      "speaker": "lyra",
@@ -5599,7 +5599,7 @@
    "id": "lyra2",
    "crew": "lyra",
    "after": "a2_ashgrave",
-   "activity": "studying a sky-chart",
+   "activity": "tuning her lyre",
    "lines": [
     {
      "speaker": "lyra",
@@ -5619,7 +5619,7 @@
    "id": "lyra3",
    "crew": "lyra",
    "after": "a2_twins",
-   "activity": "studying a sky-chart",
+   "activity": "tuning her lyre",
    "lines": [
     {
      "speaker": "lyra",

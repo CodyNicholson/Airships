@@ -667,8 +667,9 @@ namespace Airships.Game
         static readonly Dictionary<string, Vector2> DeckSpots = new Dictionary<string, Vector2>
         {
             { "sable", new Vector2(-5.5f, 0.9f) },
-            { "lyra", new Vector2(-2.7f, 0.6f) },
-            { "morrow", new Vector2(-3f, -1.6f) },
+            { "lyra", new Vector2(-2.4f, 0.6f) },
+            { "morrow", new Vector2(-3.9f, -1.5f) },
+            { "brill", new Vector2(-0.9f, 0.1f) },
             { "rook", new Vector2(0.9f, 0.5f) },
             { "thorne", new Vector2(2.6f, -0.8f) },
         };
@@ -763,7 +764,7 @@ namespace Airships.Game
 
             var y = 16f;
             AddMenuButton("BOUNTY BOARD", "Story_Bounty", ref y, ShowBoard, Campaign.PrologueDone(save, content), BoardCount() > 0 ? Palette.Danger : Palette.PanelLight);
-            AddMenuButton("VOYAGE LOG", "Hud_Map", ref y, ShowLog, Campaign.PrologueDone(save, content), Palette.PanelLight);
+            AddMenuButton("VOYAGE LOG", "Hud_Map", ref y, ShowLog, Campaign.PrologueDone(save, content) || Campaign.AllChaptersUnlocked, Palette.PanelLight);
             AddMenuButton("FLEET", "Ship_RustWing", ref y, ShowFleet, save.fleet.Count > 0, Palette.PanelLight);
             AddMenuButton("CREW & SHIPWRIGHT", "Hud_Crew", ref y, director.ShowPort, Campaign.PrologueDone(save, content), Palette.PanelLight);
             AddMenuButton("SETTINGS", "Hud_Settings", ref y, ToggleSettings, true, Palette.Panel);
@@ -804,17 +805,28 @@ namespace Airships.Game
                     if (definition.act != act.number || !definition.IsStory) continue;
                     var mission = definition;
                     var done = Campaign.IsDone(save, mission.id);
-                    var row = UIKit.Panel(mission.title, list, Palette.WithAlpha(mission == next ? Palette.PlayerPaint : Palette.PanelLight, done || mission == next ? 0.8f : 0.3f));
+                    var known = done || mission == next || Campaign.AllChaptersUnlocked;
+                    var row = UIKit.Panel(mission.title, list, Palette.WithAlpha(mission == next ? Palette.PlayerPaint : Palette.PanelLight, known ? 0.8f : 0.3f));
                     UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -y), new Vector2(1380f, 76f));
-                    var label = done || mission == next ? mission.title : "???";
-                    var text = UIKit.Text("Name", row.transform, label, 30f, done || mission == next ? Palette.TextLight : Palette.TextMuted, TextAlignmentOptions.Left);
+                    var label = known ? mission.title : "???";
+                    var text = UIKit.Text("Name", row.transform, label, 30f, known ? Palette.TextLight : Palette.TextMuted, TextAlignmentOptions.Left);
                     UIKit.Place(text.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(84f, 0f), new Vector2(1000f, 60f));
-                    var status = UIKit.Icon("Status", row.transform, done ? "Item_Treasure" : mission == next ? "Marker_Objective" : "Hud_Locked");
+                    var status = UIKit.Icon("Status", row.transform, done ? "Item_Treasure" : mission == next ? "Marker_Objective" : Campaign.AllChaptersUnlocked ? "Hud_Map" : "Hud_Locked");
                     UIKit.Place(status.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), Vector2.one * 60f);
                     if (done)
                     {
                         var replay = UIKit.Button("Replay", row.transform, "REPLAY", 26f, Palette.Panel, () => director.PlayMission(mission, 0));
                         UIKit.Place((RectTransform)replay.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-10f, 0f), new Vector2(180f, 60f));
+                    }
+                    else if (Campaign.AllChaptersUnlocked)
+                    {
+                        // Testing: jump straight to this chapter, with the crew and ships the story would have given by now.
+                        var jump = UIKit.Button("Play", row.transform, "PLAY", 26f, Palette.Danger, () =>
+                        {
+                            Campaign.FastForwardTo(director.Save, director.Content, mission);
+                            director.PlayMission(mission, 0);
+                        });
+                        UIKit.Place((RectTransform)jump.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-10f, 0f), new Vector2(180f, 60f));
                     }
                     y += 84f;
                 }

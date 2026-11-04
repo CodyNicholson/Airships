@@ -62,6 +62,10 @@ namespace Airships.Core
     {
         public const string Protagonist = "vane";
 
+        // TESTING: every story chapter can be started from the Voyage Log at any time, from the very first launch.
+        // Set to false before release, and the log goes back to unlocking chapters as they're played.
+        public static bool AllChaptersUnlocked = true;
+
         public static bool IsDone(SaveData save, string missionId) => save.campaign.completed.Contains(missionId);
         public static bool HasMechanic(SaveData save, string mechanic) => save.campaign.mechanics.Contains(mechanic);
         public static bool PrologueDone(SaveData save, GameContent content) => IsDone(save, content.campaign.missions[0].id);
@@ -102,6 +106,29 @@ namespace Airships.Core
                 if (mission.IsStory && !IsDone(save, mission.id)) return mission;
             }
             return null;
+        }
+
+        // Brings a save up to the start of a story mission, as though every story mission before it had been played:
+        // their gold, XP, items, recruits, ships, mechanics and signature weapons, plus both the officer and the ship
+        // each Davy Jones choice offers. Missions already played are left alone.
+        public static void FastForwardTo(SaveData save, GameContent content, MissionDef target)
+        {
+            foreach (var mission in content.campaign.missions)
+            {
+                if (mission == target) break;
+                if (!mission.IsStory || IsDone(save, mission.id)) continue;
+                if (mission.phases != null)
+                {
+                    foreach (var phase in mission.phases)
+                    {
+                        if (phase.kind != "choice") continue;
+                        // Both the officer and the ship, so a jump never leaves out what either answer would give.
+                        ApplyChoice(content, save, phase, DavyJonesChoice.PressGang);
+                        if (!string.IsNullOrEmpty(phase.shipId)) AddShip(save, phase.shipId, true);
+                    }
+                }
+                Complete(content, save, mission, false, new List<string>());
+            }
         }
 
         public static bool IsAvailable(SaveData save, GameContent content, MissionDef mission)
