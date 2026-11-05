@@ -7,12 +7,12 @@
 
 - **Project:** *Airships: Ransom Skies* (Campaign: *Shattered Skies*)
 - **Engine & Platform:** Unity 6 / Mobile & PC Cross-Platform Airship Combat RPG
-- **Genre:** Steampunk / Dieselpunk Aerial Pirate RPG (Dogfighting, Boarding Action, Quarterdeck Roleplaying)
-- **Document Purpose:** Complete, unabridged, line-by-line script of every single dialogue line, cinematic cutscene narration, character title card, in-flight comms bark, pilot training prompt, deck battle exchange, companion quarterdeck conversation, and choice dilemma in the game, presented in chronological playthrough order for script quality and narrative evaluation.
+- **Genre:** Steampunk / Dieselpunk Aerial Pirate RPG (Dogfighting, Boarding Action, Hangar Roleplaying)
+- **Document Purpose:** Complete, unabridged, line-by-line script of every single dialogue line, cinematic cutscene narration, character title card, in-flight comms bark, pilot training prompt, deck battle exchange, companion hangar conversation, and choice dilemma in the game, presented in chronological playthrough order for script quality and narrative evaluation.
 - **Narrative Scope:** 
   - **1 Prologue + 4 Acts**
   - **26 Missions** (20 Main Story Missions, 6 Loyalty Side Missions)
-  - **14 Quarterdeck Companion Conversations**
+  - **14 Hangar Companion Conversations**
   - **27 Speaking Characters**
   - **263+ Unique Dialogue Lines**
 
@@ -318,9 +318,9 @@ Left for dead with a leaking scout gunboat, Vane awakens in the lowest habitable
 - **ROOK**:
   > "The hound's Cinder. I built her out of what they threw away. Keep your hand off the mouth. It's a cannon, and it breathes fire."
 
-#### ⚓ Quarterdeck Conversation: Rook (`rook1`)
+#### ⚓ Hangar Conversation: Rook (`rook1`)
 
-*Context: Vane approaches Rook on the quarterdeck while lifting a cannon.*
+*Context: Vane approaches Rook in the hangar while lifting a cannon.*
 
 - **ROOK**:
   > "Armada drills say hit the hull. Armada drills are written by people who've never lifted one of these."
@@ -484,9 +484,9 @@ Left for dead with a leaking scout gunboat, Vane awakens in the lowest habitable
 
 > *Permanent Weapon Trophy Awarded (Regardless of Choice):* **HARPOON** — *Tether a ship and reel it in. Once it's beaten, climb aboard.*
 
-#### ⚓ Quarterdeck Conversation: Rook (`rook2`)
+#### ⚓ Hangar Conversation: Rook (`rook2`)
 
-*Context: Vane approaches Rook on the quarterdeck while lifting a cannon.*
+*Context: Vane approaches Rook in the hangar while lifting a cannon.*
 
 - **ROOK**:
   > "Commodore Hale signed my court-martial. He's running powder through here, you know."
@@ -592,9 +592,9 @@ Ascending from the Scrap-Winds into the high-velocity jetstreams, Vane enters th
 - **ROOK**:
   > "With her charts we can use the currents, and hide in the cloud banks. I've rigged chain-shot for sails, and fire-shot for decks."
 
-#### ⚓ Quarterdeck Conversation: Lyra (`lyra1`)
+#### ⚓ Hangar Conversation: Lyra (`lyra1`)
 
-*Context: Vane approaches Lyra on the quarterdeck while studying a sky-chart.*
+*Context: Vane approaches Lyra in the hangar while studying a sky-chart.*
 
 - **LYRA**:
   > "Wind has moods. You just have to listen, and not take it personally."
@@ -707,9 +707,9 @@ Ascending from the Scrap-Winds into the high-velocity jetstreams, Vane enters th
 >
 > 3. **SCUTTLE & PLUNDER**: Plunder **300 Gold**. Salvage and strip the **Syndicate Rudder** (+10% turning on any ship). Lord Ashgrave is set adrift in a lifeboat into the winds.
 
-#### ⚓ Quarterdeck Conversation: Lyra (`lyra2`)
+#### ⚓ Hangar Conversation: Lyra (`lyra2`)
 
-*Context: Vane approaches Lyra on the quarterdeck while studying a sky-chart.*
+*Context: Vane approaches Lyra in the hangar while studying a sky-chart.*
 
 - **LYRA**:
   > "My mother mapped the deep currents. Her chart's still out there, on the wreck that killed her."
@@ -798,9 +798,9 @@ Ascending from the Scrap-Winds into the high-velocity jetstreams, Vane enters th
 - **SABLE**:
   > "Give me the run of any enemy ship. I'll set charges on their Lift-Core. Captains surrender quickly with a timer ticking under their feet."
 
-#### ⚓ Quarterdeck Conversation: Sable (`sable1`)
+#### ⚓ Hangar Conversation: Sable (`sable1`)
 
-*Context: Vane approaches Sable on the quarterdeck while sharpening her daggers.*
+*Context: Vane approaches Sable in the hangar while sharpening her daggers.*
 
 - **SABLE**:
   > "You should know I've killed better captains than you."
@@ -855,9 +855,9 @@ Ascending from the Scrap-Winds into the high-velocity jetstreams, Vane enters th
 >
 > 3. **SCUTTLE & PLUNDER**: Plunder **360 Gold**. Salvage and strip the **Gilded Battery** (+12% broadside damage on any ship). Lady Thrace is set adrift in a lifeboat into the winds.
 
-#### ⚓ Quarterdeck Conversation: Sable (`sable2`)
+#### ⚓ Hangar Conversation: Sable (`sable2`)
 
-*Context: Vane approaches Sable on the quarterdeck while sharpening her daggers.*
+*Context: Vane approaches Sable in the hangar while sharpening her daggers.*
 
 - **SABLE**:
   > "The Syndicate's put a price on me. It's insultingly low."
@@ -967,9 +967,9 @@ Ascending from the Scrap-Winds into the high-velocity jetstreams, Vane enters th
 
 > *Permanent Weapon Trophy Awarded (Regardless of Choice):* **BURNER** — *A burst of double speed.*
 
-#### ⚓ Quarterdeck Conversation: Rook (`rook3`)
+#### ⚓ Hangar Conversation: Rook (`rook3`)
 
-*Context: Vane approaches Rook on the quarterdeck while lifting a cannon.*
+*Context: Vane approaches Rook in the hangar while lifting a cannon.*
 
 - **ROOK**:
   > "I've been hauling guns since I was nine. First time anyone's asked me where we should aim them."
@@ -982,9 +982,9 @@ Ascending from the Scrap-Winds into the high-velocity jetstreams, Vane enters th
 
 ***Loyalty Impact:** Rook Loyalty 3 Achieved → Unlocks Perk **Rook's Warheads** *(+15% torpedo damage)**
 
-#### ⚓ Quarterdeck Conversation: Lyra (`lyra3`)
+#### ⚓ Hangar Conversation: Lyra (`lyra3`)
 
-*Context: Vane approaches Lyra on the quarterdeck while studying a sky-chart.*
+*Context: Vane approaches Lyra in the hangar while studying a sky-chart.*
 
 - **LYRA**:
   > "When this is over, where will you go?"
@@ -1083,9 +1083,9 @@ With the three ciphers and the lightning-fast *Mirage*, Vane's crew storms Tarta
 - **DR. THORNE**:
   > "I mend what breaks. I raise what falls. Open this door."
 
-#### ⚓ Quarterdeck Conversation: Dr. Thorne (`thorne1`)
+#### ⚓ Hangar Conversation: Dr. Thorne (`thorne1`)
 
-*Context: Vane approaches Dr. Thorne on the quarterdeck while watching the Lift-Core.*
+*Context: Vane approaches Dr. Thorne in the hangar while watching the Lift-Core.*
 
 - **DR. THORNE**:
   > "Your Lift-Core is dying. Who has been tending it?"
@@ -1098,9 +1098,9 @@ With the three ciphers and the lightning-fast *Mirage*, Vane's crew storms Tarta
 
 ***Loyalty Impact:** Dr. Thorne Loyalty 1 Achieved → Unlocks Perk **Thorne's Wards** *(+8% hull)**
 
-#### ⚓ Quarterdeck Conversation: Rook (`rook4`)
+#### ⚓ Hangar Conversation: Rook (`rook4`)
 
-*Context: Vane approaches Rook on the quarterdeck while lifting a cannon.*
+*Context: Vane approaches Rook in the hangar while lifting a cannon.*
 
 - **ROOK**:
   > "You've gone quiet since that war room."
@@ -1113,9 +1113,9 @@ With the three ciphers and the lightning-fast *Mirage*, Vane's crew storms Tarta
 
 ***Loyalty Impact:** Rook Loyalty Maxed (Deep crew camaraderie & mutual trust forged before the final confrontation)*
 
-#### ⚓ Quarterdeck Conversation: Sable (`sable3`)
+#### ⚓ Hangar Conversation: Sable (`sable3`)
 
-*Context: Vane approaches Sable on the quarterdeck while sharpening her daggers.*
+*Context: Vane approaches Sable in the hangar while sharpening her daggers.*
 
 - **SABLE**:
   > "He raised you. Cassian. I know what that's like, when they turn out to be exactly what you feared."
@@ -1173,9 +1173,9 @@ With the three ciphers and the lightning-fast *Mirage*, Vane's crew storms Tarta
 - **ROOK**:
   > "The blockade's still up. Warden Malakor's Ironclad holds the only gap, and it's the only ship left that can break it."
 
-#### ⚓ Quarterdeck Conversation: Dr. Thorne (`thorne2`)
+#### ⚓ Hangar Conversation: Dr. Thorne (`thorne2`)
 
-*Context: Vane approaches Dr. Thorne on the quarterdeck while watching the Lift-Core.*
+*Context: Vane approaches Dr. Thorne in the hangar while watching the Lift-Core.*
 
 - **DR. THORNE**:
   > "The Citadel's locks are bound with my work. They kept me to keep the rest shut."
@@ -1274,9 +1274,9 @@ With the three ciphers and the lightning-fast *Mirage*, Vane's crew storms Tarta
 
 > *Permanent Weapon Trophy Awarded (Regardless of Choice):* **RAM** — *Charge. Collisions wreck them and barely scratch you.*
 
-#### ⚓ Quarterdeck Conversation: Dr. Thorne (`thorne3`)
+#### ⚓ Hangar Conversation: Dr. Thorne (`thorne3`)
 
-*Context: Vane approaches Dr. Thorne on the quarterdeck while watching the Lift-Core.*
+*Context: Vane approaches Dr. Thorne in the hangar while watching the Lift-Core.*
 
 - **DR. THORNE**:
   > "Your Lift-Core will not kill her. Not while I watch it."
@@ -1420,9 +1420,9 @@ The truth is laid bare: Cassian was never a prisoner. He sold out *The Sovereign
 >
 > 3. **SCUTTLE & PLUNDER**: Plunder **520 Gold**. Strip the wreck for scrap and structural parts. Morrow is set adrift in a lifeboat into the winds.
 
-#### ⚓ Quarterdeck Conversation: Morrow (`morrow1`)
+#### ⚓ Hangar Conversation: Morrow (`morrow1`)
 
-*Context: Vane approaches Morrow on the quarterdeck while marking up a chart.*
+*Context: Vane approaches Morrow in the hangar while marking up a chart.*
 
 - **MORROW**:
   > "I'm not going to ask you to forgive me."

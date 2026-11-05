@@ -298,6 +298,13 @@ namespace Airships.Game
 
         public void SetAction(Action onClick) => click = onClick;
 
+        // A new base colour, kept dimmed while the button is disabled.
+        public void SetColor(Color baseColor)
+        {
+            color = baseColor;
+            Interactable = interactable;
+        }
+
         // Runs the click from code, used by the automated playthrough.
         public void Press()
         {
@@ -330,6 +337,22 @@ namespace Airships.Game
             var start = transform.localScale.x;
             pop = StartCoroutine(Ease.Tween(0.08f, t => transform.localScale = Vector3.one * Mathf.LerpUnclamped(start, target, t)));
         }
+    }
+
+    // An invisible spot that reports where it was tapped, such as an enemy's row or the battlefield itself.
+    public class TapZone : MonoBehaviour, IPointerClickHandler
+    {
+        public Action<Vector2> Tapped;
+
+        public static TapZone Create(string name, Transform parent, Action<Vector2> tapped)
+        {
+            var image = UIKit.Solid(name, parent, Color.clear, true);
+            var zone = image.gameObject.AddComponent<TapZone>();
+            zone.Tapped = tapped;
+            return zone;
+        }
+
+        public void OnPointerClick(PointerEventData eventData) => Tapped?.Invoke(eventData.position);
     }
 
     // Floating thumb stick. Pressing anywhere in its zone sets the stick's center.

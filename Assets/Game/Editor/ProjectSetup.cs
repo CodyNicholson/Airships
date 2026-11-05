@@ -1,6 +1,7 @@
 using System.IO;
 using Airships.Game;
 using UnityEditor;
+using UnityEditor.Android;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -21,11 +22,18 @@ namespace Airships.EditorTools
         const string TemplateAssetPath = "Assets/Settings/Mobile_RPAsset.asset";
         const string ApkPath = "Builds/Android/Airships.apk";
 
+        // The glowing anchor, drawn by Blender_Assets_Project/tools/blender/fx_appicon.py.
+        const string AppIconFolder = "Assets/Game/Art/AppIcon";
+        const string AppIconPath = AppIconFolder + "/T_AppIcon.png";
+        const string AppIconBackgroundPath = AppIconFolder + "/T_AppIcon_Background.png";
+        const string AppIconForegroundPath = AppIconFolder + "/T_AppIcon_Foreground.png";
+
         [MenuItem("Airships/Apply Project Setup")]
         public static void ApplyAll()
         {
             ConfigureGraphicsModes();
             ConfigureAndroid();
+            ApplyAppIcon();
             CreateScene();
             AssetDatabase.SaveAssets();
             Debug.Log("[Setup] Project setup applied");
@@ -119,9 +127,33 @@ namespace Airships.EditorTools
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
         }
 
+        // The phone's home screen icon. Android uses an adaptive icon, a back and a front layer that each
+        // launcher crops to its own shape. The whole picture is the default icon everywhere else.
+        [MenuItem("Airships/Apply App Icon")]
+        public static void ApplyAppIcon()
+        {
+            var full = AssetDatabase.LoadAssetAtPath<Texture2D>(AppIconPath);
+            var background = AssetDatabase.LoadAssetAtPath<Texture2D>(AppIconBackgroundPath);
+            var foreground = AssetDatabase.LoadAssetAtPath<Texture2D>(AppIconForegroundPath);
+            if (full == null || background == null || foreground == null) throw new BuildFailedException($"App icon art is missing from {AppIconFolder}");
+
+            PlayerSettings.SetIcons(NamedBuildTarget.Unknown, new[] { full }, IconKind.Any);
+            SetAndroidIcons(AndroidPlatformIconKind.Adaptive, background, foreground);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Build] App icon applied");
+        }
+
+        static void SetAndroidIcons(PlatformIconKind kind, params Texture2D[] layers)
+        {
+            var icons = PlayerSettings.GetPlatformIcons(NamedBuildTarget.Android, kind);
+            foreach (var icon in icons) icon.SetTextures(layers);
+            PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, kind, icons);
+        }
+
         [MenuItem("Airships/Build Android APK")]
         public static void BuildApk()
         {
+            ApplyAppIcon();
             Directory.CreateDirectory(Path.GetDirectoryName(ApkPath));
             EditorUserBuildSettings.buildAppBundle = false;
             var options = new BuildPlayerOptions

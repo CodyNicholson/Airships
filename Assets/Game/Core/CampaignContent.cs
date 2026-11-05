@@ -243,7 +243,7 @@ namespace Airships.Core
         public string[] ships;
         public string[] signatures;
         public PhaseDef[] phases;
-        public bool cipher; // Counts toward the three ciphers shown on the quarterdeck.
+        public bool cipher; // Counts toward the three ciphers shown in the hangar.
         public string[] items; // Loot, one entry per item.
 
         public bool IsStory => kind != "side" && kind != "bounty";
@@ -257,7 +257,7 @@ namespace Airships.Core
         public string setting;
     }
 
-    // Quick conversations on the quarterdeck. Each one builds loyalty once.
+    // Quick conversations in the hangar. Each one builds loyalty once.
     [Serializable]
     public class TalkDef
     {

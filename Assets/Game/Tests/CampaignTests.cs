@@ -170,11 +170,14 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void ShootingEnginesOutSlowsAShipAndLetsHooksLand()
+        public void HooksLandOnlyOnceAShipIsDownToItsLastPointOfHull()
         {
             var sim = Duel(out var a, out var b);
             Assert.IsFalse(sim.CanBoard(a, b), "A healthy ship can't be boarded");
             b.Engines = 0f;
+            b.Hull = 2f;
+            Assert.IsFalse(sim.CanBoard(a, b), "Dead engines and a nearly beaten hull aren't enough");
+            b.Hull = DogfightSim.BoardableHull;
             Assert.IsTrue(sim.CanBoard(a, b));
             b.X = 500f;
             Assert.IsFalse(sim.CanBoard(a, b), "Out of range");
@@ -229,7 +232,7 @@ namespace Airships.Tests
         public void MultipleHooksMustLandAndDriftingSnapsThem()
         {
             var sim = Duel(out var a, out var b);
-            b.Engines = 0f;
+            b.Hull = DogfightSim.BoardableHull;
             b.HooksRequired = 3;
             b.Speed = 0f;
             Run(sim, 0.1f, new ShipCommand { Grapple = true });
@@ -240,7 +243,7 @@ namespace Airships.Tests
             Assert.AreEqual(b.Id, sim.BoardedShipId, "The third hook boards");
 
             var other = Duel(out var c, out var d);
-            d.Engines = 0f;
+            d.Hull = DogfightSim.BoardableHull;
             d.HooksRequired = 3;
             Run(other, 0.1f, new ShipCommand { Grapple = true });
             Assert.AreEqual(1, d.Hooks);
@@ -267,6 +270,9 @@ namespace Airships.Tests
             for (var i = 0; i < 90 && rider.Target.Ship.TetheredTo < 0; i++) rider.Step(default);
             rider.Target.Ship.Hull = rider.Target.Ship.Loadout.Hull * 0.2f;
             rider.Step(new ShipCommand { Grapple = true });
+            Assert.AreEqual(SkyOutcome.Ongoing, rider.Outcome, "Not until he's down to his last point of hull");
+            rider.Target.Ship.Hull = DogfightSim.BoardableHull;
+            rider.Step(new ShipCommand { Grapple = true });
             Assert.AreEqual(SkyOutcome.Boarded, rider.Outcome, "One grapple climbs the tether once they're beaten");
         }
 
@@ -279,6 +285,8 @@ namespace Airships.Tests
             Assert.AreEqual(b.Id, a.TetheredTo);
             Assert.IsFalse(sim.CanBoard(a, b), "Can't jump a healthy ship just by hitting it");
             b.Hull = b.Loadout.Hull * content.skyRules.tetherBoardShare * 0.9f;
+            Assert.IsFalse(sim.CanBoard(a, b), "A line doesn't skip the beating");
+            b.Hull = DogfightSim.BoardableHull;
             Assert.IsTrue(sim.CanBoard(a, b));
             Run(sim, content.Signature("harpoon_winch").seconds + 0.5f);
             Assert.AreEqual(-1, a.TetheredTo, "The line slips off in time");
@@ -532,14 +540,86 @@ namespace Airships.Tests
             Assert.AreEqual(startGold + 20, sunk.gold, "20% scrap");
         }
 
+        SkyEncounter FreeSkies(SaveData save)
+        {
+            var config = new SkyConfig
+            {
+                Content = content,
+                Seed = 11,
+                Player = Encounter.PlayerLoadout(content, save, "rust_wing"),
+                PlayerShipName = "Test",
+                PlayerHull = 400f,
+                AllControls = true,
+                Weather = "clear",
+                Patches = Campaign.PatchesFor(save),
+            };
+            config.Enemies.Add(new SkySpawn { shipId = "scrap_raider", name = "Raider", target = true });
+            return new SkyEncounter(config);
+        }
+
         [Test]
-        public void TheMainEnemyCantBeSunkAndOnlyBoardsBelowAQuarterHull()
+        public void ARepairKitPatchesTheHullInFreeSkiesAndIsSpentOnlyIfUsed()
+        {
+            var save = Started();
+            save.campaign.mechanics.Remove("patch");
+            Assert.AreEqual(0, Campaign.PatchesFor(save));
+            Assert.IsFalse(FreeSkies(save).HasControl("patch"), "Nothing to patch with");
+
+            save.AddItem("repair_kit", 2);
+            Assert.AreEqual(1, Campaign.PatchesFor(save), "Only one kit counts per fight");
+            var unused = FreeSkies(save);
+            Assert.IsTrue(unused.HasControl("patch"), "A kit in the hold brings the patch button, taught or not");
+            Campaign.SpendRepairKit(save, unused);
+            Assert.AreEqual(2, save.ItemCount("repair_kit"), "A kit you never used stays in the hold");
+
+            var used = FreeSkies(save);
+            used.Player.Hull = used.Player.Loadout.Hull * 0.5f;
+            var hull = used.Player.Hull;
+            used.Step(new ShipCommand { Patch = true });
+            Assert.Greater(used.Player.Hull, hull, "The patch mends the hull");
+            Campaign.SpendRepairKit(save, used);
+            Assert.AreEqual(1, save.ItemCount("repair_kit"));
+        }
+
+        [Test]
+        public void AQuickDogfightRaiderIsBeatenDownAndBoardedNeverSunk()
+        {
+            var save = Started();
+            var config = new SkyConfig
+            {
+                Content = content,
+                Seed = 9,
+                Player = Encounter.PlayerLoadout(content, save, "rust_wing"),
+                PlayerShipName = "Test",
+                PlayerHull = 400f,
+                AllControls = true,
+                Weather = "clear",
+            };
+            config.Enemies.Add(new SkySpawn { shipId = "scrap_raider", name = "Raider", target = true });
+            var encounter = new SkyEncounter(config);
+            var raider = encounter.Target.Ship;
+            raider.X = encounter.Player.X;
+            raider.Y = encounter.Player.Y;
+            raider.Z = encounter.Player.Z + 30f;
+
+            raider.Engines = 0f;
+            raider.Hull = raider.Loadout.Hull * 0.1f;
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, raider), "Not until it's beaten all the way down");
+            raider.TakeDamage(raider.Loadout.Hull * 10f);
+            Assert.AreEqual(DogfightSim.BoardableHull, raider.Hull, "A ship you can board never sinks");
+            Assert.IsTrue(raider.Alive);
+            encounter.Step(default);
+            Assert.AreEqual(SkyOutcome.Ongoing, encounter.Outcome);
+            encounter.Step(new ShipCommand { Grapple = true });
+            Assert.AreEqual(SkyOutcome.Boarded, encounter.Outcome);
+        }
+
+        [Test]
+        public void TheMainEnemyCantBeSunkAndOnlyBoardsAtItsLastPointOfHull()
         {
             var encounter = Sky("capture", new SkySpawn { key = "main", shipId = "scrap_raider", name = "Main", target = true }, new SkySpawn { key = "escort", shipId = "scrap_raider", name = "Escort" });
             var main = encounter.Main.Ship;
             var escort = encounter.Enemies[1].Ship;
-            var rules = content.skyRules;
-            Assert.AreEqual(0.25f, rules.mainBoardHullShare);
             main.X = encounter.Player.X;
             main.Y = encounter.Player.Y;
             main.Z = encounter.Player.Z + 30f;
@@ -547,12 +627,12 @@ namespace Airships.Tests
             escort.Y = encounter.Player.Y;
             escort.Z = encounter.Player.Z + 30f;
 
-            main.Hull = main.Loadout.Hull * rules.mainBoardHullShare;
-            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, main), "Exactly a quarter isn't less than a quarter");
+            main.Hull = main.Loadout.Hull * 0.1f;
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, main), "Badly hurt isn't beaten");
             main.Engines = 0f;
-            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, main), "Dead engines no longer open the way");
-            main.Hull = main.Loadout.Hull * rules.mainBoardHullShare - 1f;
-            Assert.IsTrue(encounter.Sim.CanBoard(encounter.Player, main));
+            Assert.IsFalse(encounter.Sim.CanBoard(encounter.Player, main), "Dead engines don't open the way");
+            main.TakeDamage(main.Loadout.Hull * 10f);
+            Assert.IsTrue(encounter.Sim.CanBoard(encounter.Player, main), "Beaten down to its last point of hull");
 
             escort.Hull = 1f;
             escort.Engines = 0f;
@@ -881,6 +961,7 @@ namespace Airships.Tests
             var run = new CampaignRun(content, save, mission);
             var encounter = new SkyEncounter(run.BuildSky(mission.phases[0], 3));
             encounter.Target.Ship.DeckDamage = encounter.Target.Ship.Loadout.Hull * 0.2f;
+            encounter.Target.Ship.Hull = DogfightSim.BoardableHull;
             encounter.Target.Ship.X = encounter.Player.X;
             encounter.Target.Ship.Z = encounter.Player.Z + 30f;
             encounter.Step(new ShipCommand { Grapple = true });
@@ -1917,28 +1998,6 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void GoodTimingBuildsMomentumForABoardingRush()
-        {
-            var battle = Deck(out var hero, out var foe, 1);
-            foe.Stats.hp = 99999f;
-            foe.Hp = 99999;
-            hero.Stats.hp = 99999f;
-            hero.Hp = 99999;
-            Assert.IsFalse(battle.RushReady);
-            for (var i = 0; i < 40 && !battle.RushReady; i++)
-            {
-                var action = battle.Current == hero ? new BattleAction { Kind = BattleActionKind.Attack, Target = foe, Timing = TimingGrade.Perfect } : new BattleAction { Kind = BattleActionKind.Guard };
-                battle.Submit(action);
-            }
-            Assert.IsTrue(battle.RushReady);
-            WaitForTurn(battle, hero);
-            var hp = foe.Hp;
-            battle.Submit(new BattleAction { Kind = BattleActionKind.Rush, Timing = TimingGrade.Good });
-            Assert.Less(foe.Hp, hp);
-            Assert.AreEqual(0, battle.Momentum, "A rush spends it all");
-        }
-
-        [Test]
         public void ItemsHealAndDamageAndCanBeBought()
         {
             var battle = Deck(out var hero, out var foe);
@@ -2061,7 +2120,7 @@ namespace Airships.Tests
         }
 
         [Test]
-        public void CiphersCountForTheQuarterdeck()
+        public void CiphersCountForTheHangar()
         {
             var save = Started();
             Assert.AreEqual(3, Campaign.CiphersTotal(content));

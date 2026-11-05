@@ -314,6 +314,47 @@ namespace Airships.Tests
         }
 
         [Test]
+        public void JellyfishShockStopsTheShipDeadUntilTheCurrentLetsGo()
+        {
+            var sim = TwoShips(9, out var ship, out _);
+            var field = SingleHazard(sim, HazardKind.Jellyfish, 5f, 10f, 0f, 0f, 12f);
+            field.Hazards[0].SwimSpeed = 0f;
+            field.Hazards[0].BobPhase = 0f;
+            var hull = ship.Hull;
+            var commands = new List<ShipCommand> { new ShipCommand { Throttle = 1f, Turn = 1f, Climb = 1f }, new ShipCommand { Throttle = 0.5f } };
+            for (var i = 0; i < DogfightSim.TicksPerSecond * 2 && ship.Hull == hull; i++) sim.Step(commands);
+            Assert.Less(ship.Hull, hull, "The sting hurts");
+            Assert.IsTrue(ship.Stunned);
+
+            // Held in place, facing the same way and with its guns silent, however hard the stick is pushed
+            // and the triggers pulled.
+            commands[0] = new ShipCommand { Throttle = 1f, Turn = 1f, Climb = 1f, FireTorpedo = true, FireBroadside = true, FireChaseGuns = true, Signature = true, Grapple = true };
+            var x = ship.X;
+            var y = ship.Y;
+            var z = ship.Z;
+            var heading = ship.Heading;
+            var stunTicks = (int)(HazardField.JellyStunSeconds * DogfightSim.TicksPerSecond) - 2;
+            for (var i = 0; i < stunTicks; i++)
+            {
+                sim.Step(commands);
+                foreach (var e in sim.Events)
+                {
+                    Assert.IsFalse((e.Kind == DogfightEventKind.Fired || e.Kind == DogfightEventKind.SignatureFired) && e.ShipId == ship.Id, "A shocked ship can't fire");
+                }
+            }
+            Assert.IsTrue(ship.Stunned);
+            Assert.AreEqual(0f, ship.Speed);
+            Assert.AreEqual(x, ship.X, 0.001f);
+            Assert.AreEqual(y, ship.Y, 0.001f);
+            Assert.AreEqual(z, ship.Z, 0.001f);
+            Assert.AreEqual(heading, ship.Heading, 0.001f);
+
+            for (var i = 0; i < DogfightSim.TicksPerSecond; i++) sim.Step(commands);
+            Assert.IsFalse(ship.Stunned);
+            Assert.Greater(ship.Speed, 0f, "Once the current lets go, the ship flies on");
+        }
+
+        [Test]
         public void DebrisBreaksOnImpactButRocksRemain()
         {
             var sim = TwoShips(7, out _, out _);
@@ -707,6 +748,33 @@ namespace Airships.Tests
             Assert.IsTrue(save.IsInParty("lyra"));
             Assert.AreEqual(3, save.party.Count);
             Assert.IsFalse(save.SwapOut("rook"), "A reserve member can't be swapped out again");
+        }
+
+        [Test]
+        public void YouChooseWhoBoardsAndWhoStaysBehind()
+        {
+            var save = CrewedSave();
+            Assert.IsTrue(save.PartyFull);
+            Assert.IsFalse(save.JoinParty("lyra"), "No place for her while the party is full");
+            Assert.IsFalse(save.StayBehind("vane"), "The captain always sails");
+
+            Assert.IsTrue(save.StayBehind("rook"));
+            Assert.IsFalse(save.IsInParty("rook"));
+            Assert.IsFalse(save.IsInParty("lyra"), "Leaving someone behind doesn't pick their replacement");
+            Assert.IsFalse(save.StayBehind("rook"), "Already staying behind");
+
+            Assert.IsTrue(save.JoinParty("lyra"));
+            Assert.IsTrue(save.IsInParty("lyra"));
+            Assert.IsFalse(save.JoinParty("lyra"), "Already aboard the party");
+            Assert.IsFalse(save.JoinParty("nobody"), "Only crew can join");
+
+            // A short party is a choice: the rest defend the ship, and it survives a save.
+            Assert.IsTrue(save.StayBehind("thorne"));
+            Assert.AreEqual(2, save.party.Count);
+            var restored = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(save));
+            restored.EnsureValidParty(restored.party.Count == 0);
+            Assert.AreEqual(new List<string> { "vane", "lyra" }, restored.party);
+            Assert.AreEqual(2, BattleSetup.BuildParty(content, restored).Count);
         }
 
         [Test]

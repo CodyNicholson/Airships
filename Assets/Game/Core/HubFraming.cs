@@ -45,7 +45,7 @@ namespace Airships.Core
         public bool Fits;
     }
 
-    // Finds the closest camera on the quarterdeck that shows everyone in the clear area, on any screen shape.
+    // Finds the closest camera in the hangar that shows everyone in the clear area, on any screen shape.
     public static class HubFraming
     {
         public const float ClearBottom = 0.12f; // Room for name tags under the crew's feet.

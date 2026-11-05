@@ -15,7 +15,16 @@ namespace Airships.Game
         public const string Victory = "victory_fanfare";
         public const string Defeat = "defeat_lament";
 
-        public static readonly string[] Songs = { Adventure, Harbor, Tempest, Thunderheads, DeckBattle, Boss, Finale };
+        // Deck battles run on their song's beat, so they only use songs written on the shared three-second
+        // sequence: 160 BPM, two bars a sequence. See BattleBeat.
+        public const string BoardingCadence = "boarding_cadence";
+        public const string RiggingsAblaze = "riggings_ablaze";
+        public const string TyrantsTempo = "tyrants_tempo";
+        public static readonly string[] BeatSongs = { BoardingCadence, RiggingsAblaze, TyrantsTempo };
+        static readonly string[] DeckBattles = { BoardingCadence, RiggingsAblaze };
+        static int nextDeckBattle;
+
+        public static readonly string[] Songs = { Adventure, Harbor, Tempest, Thunderheads, DeckBattle, Boss, Finale, BoardingCadence, RiggingsAblaze, TyrantsTempo };
 
         // Ordinary dogfights take turns, so a run of them doesn't wear out one theme.
         static readonly string[] SkyBattles = { Tempest, Thunderheads };
@@ -26,6 +35,7 @@ namespace Airships.Game
         // Null means whatever is playing carries on.
         public static string For(GameState state, PhaseDef phase)
         {
+            if (state == GameState.Battle) return DeckBattleSong(phase);
             if (phase != null && !string.IsNullOrEmpty(phase.music)) return phase.music;
             switch (state)
             {
@@ -39,11 +49,18 @@ namespace Airships.Game
                     return Harbor;
                 case GameState.Dogfight:
                     return SkyBattles[nextSkyBattle++ % SkyBattles.Length];
-                case GameState.Battle:
-                    return DeckBattle;
                 default:
                     return null;
             }
+        }
+
+        // A deck phase scored with a boss or finale theme gets the boss beat song, and the rest take turns.
+        public static string DeckBattleSong(PhaseDef phase)
+        {
+            var music = phase?.music;
+            if (System.Array.IndexOf(BeatSongs, music) >= 0) return music;
+            if (music == Boss || music == Finale) return TyrantsTempo;
+            return DeckBattles[nextDeckBattle++ % DeckBattles.Length];
         }
 
         // A boss's Choice and the end of its mission can be seconds apart, and one fanfare is enough.

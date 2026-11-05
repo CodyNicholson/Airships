@@ -101,6 +101,26 @@ namespace Airships.Core
             return true;
         }
 
+        // Leaves a party member behind with the ship, where they defend it while the party is away. The
+        // captain always sails. Returns whether anything changed.
+        public bool StayBehind(string id)
+        {
+            var slot = party.IndexOf(id);
+            if (slot <= 0) return false;
+            party.RemoveAt(slot);
+            return true;
+        }
+
+        // Brings a crew member from the ship into the boarding party, if there's a place for them.
+        public bool JoinParty(string id)
+        {
+            if (party.Contains(id) || crew.Find(c => c.id == id) == null || party.Count >= BattleSetup.MaxPartySize) return false;
+            party.Add(id);
+            return true;
+        }
+
+        public bool PartyFull => party.Count >= BattleSetup.MaxPartySize;
+
         // Sends a party member to the reserve and brings in the first crew member waiting there.
         // The captain can't be swapped out. Returns whether anything changed.
         public bool SwapOut(string id)

@@ -588,7 +588,7 @@
         1.8,
         -6.4
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -685,7 +685,7 @@
         2.7,
         -1
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -766,7 +766,7 @@
         1.5,
         0.5
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -844,7 +844,7 @@
         1.5,
         -3.8
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -922,7 +922,7 @@
         1.5,
         0.8
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -1000,7 +1000,7 @@
         1.5,
         -1.8
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -1078,7 +1078,7 @@
         2.5,
         -1.7
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -1300,7 +1300,7 @@
         2.8,
         -6.4
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -1437,7 +1437,7 @@
         1.7,
         -4.6
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -1753,7 +1753,7 @@
         2.2,
         -4.2
        ],
-       "arena": "SM_Env_QuarterdeckHub",
+       "arena": "SM_Env_GaleQuarterdeck",
        "faction": "Crimson",
        "weather": "heist",
        "props": [
@@ -2319,7 +2319,7 @@
       {
        "control": "grapple",
        "speaker": "vane",
-       "text": "Only the Boss's ship is worth a boarding. Beat it under a quarter hull, get close, then GRAPPLE.",
+       "text": "Only the Boss's ship is worth a boarding. Beat its hull down to the last plank, get close, then GRAPPLE.",
        "delay": 6
       }
      ],
@@ -2605,7 +2605,7 @@
       },
       {
        "speaker": "rook",
-       "text": "Engines are gone! She can't run. Get her under a quarter hull, then hooks on!",
+       "text": "Engines are gone! She can't run. Beat her down to her last plank, then hooks on!",
        "trigger": "enginesOut"
       },
       {
@@ -2733,7 +2733,7 @@
       },
       {
        "speaker": "rook",
-       "text": "We're being dragged down! Pour it on! Under a quarter hull, hit GRAPPLE and ride the line onto his deck!",
+       "text": "We're being dragged down! Pour it on! Once he's down to his last plank, hit GRAPPLE and ride the line onto his deck!",
        "trigger": "tethered"
       },
       {
@@ -3520,7 +3520,7 @@
       },
       {
        "speaker": "rook",
-       "text": "Line's on! Vex can't slip that. Keep firing till she's under a quarter hull!",
+       "text": "Line's on! Vex can't slip that. Keep firing till she's down to her last plank!",
        "trigger": "tethered"
       }
      ],
@@ -3528,7 +3528,7 @@
       {
        "control": "signature",
        "speaker": "rook",
-       "text": "Use Krag's HARPOON! Snag Vex's clipper, batter it under a quarter hull, then GRAPPLE up the line!",
+       "text": "Use Krag's HARPOON! Snag Vex's clipper, batter it down to its last plank, then GRAPPLE up the line!",
        "delay": 4
       }
      ],
@@ -3705,7 +3705,7 @@
        "hooks": 3,
        "damageScale": 0.65,
        "accuracy": 9,
-       "hullScale": 0.8
+       "hullScale": 0.55
       },
       {
        "key": "guard",
@@ -4117,7 +4117,7 @@
        "hooks": 3,
        "damageScale": 0.65,
        "accuracy": 9,
-       "hullScale": 0.55,
+       "hullScale": 0.45,
        "signatureEvery": 18,
        "standoff": 80
       }
@@ -4736,7 +4736,7 @@
      "lines": [
       {
        "speaker": "rook",
-       "text": "Corvette's ahead. Shell her under a quarter hull, then hooks on, and go!",
+       "text": "Corvette's ahead. Shell her down to her last plank, then hooks on, and go!",
        "trigger": "start"
       }
      ],
@@ -4788,7 +4788,8 @@
        "unsinkable": true,
        "hooks": 2,
        "damageScale": 0.65,
-       "accuracy": 10
+       "accuracy": 10,
+       "hullScale": 0.8
       }
      ],
      "lines": [

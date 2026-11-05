@@ -146,7 +146,8 @@ namespace Airships.Core
 
         public bool CanClimb => config.AllControls || config.Mechanics.Contains("altitude");
         public bool IsTeaching(string control) => CurrentTeach(control) != null && !usedControls.Contains(control);
-        public bool HasControl(string control) => config.AllControls && IsBasicControl(control) || config.Mechanics.Contains(control) || CurrentTeach(control) != null;
+        public bool HasControl(string control) => config.AllControls && IsBasicControl(control) || config.Mechanics.Contains(control) || CurrentTeach(control) != null
+            || control == "patch" && config.Patches > 0; // A repair kit in the hold brings the patch button, taught or not.
 
         static bool IsBasicControl(string control) => control == "broadside" || control == "torpedo" || control == "boost" || control == "altitude" || control == "stick";
 
@@ -194,8 +195,11 @@ namespace Airships.Core
             ship.AltitudeLocked = Player.AltitudeLocked;
             if (loadout.Torpedo != null) ship.TorpedoCooldown = loadout.Torpedo.reload * random.Range(0.3f, 1f);
             var isMain = config.Phase != null && config.Objective == "capture" && spawn.target && !ally;
-            ship.HullFloor = spawn.unsinkable || isMain ? 1f : 0f;
             if (config.Phase != null) ship.Boarding = isMain ? BoardingRule.Main : BoardingRule.Never;
+
+            // A ship that can be boarded is never sunk. It's beaten down to its last point of hull instead.
+            var boardable = !ally && ship.Boarding != BoardingRule.Never;
+            ship.HullFloor = spawn.unsinkable || boardable ? DogfightSim.BoardableHull : 0f;
             ship.HooksRequired = config.Mechanics.Contains("multihook") ? spawn.Hooks : 1;
             ship.TetherDrags = spawn.ai == "krag";
             if (spawn.startHullShare > 0f) ship.Hull = loadout.Hull * spawn.startHullShare;
@@ -363,7 +367,7 @@ namespace Airships.Core
         {
             var ship = enemy.Ship;
             var rules = config.Content.skyRules;
-            if (!enemy.Spawn.ally && ship.BroadsideCooldown <= 0f)
+            if (!enemy.Spawn.ally && ship.BroadsideCooldown <= 0f && !ship.Stunned)
             {
                 if (enemy.VolleyTimer > 0f)
                 {
@@ -397,7 +401,7 @@ namespace Airships.Core
             if (enemy.Spawn.missileEvery > 0f)
             {
                 enemy.MissileTimer -= DogfightSim.TickSeconds;
-                if (enemy.MissileTimer <= 0f)
+                if (enemy.MissileTimer <= 0f && !ship.Stunned)
                 {
                     enemy.MissileTimer = enemy.Spawn.missileEvery;
                     Sim.LaunchMissile(ship, target);

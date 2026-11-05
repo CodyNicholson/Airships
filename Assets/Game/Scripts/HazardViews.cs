@@ -16,6 +16,7 @@ namespace Airships.Game
         const float NotHeld = -1f;
         const float JawLength = 17f; // From the hinge to the front teeth.
         const float GapeLift = 14f; // The head tips back as the jaw drops.
+        const int JellyBolts = 5;
 
         // Meshes are shared across dogfights, because they never change after being built.
         static readonly Mesh[] RockMeshes = new Mesh[RockVariants];
@@ -32,6 +33,7 @@ namespace Airships.Game
             public Vector3 Previous;
             public Vector3 TumbleAxis;
             public float TumbleSpeed;
+            public SparkCluster Sparks; // Jellyfish only: the current crackling over the bell.
         }
 
         readonly List<View> views = new List<View>();
@@ -107,6 +109,7 @@ namespace Airships.Game
                     view.TumbleAxis = new Vector3(Mathf.Sin(hazard.Id * 12.3f), Mathf.Cos(hazard.Id * 7.1f), Mathf.Sin(hazard.Id * 3.7f)).normalized;
                     view.TumbleSpeed = hazard.Kind == HazardKind.Debris ? 24f : 2.5f;
                 }
+                if (hazard.Kind == HazardKind.Jellyfish) view.Sparks = new SparkCluster(view.Transform, JellyBolts);
                 views.Add(view);
                 byId[hazard.Id] = view;
             }
@@ -297,6 +300,9 @@ namespace Airships.Game
                     case HazardKind.Jellyfish:
                         var pulse = 1f + Mathf.Sin(time * 2.2f + hazard.BobPhase) * 0.14f;
                         view.Transform.localScale = new Vector3(pulse, 2f - pulse, pulse) * hazard.Radius;
+
+                        // In the jellyfish's own space, so the arcs size and squeeze with the bell.
+                        view.Sparks.Update(new Vector3(0f, 0.1f, 0f), new Vector3(0.85f, 0.6f, 0.85f), 0.45f, 0.95f, 0.6f);
                         break;
                     default:
                         view.Transform.Rotate(view.TumbleAxis, view.TumbleSpeed * Time.deltaTime, Space.World);

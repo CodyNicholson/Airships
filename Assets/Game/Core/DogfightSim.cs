@@ -61,6 +61,8 @@ namespace Airships.Core
         public float LookPitch; // Radians up from level, while the engines are stopped.
         public float BroadsideCooldown;
         public float CollisionCooldown; // Grace period after a crash, so one rock can't hit every tick.
+        public float StunTimer; // Seconds left hanging dead in the air after a jellyfish's shock.
+        public bool Stunned => StunTimer > 0f;
         public bool Eaten;
         public bool HuntedByWhale = true; // False for AI enemies, which the whale steers around instead.
 
@@ -286,27 +288,23 @@ namespace Airships.Core
             CheckFinished();
         }
 
-        // A hook or harpoon can land when the target is disabled, nearly beaten, or already tethered.
+        // Ships that can be boarded never sink: they're beaten down to this last point of hull, and only
+        // then can hooks take them.
+        public const float BoardableHull = 1f;
+
+        // A hook or harpoon can land only on a beaten ship, in range or already joined by a line.
         public bool CanBoard(ShipState ship, ShipState target)
         {
             if (Rules == null || target == null || !target.Alive || target.Team == ship.Team || target.BoardsOnContact) return false;
-            if (target.Boarding != BoardingRule.Standard)
-            {
-                // A line between the ships saves closing in, but the target must still be beaten.
-                var linked = target.TetheredTo == ship.Id || ship.TetheredTo == target.Id;
-                return IsBoardable(target) && (linked || InGrappleRange(ship, target));
-            }
-            // Being dragged by someone's line means you can climb it. Your own line still needs a beaten target.
-            if (target.TetheredTo == ship.Id) return true;
-            if (ship.TetheredTo == target.Id && target.Hull <= target.Loadout.Hull * Rules.tetherBoardShare) return true;
-            return IsBoardable(target) && InGrappleRange(ship, target);
+            if (!IsBoardable(target)) return false;
+            var linked = target.TetheredTo == ship.Id || ship.TetheredTo == target.Id;
+            return linked || InGrappleRange(ship, target);
         }
 
         public bool IsBoardable(ShipState target)
         {
             if (Rules == null || target.Boarding == BoardingRule.Never) return false;
-            if (target.Boarding == BoardingRule.Main) return target.Hull < target.Loadout.Hull * Rules.mainBoardHullShare;
-            return target.EnginesOut || target.Hull <= target.Loadout.Hull * Rules.grappleHullShare;
+            return target.Hull <= BoardableHull;
         }
 
         public bool InGrappleRange(ShipState ship, ShipState target)
@@ -474,7 +472,7 @@ namespace Airships.Core
         {
             ship.EvadeCooldown = Math.Max(0f, ship.EvadeCooldown - TickSeconds);
             ship.ImmuneTimer = Math.Max(0f, ship.ImmuneTimer - TickSeconds);
-            if ((command.Evade != 0f || command.EvadeLift != 0f) && ship.EvadeCooldown <= 0f && ship.EvadeTimer <= 0f)
+            if ((command.Evade != 0f || command.EvadeLift != 0f) && ship.EvadeCooldown <= 0f && ship.EvadeTimer <= 0f && !ship.Stunned)
             {
                 // A ship that can't climb right now rolls sideways instead of doing nothing.
                 var cantLift = ship.AltitudeLocked || (ship.EnvelopeOut && command.EvadeLift > 0f);
@@ -656,6 +654,11 @@ namespace Airships.Core
         void StepShip(ShipState ship, ShipCommand command)
         {
             var loadout = ship.Loadout;
+
+            // A shocked ship can't steer, climb or fly until the current lets go of it.
+            var stunned = ship.Stunned;
+            if (stunned) ship.StunTimer = Math.Max(0f, ship.StunTimer - TickSeconds);
+
             var turn = Clamp(command.Turn, -1f, 1f) * loadout.TurnDegrees * DegreesToRadians;
 
             // Past the arena edge the wind pushes every ship back toward the center.
@@ -667,8 +670,9 @@ namespace Airships.Core
                 turn += WrapAngle(toCenter - ship.Heading) * BoundaryTurnStrength * over;
             }
 
-            var drift = UpdateDamageDrift(ship);
+            var drift = stunned ? 0f : UpdateDamageDrift(ship);
             if (drift != 0f) turn += drift * Rules.damagedDriftTurnShare * loadout.TurnDegrees * DegreesToRadians;
+            if (stunned) turn = 0f;
 
             ship.TurnRate = turn;
             ship.Heading = WrapAngle(ship.Heading + turn * TickSeconds);
@@ -678,11 +682,11 @@ namespace Airships.Core
                 ship.Z -= ship.ForwardX * drift * Rules.damagedDriftSlip * TickSeconds;
             }
 
-            var climb = ship.AltitudeLocked || ship.TornadoDrag != 0f || command.EnginesStopped ? 0f : Clamp(command.Climb, -1f, 1f);
+            var climb = stunned || ship.AltitudeLocked || ship.TornadoDrag != 0f || command.EnginesStopped ? 0f : Clamp(command.Climb, -1f, 1f);
             var lookGoal = command.EnginesStopped ? ship.LookPitch + Clamp(command.Climb, -1f, 1f) * LookRate * TickSeconds : 0f;
             ship.LookPitch = command.EnginesStopped ? Clamp(lookGoal, -MaxLookPitch, MaxLookPitch) : MoveTowards(ship.LookPitch, 0f, LookRate * 2f * TickSeconds);
             if (Rules != null && ship.EnvelopeOut) climb = -Rules.envelopeSinkSpeed / ClimbSpeed;
-            ship.ClimbRate = MoveTowards(ship.ClimbRate, climb * ClimbSpeed, ClimbAcceleration * TickSeconds);
+            ship.ClimbRate = stunned ? 0f : MoveTowards(ship.ClimbRate, climb * ClimbSpeed, ClimbAcceleration * TickSeconds);
             var altitude = ship.Y + ship.ClimbRate * TickSeconds;
             ship.Y = ClampAltitude(altitude);
             if (ship.Y != altitude) ship.ClimbRate = 0f;
@@ -691,7 +695,7 @@ namespace Airships.Core
             var climbEffect = 1f - ClimbSpeedEffect * ship.ClimbRate / ClimbSpeed;
             var speedAcceleration = ship.BoostTimer > 0f ? Acceleration * 3f : Acceleration;
             var targetSpeed = command.EnginesStopped ? 0f : loadout.Speed * throttle * climbEffect * SpeedScale(ship);
-            ship.Speed = MoveTowards(ship.Speed, targetSpeed, (command.EnginesStopped ? StopDeceleration : speedAcceleration) * TickSeconds);
+            ship.Speed = stunned ? 0f : MoveTowards(ship.Speed, targetSpeed, (command.EnginesStopped ? StopDeceleration : speedAcceleration) * TickSeconds);
             ship.X += ship.ForwardX * ship.Speed * TickSeconds;
             ship.Z += ship.ForwardZ * ship.Speed * TickSeconds;
 
@@ -715,6 +719,16 @@ namespace Airships.Core
                     events.Add(new DogfightEvent { Kind = DogfightEventKind.Destroyed, ShipId = ship.Id, X = ship.X, Y = ship.Y, Z = ship.Z });
                     return;
                 }
+            }
+
+            // The shock locks up the gun crews too: nothing fires until the ship can fly again.
+            if (stunned)
+            {
+                command.FireTorpedo = false;
+                command.FireChaseGuns = false;
+                command.FireBroadside = false;
+                command.Signature = false;
+                command.Grapple = false;
             }
 
             if (command.FireTorpedo && ship.Loadout.Torpedo != null && ship.TorpedoCooldown <= 0f)

@@ -1234,8 +1234,8 @@
         }
       }
     },
-    "QuarterdeckDusk": {
-      "used_for": "Hub: warm, safe evening on your own deck",
+    "HangarDusk": {
+      "used_for": "Hub: warm, safe evening in the crew's hangar",
       "sun_dir": [
         -0.72,
         0.16,
@@ -1261,12 +1261,12 @@
       "fog_end_m": 620,
       "variants": {
         "HQ": {
-          "file": "T_Sky_QuarterdeckDusk_HQ.png",
+          "file": "T_Sky_HangarDusk_HQ.png",
           "width": 2048,
           "height": 1024
         },
         "LQ": {
-          "file": "T_Sky_QuarterdeckDusk_LQ.png",
+          "file": "T_Sky_HangarDusk_LQ.png",
           "width": 1024,
           "height": 512
         }
@@ -1607,6 +1607,19 @@
         },
         "LQ": {
           "file": "T_Icon_Hud_AltitudeUp_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Hud_Attack": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Hud_Attack_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Hud_Attack_LQ.png",
           "size": 128
         }
       }
@@ -2231,6 +2244,305 @@
         },
         "LQ": {
           "file": "T_Icon_Ship_TartarusAloft_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_AimedShot": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_AimedShot_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_AimedShot_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_Backstab": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_Backstab_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_Backstab_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_BelayingPin": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_BelayingPin_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_BelayingPin_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_CinderFlame": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_CinderFlame_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_CinderFlame_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_Cleave": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_Cleave_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_Cleave_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_CrushingBlow": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_CrushingBlow_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_CrushingBlow_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_DarkMending": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_DarkMending_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_DarkMending_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_HeavyFlak": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_HeavyFlak_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_HeavyFlak_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_HookSwing": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_HookSwing_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_HookSwing_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_LightningBolt": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_LightningBolt_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_LightningBolt_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_MarkWeakPoint": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_MarkWeakPoint_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_MarkWeakPoint_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_PatchUp": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_PatchUp_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_PatchUp_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_QuickDraw": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_QuickDraw_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_QuickDraw_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_RaiseTheFallen": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_RaiseTheFallen_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_RaiseTheFallen_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_Rally": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_Rally_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_Rally_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_Scattershot": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_Scattershot_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_Scattershot_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_SetCharge": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_SetCharge_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_SetCharge_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_SmellingSalts": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_SmellingSalts_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_SmellingSalts_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_SmokeBomb": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_SmokeBomb_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_SmokeBomb_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_Squall": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_Squall_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_Squall_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_StaticSnare": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_StaticSnare_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_StaticSnare_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_Tailwind": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_Tailwind_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_Tailwind_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Skill_VeilOfLife": {
+      "source_model": null,
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Skill_VeilOfLife_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Skill_VeilOfLife_LQ.png",
           "size": 128
         }
       }
@@ -8948,7 +9260,7 @@
       },
       "default_faction": "Scrap"
     },
-    "SM_Env_QuarterdeckHub": {
+    "SM_Env_GaleQuarterdeck": {
       "variants": {
         "HQ": {
           "tier": "environment",
@@ -9162,6 +9474,234 @@
             5.0,
             1.7,
             1.0
+          ]
+        }
+      }
+    },
+    "SM_Env_HangarHub": {
+      "variants": {
+        "HQ": {
+          "tier": "environment",
+          "tris": 1180
+        },
+        "LQ": {
+          "tier": "environment_low",
+          "tris": 548
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "camera_look_at": [
+            0.0,
+            8.2,
+            5.5
+          ],
+          "centre_stage": [
+            0.0,
+            6.6,
+            6.0
+          ],
+          "enemy_slot_1": [
+            4.0,
+            6.6,
+            7.6
+          ],
+          "enemy_slot_2": [
+            5.0,
+            6.6,
+            6.55
+          ],
+          "enemy_slot_3": [
+            4.0,
+            6.6,
+            5.5
+          ],
+          "enemy_slot_4": [
+            5.0,
+            6.6,
+            4.45
+          ],
+          "lantern_0": [
+            -7.5,
+            8.65,
+            1.58
+          ],
+          "lantern_1": [
+            7.5,
+            8.65,
+            1.58
+          ],
+          "party_slot_1": [
+            -4.0,
+            6.6,
+            7.6
+          ],
+          "party_slot_2": [
+            -5.0,
+            6.6,
+            6.55
+          ],
+          "party_slot_3": [
+            -4.0,
+            6.6,
+            5.5
+          ],
+          "party_slot_4": [
+            -5.0,
+            6.6,
+            4.45
+          ],
+          "ship_berth": [
+            0.0,
+            11.2,
+            -5.5
+          ],
+          "station_bounty_board": [
+            -7.9,
+            6.6,
+            1.7
+          ],
+          "station_helm": [
+            0.0,
+            7.48,
+            3.6
+          ],
+          "station_lyra": [
+            -2.6,
+            6.6,
+            5.0
+          ],
+          "station_lyra_table": [
+            -2.6,
+            6.6,
+            4.15
+          ],
+          "station_morrow": [
+            -5.0,
+            6.6,
+            8.0
+          ],
+          "station_rook": [
+            6.1,
+            6.6,
+            2.7
+          ],
+          "station_sable": [
+            -7.0,
+            6.6,
+            2.4
+          ],
+          "station_thorne": [
+            5.0,
+            6.6,
+            7.0
+          ]
+        },
+        "LQ": {
+          "camera_look_at": [
+            0.0,
+            8.2,
+            5.5
+          ],
+          "centre_stage": [
+            0.0,
+            6.6,
+            6.0
+          ],
+          "enemy_slot_1": [
+            4.0,
+            6.6,
+            7.6
+          ],
+          "enemy_slot_2": [
+            5.0,
+            6.6,
+            6.55
+          ],
+          "enemy_slot_3": [
+            4.0,
+            6.6,
+            5.5
+          ],
+          "enemy_slot_4": [
+            5.0,
+            6.6,
+            4.45
+          ],
+          "lantern_0": [
+            -7.5,
+            8.65,
+            1.58
+          ],
+          "lantern_1": [
+            7.5,
+            8.65,
+            1.58
+          ],
+          "party_slot_1": [
+            -4.0,
+            6.6,
+            7.6
+          ],
+          "party_slot_2": [
+            -5.0,
+            6.6,
+            6.55
+          ],
+          "party_slot_3": [
+            -4.0,
+            6.6,
+            5.5
+          ],
+          "party_slot_4": [
+            -5.0,
+            6.6,
+            4.45
+          ],
+          "ship_berth": [
+            0.0,
+            11.2,
+            -5.5
+          ],
+          "station_bounty_board": [
+            -7.9,
+            6.6,
+            1.7
+          ],
+          "station_helm": [
+            0.0,
+            7.48,
+            3.6
+          ],
+          "station_lyra": [
+            -2.6,
+            6.6,
+            5.0
+          ],
+          "station_lyra_table": [
+            -2.6,
+            6.6,
+            4.15
+          ],
+          "station_morrow": [
+            -5.0,
+            6.6,
+            8.0
+          ],
+          "station_rook": [
+            6.1,
+            6.6,
+            2.7
+          ],
+          "station_sable": [
+            -7.0,
+            6.6,
+            2.4
+          ],
+          "station_thorne": [
+            5.0,
+            6.6,
+            7.0
           ]
         }
       }

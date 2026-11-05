@@ -78,10 +78,26 @@ namespace Airships.Game
 
     public class PortScreen : MonoBehaviour
     {
+        // The stack of buttons under the ship, with a supply card either side of it, all fitted into the gap
+        // between the crew and upgrade panels. Narrow screens get a narrower column rather than an overlap.
+        const float MaxColumnWidth = 480f;
+        const float ColumnButtonHeight = 86f;
+        const float ColumnGap = 14f;
+        const float ColumnBottom = 20f;
+        const int ColumnButtons = 3;
+        static readonly Vector2 SupplyCard = new Vector2(92f, 142f);
+        const float CrewPanelEdge = 28f + 600f; // From the left of the safe area.
+        const float UpgradePanelEdge = 28f + 660f; // From the right of the safe area.
+        const float MiddleMargin = 12f;
+        float columnX;
+        float columnWidth;
+        const float CrewRowStep = 188f;
+        readonly Dictionary<string, RectTransform> crewRows = new Dictionary<string, RectTransform>();
         GameDirector director;
         TextMeshProUGUI goldText;
         readonly List<Action> refreshers = new List<Action>();
         GameObject settingsPanel;
+        GameObject fleetPanel;
         Canvas canvas;
 
         void Start()
@@ -95,13 +111,20 @@ namespace Airships.Game
             BuildHeader(safe);
             BuildCrew(safe);
             BuildShop(safe);
+            FitMiddleColumn();
             BuildChandler(safe);
 
-            var sail = UIKit.Button("Free Skies", safe, "FREE SKIES", 50f, Palette.PlayerPaint, SetSail);
-            sail.ClickSound = Sfx.Confirm;
-            UIKit.Place((RectTransform)sail.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 28f), new Vector2(520f, 130f));
-            var back = UIKit.Button("Back", safe, "QUARTERDECK", 34f, Palette.PanelLight, director.ShowHub);
-            UIKit.Place((RectTransform)back.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(400f, 86f));
+            // From the bottom up: Settings, then Fleet, then back to the Hangar.
+            var y = ColumnBottom;
+            var settings = UIKit.Button("Settings", safe, "SETTINGS", 30f, Palette.PanelLight, ToggleSettings);
+            PlaceInColumn(settings, ref y);
+            var fleet = UIKit.Button("Fleet", safe, "FLEET", 34f, Palette.PanelLight, ShowFleet);
+            PlaceInColumn(fleet, ref y);
+            fleet.Interactable = director.Save.fleet.Count > 0;
+            var fleetIcon = UIKit.Icon("Icon", fleet.transform, "Ship_RustWing");
+            UIKit.Place(fleetIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), Vector2.one * 66f);
+            var back = UIKit.Button("Back", safe, "HANGAR", 34f, Palette.PanelLight, director.ShowHub);
+            PlaceInColumn(back, ref y);
 
             Refresh();
             if (GameDirector.Autoplay) StartCoroutine(AutoPlay());
@@ -120,10 +143,28 @@ namespace Airships.Game
             director.ShowHub();
         }
 
-        void SetSail()
+        // Pick the ship to fly over this screen. Flying a new one reloads it, so the ship behind shows the change.
+        void ShowFleet()
         {
-            director.SaveGame();
-            director.StartDogfight();
+            if (fleetPanel != null) Destroy(fleetPanel);
+            fleetPanel = FleetPanel.Build(canvas.transform, director, director.ShowPort, Refresh, () => fleetPanel = null);
+        }
+
+        // Centres the column in the gap the side panels leave, and narrows it if the cards wouldn't fit beside it.
+        void FitMiddleColumn()
+        {
+            var scale = UIKit.ReferenceHeight / Mathf.Max(1f, Screen.height);
+            var width = Screen.safeArea.width * scale;
+            var left = CrewPanelEdge - width * 0.5f + MiddleMargin;
+            var right = width * 0.5f - UpgradePanelEdge - MiddleMargin;
+            columnX = (left + right) * 0.5f;
+            columnWidth = Mathf.Min(MaxColumnWidth, right - left - 2f * (SupplyCard.x + ColumnGap));
+        }
+
+        void PlaceInColumn(GameButton button, ref float y)
+        {
+            UIKit.Place((RectTransform)button.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(columnX, y), new Vector2(columnWidth, ColumnButtonHeight));
+            y += ColumnButtonHeight + ColumnGap;
         }
 
         void BuildHeader(RectTransform safe)
@@ -132,9 +173,6 @@ namespace Airships.Game
             UIKit.Place(gold.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(400f, 86f));
             goldText = UIKit.Text("Amount", gold.transform, "", 44f, Palette.Accent);
             UIKit.Fill(goldText.rectTransform);
-
-            var settings = UIKit.Button("Settings", safe, "SETTINGS", 30f, Palette.PanelLight, ToggleSettings);
-            UIKit.Place((RectTransform)settings.transform, new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(218f, -22f), new Vector2(220f, 86f));
         }
 
         void BuildCrew(RectTransform safe)
@@ -143,6 +181,7 @@ namespace Airships.Game
             UIKit.Place(panel.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(28f, 30f), new Vector2(600f, 860f));
             var heading = UIKit.Text("Heading", panel.transform, "CREW", 40f, Palette.Accent);
             UIKit.Place(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(540f, 56f));
+            refreshers.Add(() => heading.text = $"CREW   {director.Save.party.Count}/{BattleSetup.MaxPartySize} BOARDING");
 
             var rows = director.Save.crew;
             CampaignLook.ScrollList(panel.transform, new Vector2(580f, 770f), new Vector2(0f, -82f), new Vector2(0.5f, 1f), out var crewList);
@@ -154,7 +193,8 @@ namespace Airships.Game
                 var member = Array.Find(director.Content.crew, c => c.id == progress.id);
                 var cls = director.Content.Class(member.classId);
                 var row = UIKit.Panel(member.name, crewList, Palette.WithAlpha(Palette.PanelLight, 0.7f));
-                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f - i * 188f), new Vector2(560f, 176f));
+                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f - i * CrewRowStep), new Vector2(560f, 176f));
+                crewRows[progress.id] = row.rectTransform;
 
                 var name = UIKit.Text("Name", row.transform, member.name, 34f, Palette.TextLight, TextAlignmentOptions.Left);
                 UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -10f), new Vector2(380f, 44f));
@@ -176,17 +216,27 @@ namespace Airships.Game
                 var xpBar = UIKit.Bar("XP", row.transform, Palette.Accent);
                 UIKit.Place((RectTransform)xpBar.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(520f, 22f));
 
-                // The captain always sails. Anyone else can trade places with whoever is in reserve.
-                GameButton swap = null;
-                if (i > 0)
+                // The captain always sails. Everyone else boards or stays behind to defend the ship, your choice.
+                GameButton choose = null;
+                if (progress.id != Campaign.Protagonist)
                 {
-                    swap = UIKit.Button("Swap", row.transform, "SWAP", 24f, Palette.PanelLight, () =>
+                    choose = UIKit.Button("Board Or Stay", row.transform, "", 22f, Palette.PanelLight, () =>
                     {
-                        if (!director.Save.SwapOut(progress.id)) return;
+                        var save = director.Save;
+                        var changed = save.IsInParty(progress.id) ? save.StayBehind(progress.id) : save.JoinParty(progress.id);
+                        if (!changed)
+                        {
+                            AudioBank.Play(Sfx.Denied, 0.6f);
+                            return;
+                        }
                         director.SaveGame();
                         Refresh();
                     });
-                    UIKit.Place((RectTransform)swap.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-120f, -8f), new Vector2(150f, 48f));
+                    choose.Label.enableAutoSizing = true;
+                    choose.Label.fontSizeMin = 16f;
+                    choose.Label.fontSizeMax = 22f;
+                    choose.Label.characterSpacing = 0f;
+                    UIKit.Place((RectTransform)choose.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-110f, -8f), new Vector2(180f, 48f));
                 }
 
                 var rowColor = row.color;
@@ -195,9 +245,12 @@ namespace Airships.Game
                     var active = director.Save.IsInParty(progress.id);
                     row.color = active ? rowColor : Palette.WithAlpha(Palette.Panel, 0.8f);
                     role.text = active ? cls.name : $"{cls.name}  (defending the ship)";
-                    if (swap != null)
+                    if (choose != null)
                     {
-                        swap.gameObject.SetActive(active);
+                        var full = director.Save.PartyFull;
+                        choose.Label.text = active ? "STAY BEHIND" : full ? "PARTY FULL" : "BOARD";
+                        choose.SetColor(active ? Palette.PanelLight : Palette.PlayerPaint);
+                        choose.Interactable = active || !full;
                     }
                     var s = Growth.StatsAtLevel(member.baseStats, cls, progress.level, director.Content.economy.baseStatGrowthInfluence);
                     level.text = $"LV {progress.level}";
@@ -211,7 +264,7 @@ namespace Airships.Game
         {
             var panel = UIKit.Panel("Shipwright", safe, Palette.WithAlpha(Palette.Panel, 0.92f));
             UIKit.Place(panel.rectTransform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-28f, 30f), new Vector2(660f, 860f));
-            var heading = UIKit.Text("Heading", panel.transform, "SHIPWRIGHT", 40f, Palette.Accent);
+            var heading = UIKit.Text("Heading", panel.transform, "UPGRADES", 40f, Palette.Accent);
             UIKit.Place(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(600f, 56f));
 
             var upgrades = director.Content.upgrades;
@@ -244,15 +297,20 @@ namespace Airships.Game
             }
         }
 
-        // Consumables for the fights ahead.
+        // Consumables for the fights ahead, one card either side of the buttons: rum for deck battles on the left,
+        // repair kits for air fights on the right. Deck battles have one item button, the rum, so a charge isn't sold.
         void BuildChandler(RectTransform safe)
         {
-            var items = director.Content.items;
+            var items = System.Array.FindAll(director.Content.items, item => item.kind != "damage");
+            var columnHeight = ColumnButtons * ColumnButtonHeight + (ColumnButtons - 1) * ColumnGap;
+            var cardBottom = ColumnBottom + (columnHeight - SupplyCard.y) * 0.5f;
+            var reach = columnWidth * 0.5f + ColumnGap + SupplyCard.x * 0.5f;
             for (var i = 0; i < items.Length; i++)
             {
                 var item = items[i];
+                var side = item.kind == "patch" ? 1f : -1f;
                 var row = UIKit.Panel(item.name, safe, Palette.WithAlpha(Palette.Panel, 0.92f));
-                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-98f + i * 98f, -118f), new Vector2(92f, 142f));
+                UIKit.Place(row.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(columnX + side * reach, cardBottom), SupplyCard);
                 var icon = UIKit.Icon("Icon", row.transform, item.icon);
                 UIKit.Place(icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -2f), Vector2.one * 66f);
                 var count = UIKit.Text("Count", row.transform, "", 22f, Palette.Accent);
@@ -288,6 +346,27 @@ namespace Airships.Game
         {
             goldText.text = $"{director.Save.gold} GOLD";
             foreach (var refresh in refreshers) refresh();
+            SortCrewRows();
+        }
+
+        // The boarding party heads the list, in the order they joined with the captain first, and everyone
+        // staying behind with the ship follows in crew order. Re-sorted every time someone boards or stays.
+        void SortCrewRows()
+        {
+            var save = director.Save;
+            var order = new List<string>();
+            foreach (var id in save.party)
+            {
+                if (crewRows.ContainsKey(id)) order.Add(id);
+            }
+            foreach (var member in save.crew)
+            {
+                if (!order.Contains(member.id) && crewRows.ContainsKey(member.id)) order.Add(member.id);
+            }
+            for (var i = 0; i < order.Count; i++)
+            {
+                crewRows[order[i]].anchoredPosition = new Vector2(0f, -8f - i * CrewRowStep);
+            }
         }
 
         void ToggleSettings()
@@ -444,7 +523,7 @@ namespace Airships.Game
             }
             else
             {
-                var next = UIKit.Button("Continue", panel.transform, director.Run != null ? "TO THE QUARTERDECK" : "RETURN TO PORT", 40f, Palette.PlayerPaint, director.FinishResults);
+                var next = UIKit.Button("Continue", panel.transform, "TO THE HANGAR", 40f, Palette.PlayerPaint, director.FinishResults);
                 next.ClickSound = Sfx.Confirm;
                 UIKit.Place((RectTransform)next.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 30f), new Vector2(640f, 110f));
             }

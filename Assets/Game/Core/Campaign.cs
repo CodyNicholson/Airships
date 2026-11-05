@@ -70,7 +70,7 @@ namespace Airships.Core
         public static bool HasMechanic(SaveData save, string mechanic) => save.campaign.mechanics.Contains(mechanic);
         public static bool PrologueDone(SaveData save, GameContent content) => IsDone(save, content.campaign.missions[0].id);
 
-        // Ciphers found so far, shown on the quarterdeck during Act II.
+        // Ciphers found so far, shown in the hangar during Act II.
         public static int CiphersFound(SaveData save, GameContent content)
         {
             var found = 0;
@@ -241,6 +241,17 @@ namespace Airships.Core
             var ship = save.fleet.Find(s => s.id == shipId);
             if (ship == null) return;
             ship.damage = Math.Max(0f, ShipHull(content, save, shipId) - hullLeft);
+        }
+
+        // Hull patches for one air fight: Thorne's free one once he's taught it, and one more if you carry a
+        // repair kit. Only one kit counts per fight.
+        public static int PatchesFor(SaveData save) => (HasMechanic(save, "patch") ? 1 : 0) + Math.Min(1, save.ItemCount("repair_kit"));
+
+        // A patch beyond Thorne's free one used up a repair kit. A kit you never needed stays in the hold.
+        public static void SpendRepairKit(SaveData save, SkyEncounter encounter)
+        {
+            var freePatches = HasMechanic(save, "patch") ? 1 : 0;
+            if (encounter.Config.Patches > freePatches && encounter.Player.PatchesLeft < encounter.Config.Patches - freePatches) save.AddItem("repair_kit", -1);
         }
 
         public static int RepairCost(GameContent content, SaveData save, string shipId)
@@ -538,7 +549,7 @@ namespace Airships.Core
                 Phase = phase,
                 Objective = string.IsNullOrEmpty(phase.objective) ? "sink_all" : phase.objective,
                 Weather = string.IsNullOrEmpty(phase.weather) ? "clear" : phase.weather,
-                Patches = (Campaign.HasMechanic(save, "patch") ? 1 : 0) + Math.Min(1, save.ItemCount("repair_kit")),
+                Patches = Campaign.PatchesFor(save),
                 HullShares = HullShares,
             };
             foreach (var mechanic in save.campaign.mechanics) config.Mechanics.Add(mechanic);
@@ -589,9 +600,7 @@ namespace Airships.Core
 
             BoardersLanded = encounter.Sim.BoardersLanded;
 
-            // A patch beyond Thorne's free one used up a repair kit.
-            var freePatches = Campaign.HasMechanic(save, "patch") ? 1 : 0;
-            if (encounter.Config.Patches > freePatches && encounter.Player.PatchesLeft < encounter.Config.Patches - freePatches) save.AddItem("repair_kit", -1);
+            Campaign.SpendRepairKit(save, encounter);
             DeckWounds = encounter.DeckWounds(encounter.BoardedEnemy ?? encounter.Target);
             var phase = Phase;
             if (string.IsNullOrEmpty(phase.ship)) Campaign.RecordDamage(content, save, save.activeShip, encounter.Player.Hull);
@@ -644,9 +653,7 @@ namespace Airships.Core
                 var member = content.Crew(id);
                 var progress = save.crew.Find(c => c.id == id);
                 if (progress == null) continue;
-                var combatant = Combatant.Create(member.id, member.name, content.Class(member.classId), member.baseStats, progress.level, content, true, party.Count);
-                combatant.Look = member.look;
-                combatant.AddSignature(member.signature, content);
+                var combatant = BattleSetup.CreateCrew(content, member, progress.level, party.Count);
                 var carried = save.campaign.crewHealth.Find(h => h.id == id);
                 if (carried != null)
                 {

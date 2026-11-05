@@ -53,6 +53,16 @@ namespace Airships.EditorTools
             Debug.Log($"[Art] Baked {baked} kit prefabs into {OutputFolder}");
         }
 
+        // Sets up icons added since the last full import as sprites, without re-baking the kit's prefabs.
+        [MenuItem("Airships/Import Icons")]
+        public static void ImportIcons()
+        {
+            AssetDatabase.Refresh();
+            ConfigureSprites(IconFolder, TextureImporterFormat.ASTC_6x6);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Art] Icons configured");
+        }
+
         // Flipbook sheets have soft edges, and their frames sit side by side, so no mips or wrapping.
         static void ConfigureVfx()
         {

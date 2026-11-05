@@ -5,7 +5,7 @@ namespace Airships.Game
 {
     public enum Sfx
     {
-        Click, Confirm, Cannon, HeavyCannon, Hit, HeavyHit, Explosion, Sting, Heal, Slash, Denied, WhaleCall,
+        Click, Confirm, Cannon, HeavyCannon, Hit, HeavyHit, Explosion, Sting, Heal, Slash, Denied, WhaleCall, Tick,
 
         // From here on, each sound is a clip in Resources/Sfx with the same name, rendered by the music project.
         ShipRoll, BoostIgnite, NearMiss, ShotWhiz, FlakBurst, MortarBurst, TimberBreak, JellyPop, Raked, WarHorn, DangerSting,
@@ -54,6 +54,8 @@ namespace Airships.Game
         float lastJingleTime = float.NegativeInfinity;
         bool jingleGivesWay;
         float jingleGain = 1f;
+        double songStartDsp = double.NaN;
+        double dspOffset = double.NaN; // The audio clock minus the frame clock, smoothed, since the audio clock only moves once per buffer.
         int nextVoice;
         float sfxVolume = 1f;
         float musicVolume = 1f;
@@ -82,6 +84,7 @@ namespace Airships.Game
             clips[(int)Sfx.Slash] = Noise("Slash", 0.13f, 0.5f, 0.75f, random);
             clips[(int)Sfx.Denied] = Tones("Denied", new[] { 196f, 165f }, 0.09f, 0.4f);
             clips[(int)Sfx.WhaleCall] = WhaleCall();
+            clips[(int)Sfx.Tick] = Tones("Tick", new[] { 1760f }, 0.06f, 0.55f); // A high A over the battle music, for a countdown.
 
             foreach (Sfx sound in Enum.GetValues(typeof(Sfx)))
             {
@@ -193,6 +196,7 @@ namespace Airships.Game
 
         public static float SecondsSinceJingle => instance != null ? Time.unscaledTime - instance.lastJingleTime : float.PositiveInfinity;
         public static string CurrentSong => instance != null ? instance.currentSong : null;
+        public static string WantedSong => instance != null ? instance.wantedSong : null;
         public static bool IsMusicPlaying => instance != null && (instance.baseIntro.isPlaying || instance.baseLoop.isPlaying);
         public static float EffectiveMusicVolume => instance != null ? instance.baseLoop.volume : 0f;
         public static float DangerLevel => instance != null ? instance.danger : 0f;
@@ -202,6 +206,24 @@ namespace Airships.Game
             ? Mathf.Abs(instance.baseLoop.timeSamples - instance.dangerLoop.timeSamples)
             : 0;
         public static bool IsJinglePlaying => instance != null && instance.jingle.isPlaying;
+
+        // How far into this song the player is hearing, in seconds since its first sample, on the audio clock.
+        // False until the song has been scheduled, and while another song or a jingle holds the speakers.
+        public static bool TryGetSongTime(string song, double latency, out double seconds)
+        {
+            seconds = 0;
+            if (instance == null || song == null || instance.currentSong != song || double.IsNaN(instance.songStartDsp) || instance.jingle.isPlaying) return false;
+            if (!instance.baseIntro.isPlaying && !instance.baseLoop.isPlaying && AudioSettings.dspTime > instance.songStartDsp + 0.5) return false;
+            seconds = instance.SmoothedDsp() - instance.songStartDsp - latency;
+            return true;
+        }
+
+        double SmoothedDsp()
+        {
+            var raw = AudioSettings.dspTime - Time.unscaledTimeAsDouble;
+            if (double.IsNaN(dspOffset) || Math.Abs(raw - dspOffset) > 0.05) dspOffset = raw;
+            return Time.unscaledTimeAsDouble + dspOffset;
+        }
 
         void Update()
         {
@@ -227,12 +249,15 @@ namespace Airships.Game
                 songGain = Mathf.MoveTowards(songGain, 1f, Time.unscaledDeltaTime / SongFadeSeconds);
             }
             danger = Mathf.MoveTowards(danger, dangerTarget, Time.unscaledDeltaTime / DangerFadeSeconds);
+            var offset = AudioSettings.dspTime - Time.unscaledTimeAsDouble;
+            dspOffset = double.IsNaN(dspOffset) || Math.Abs(offset - dspOffset) > 0.05 ? offset : dspOffset + (offset - dspOffset) * 0.05;
             ApplyVolumes();
         }
 
         void StartSong(string song)
         {
             var start = AudioSettings.dspTime + ScheduleLeadSeconds;
+            songStartDsp = start;
             var hasBase = Schedule(baseIntro, baseLoop, $"Music/{song}_base", start);
             Schedule(dangerIntro, dangerLoop, $"Music/{song}_danger", start);
             if (!hasBase) Debug.LogError($"Missing song '{song}'");
@@ -258,6 +283,7 @@ namespace Airships.Game
 
         void StopSong()
         {
+            songStartDsp = double.NaN;
             foreach (var source in new[] { baseIntro, baseLoop, dangerIntro, dangerLoop })
             {
                 source.Stop();

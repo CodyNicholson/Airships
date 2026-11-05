@@ -89,6 +89,7 @@ namespace Airships.Core
         const float JellyTurnBack = 1.2f;
         const float PulseRate = 2.2f; // Matches the bell's pulse in the view, so they push as they squeeze.
         const float MineBob = 9f;
+        public const float JellyStunSeconds = 2.5f; // A jellyfish's shock holds a ship dead in the air this long.
 
         readonly HazardDef def;
         readonly GameRandom random;
@@ -315,7 +316,18 @@ namespace Airships.Core
 
                 if (ship.CollisionCooldown > 0f) continue;
                 ship.CollisionCooldown = HitCooldown;
-                ship.Speed *= BounceSlowdown;
+                if (hazard.Kind == HazardKind.Jellyfish)
+                {
+                    // The shock stops the ship dead, and holds it there until the current lets go.
+                    ship.Speed = 0f;
+                    ship.ClimbRate = 0f;
+                    ship.EvadeTimer = 0f;
+                    ship.StunTimer = JellyStunSeconds;
+                }
+                else
+                {
+                    ship.Speed *= BounceSlowdown;
+                }
                 ship.TakeDamage(hazard.Damage);
                 events.Add(new DogfightEvent
                 {

@@ -130,7 +130,7 @@ namespace Airships.Game
             Go(GameState.Hub, root =>
             {
                 Stage.ApplyWeather(Content.Weather("hub"));
-                return root.gameObject.AddComponent<QuarterdeckScreen>();
+                return root.gameObject.AddComponent<HangarScreen>();
             });
         }
 
@@ -331,7 +331,7 @@ namespace Airships.Game
                 PlayerHull = loadout.Hull,
                 AllControls = true,
                 Weather = "clear",
-                Patches = Campaign.HasMechanic(Save, "patch") ? 1 : 0,
+                Patches = Campaign.PatchesFor(Save),
             };
             foreach (var mechanic in Save.campaign.mechanics) Sky.Mechanics.Add(mechanic);
             Sky.Enemies.Add(new SkySpawn
@@ -384,8 +384,7 @@ namespace Airships.Game
         public void RetreatToPort()
         {
             Debug.Log("[Flow] Retreated to port");
-            if (Run != null) ShowHub();
-            else ShowPort();
+            ShowHub();
         }
 
         public void Board()
@@ -441,8 +440,7 @@ namespace Airships.Game
         public void FinishResults()
         {
             LoopsCompleted++;
-            if (Run != null) ShowHub();
-            else ShowPort();
+            ShowHub();
         }
 
         List<string> RewardLines(EncounterReward dogfight, EncounterReward? boarding, string note = null)

@@ -23,12 +23,12 @@ embed the atlas that suits them (`default_faction` in the manifest), so they loo
 
 | Act | Ships | Characters | Environments and arenas | Props and items |
 | :--- | :--- | :--- | :--- | :--- |
-| **Prologue:** The Mutiny at Cloud-Break | `SM_Ship_SovereignGale`, `SM_Ship_SovereignGaleWrecked`, `SM_Ship_RustWing` | `SK_Vane`, `SK_CassianPirate`, `SK_Morrow`, `SK_ArmadaSoldier`, `SK_ArmadaOfficer` | `SM_Env_SkyVault`, `SM_Env_UndertowDisc` | `SM_Prop_LiftCore`, `SM_Prop_HookSabre`, `SM_Prop_WreckChunk`, `SM_Prop_ArmadaMusket` |
+| **Prologue:** The Mutiny at Cloud-Break | `SM_Ship_SovereignGale`, `SM_Ship_SovereignGaleWrecked`, `SM_Ship_RustWing` | `SK_Vane`, `SK_CassianPirate`, `SK_Morrow`, `SK_ArmadaSoldier`, `SK_ArmadaOfficer` | `SM_Env_GaleQuarterdeck` (the Gale's deck, for the opening cutscenes), `SM_Env_SkyVault`, `SM_Env_UndertowDisc` | `SM_Prop_LiftCore`, `SM_Prop_HookSabre`, `SM_Prop_WreckChunk`, `SM_Prop_ArmadaMusket` |
 | **Act I:** The Scrap-Winds | `SM_Ship_IronMaw`, `SM_Ship_ScrapRaider` | `SK_Rook`, `SK_Krag`, `SK_Brill` | `SM_Env_ScrapIsle`, `SM_Env_LiftMine`, `SM_Env_ToxicCloud`, `SM_Env_DebrisField`, `SM_Env_ScrapDeck` | `SM_Prop_HarpoonWinch`, `SM_Prop_Harpoon`, `SM_Prop_KragAnchor`, `SM_Prop_WinchControls`, `SM_Prop_AnchorHammer`, `SM_Prop_HandMortar`, `SM_Prop_FlakGun`, `SM_Prop_ScrapPile`, `SM_Prop_LiftStone`, `SM_Prop_WeaponModule` |
 | **Act II:** The Smuggler's Jetstream | `SM_Ship_Mirage`, `SM_Ship_SmugglerRunner` | `SK_Lyra`, `SK_Sable`, `SK_Vex`, `SK_Vesper` | `SM_Env_SmugglersHaven`, `SM_Env_WindCurrent`, `SM_Env_UpdraftColumn`, `SM_Env_StormCloud` | `SM_Prop_CipherKey`, `SM_Prop_ChainShot`, `SM_Prop_FireShot`, `SM_Prop_Grapeshot`, `SM_Prop_SaboteurCharge`, `SM_Prop_AfterburnerTurbine`, `SM_Prop_TwinScimitar`, `SM_Prop_SableDagger`, `SM_Prop_DriftwoodLyre`, `SM_Prop_Spyglass` |
 | **Act III:** The Cirrus Citadel | `SM_Ship_TartarusAloft`, `SM_Ship_Bastion`, `SM_Ship_AssaultGlider` | `SK_Thorne`, `SK_Malakor`, `SK_CassianAdmiral` | `SM_Env_GunDeck`, `SM_Env_CellBlock`, `SM_Env_WarRoom` | `SM_Prop_DeckMortar`, `SM_Prop_MortarShell`, `SM_Prop_CellDoor`, `SM_Prop_RepairKit`, `SM_Prop_BigWrench`, `SM_Prop_WardenFlail` |
 | **Act IV:** Eye of the Maelstrom | `SM_Ship_ArmadaCorvette`, `SM_Ship_ArmadaFrigate`, `SM_Ship_SovereignGale` (Gilded atlas) | `SK_RoyalGuard` | `SM_Env_FreeHaven`, `SM_Env_StormWall`, `SM_Env_LightningBolt`, `SM_Env_DreadnoughtDeck`, `SM_Env_LiftCoreChamber` | `SM_Prop_SiegeCannon`, `SM_Prop_Missile`, `SM_Prop_ArmadaBanner`, `SM_Prop_ArmadaHalberd`, `SM_Prop_RoyalSabre`, `SM_Prop_DuelPistol` |
-| **Between missions** | `SM_Ship_Lifeboat` (Scuttle & Plunder) | | `SM_Env_QuarterdeckHub` | `SM_Prop_HelmWheel`, `SM_Prop_AetherComm`, `SM_Prop_BountyBoard`, `SM_Prop_SkyChartTable`, `SM_Prop_HangingLantern`, `SM_Prop_RopeCoil` |
+| **Between missions** | `SM_Ship_Lifeboat` (Scuttle & Plunder) | | `SM_Env_HangarHub` | `SM_Prop_AetherComm`, `SM_Prop_BountyBoard`, `SM_Prop_SkyChartTable`, `SM_Prop_HangingLantern`, `SM_Prop_RopeCoil` |
 
 **One model, several story roles.** Swapping the atlas carries the plot, so these share a mesh:
 
@@ -62,7 +62,8 @@ too, because he looks towards the crew he commands from the other side of the fr
 | Rivals | `Krag`, `Gorse`, `Scrapper`, `Ashgrave`, `Thrace`, `Vex`, `Vesper`, `Malakor`, `CassianAdmiral` |
 | Armada | `ArmadaOfficer`, `ArmadaSoldier`, `RoyalGuard` |
 
-**Hub stations.** `SM_Env_QuarterdeckHub` has a `station_<name>` socket for each tappable crew member.
+**Hub stations.** `SM_Env_HangarHub` has a `station_<name>` socket for each tappable crew member, and a
+`ship_berth` socket where the ship you're flying is moored, scaled to fill 13 m.
 Stand them there on the `Work` clip, with `SM_Prop_SkyChartTable` at `station_lyra_table`. Recolour the
 hub with the current ship's atlas.
 
@@ -124,7 +125,7 @@ bilinear filtering. The image's centre looks along +Z.
 | `Jetstream` | Act II: fast and bright, with streaks that all run one way |
 | `CirrusCitadel` | Act III: cold moonlight around Tartarus Aloft |
 | `Maelstrom` | Act IV: black storm towers and a lit eye overhead |
-| `QuarterdeckDusk` | The hub, at sunset |
+| `HangarDusk` | The hub, at sunset |
 | `FreeDawn` | The ending, after the storm breaks |
 
 Each sky's manifest entry also has `sun_dir`, `sun_color`, `sun_intensity`, `ambient_color`, `fog_color`

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Airships.Core;
 using TMPro;
 using UnityEngine;
@@ -21,7 +22,35 @@ namespace Airships.Game
 
         // The kit's attack clips land their blow or shot on this frame of 24 per second.
         const float StrikeMoment = 14f / 24f;
-        const float BlockMoment = 7f / 24f;
+
+        // Enemies strike on the next bar of the music, and wait no longer than that for the song to begin.
+        const int BarBeats = 4;
+        const float SongWaitSeconds = 8f;
+
+        // The action pad: a round attack button, a skill button for each of the three skills, and the rum.
+        const float AttackSize = 200f;
+        const float SkillSize = 128f;
+        const float RumSize = 118f;
+        const float PadRadius = 228f;
+        static readonly float[] SkillAngles = { 96f, 141f, 186f };
+        const float RumAngle = 232f;
+        const float RumCaptionAngle = 180f; // Beside the rum rather than under it, which would be off the bottom of the screen.
+        static readonly Vector2 PadCenter = new Vector2(-210f, 222f);
+        const float TapReachShare = 0.2f; // How near an enemy a tap must land to pick them, as a share of screen height.
+
+        // The battle shows the beat it plays to: each fighter bounces in their own rhythm on the beat, a track
+        // under the banner lights the beat, and each sequence's first beat flashes the edges and jolts the camera.
+        const float BounceSquash = 0.06f;
+        static readonly int[] BounceEveryChoices = { 2, 3, 4 }; // Each fighter bounces on one beat in this many.
+        const float BounceSpread = 0.04f;
+        const float DownbeatShake = 0.06f;
+        const float DownbeatFlash = 0.34f;
+        const float BeatFlash = 0.08f;
+        const int WarningTicks = 3; // The window's last beats tick, so running out of time is heard coming.
+
+        // The song's danger layer, its tremolo, low brass and war drums, plays through every deck battle,
+        // and swells to full when the crew is in trouble.
+        const float BattleDangerFloor = 0.45f;
 
         public PartyBattle Battle { get; private set; }
         public int ActionsResolved { get; private set; }
@@ -50,6 +79,8 @@ namespace Airships.Game
             public Bar EnemyBar;
             public float Flash;
             public bool Fallen;
+            public int BounceEvery; // Beats between bounces, picked at random for each battle.
+            public int BounceOffset; // Which of those beats they bounce on, so the crowd doesn't move as one.
             public TextMeshProUGUI NameText;
             public TextMeshProUGUI IntentText;
         }
@@ -59,7 +90,6 @@ namespace Airships.Game
 
         Canvas canvas;
         RectTransform safe;
-        RectTransform menuRoot;
         TextMeshProUGUI turnLabel;
         TextMeshProUGUI actionLabel;
         Transform turnArrow;
@@ -69,11 +99,46 @@ namespace Airships.Game
         CommsBar comms;
         DeckSetup setup;
         TextMeshProUGUI sabotageLabel;
-        Bar momentumBar;
-        TextMeshProUGUI momentumLabel;
         RawImage rain;
         float lightningTimer = 3f;
         readonly HashSet<string> saidTriggers = new HashSet<string>();
+
+        // The music's clock. Turns open on a sequence's first beat, and actions start on a beat.
+        BattleBeat beat;
+        string song;
+        double localClockStart;
+        long lastBeat = long.MinValue;
+        double windowOpen;
+        double windowClose;
+        bool choiceMade;
+        BattleAction chosenAction;
+
+        class SkillSlot
+        {
+            public GameButton Button;
+            public Image Icon;
+            public Image Lock;
+            public TextMeshProUGUI Caption;
+            public SkillDef Skill;
+            public int Level;
+        }
+
+        RectTransform pad;
+        GameButton attackButton;
+        Image attackIcon;
+        Image windowRing;
+        readonly List<Image> beatPips = new List<Image>();
+        readonly List<SkillSlot> skillSlots = new List<SkillSlot>();
+        GameButton rumButton;
+        Image rumIcon;
+        TextMeshProUGUI rumCaption;
+        Image targetMark;
+        Combatant selectedTarget;
+        Combatant choosingActor;
+        bool clockReady;
+        readonly List<Image> sequenceTrack = new List<Image>();
+        Image edgeFlash;
+        static Sprite edgeSprite;
 
         void Start()
         {
@@ -87,6 +152,8 @@ namespace Airships.Game
                 SurrenderAfterRound = setup.SurrenderAfterRound,
             };
             patternRandom = new GameRandom(director.Seed + 5);
+            beat = BattleBeat.From(director.Content.timing);
+            song = AudioBank.WantedSong;
 
             deckModel = Models.CreateDeck(transform, setup.Faction, setup.Arena);
             if (setup.Below) director.Stage.ApplyWeather(director.Content.Weather("below"));
@@ -251,7 +318,8 @@ namespace Airships.Game
                         + new Vector3(-Mathf.Sign(home.x) * CompanionFormationForward, 0f, -CompanionFormationNear);
                 }
                 model.Animation.Loop("Idle", fighters.Count * 0.37f);
-                var fighter = new Fighter { Combatant = combatant, Model = model, Home = home, HomeRotation = rotation };
+                var bounceEvery = BounceEveryChoices[UnityEngine.Random.Range(0, BounceEveryChoices.Length)];
+                var fighter = new Fighter { Combatant = combatant, Model = model, Home = home, HomeRotation = rotation, BounceEvery = bounceEvery, BounceOffset = UnityEngine.Random.Range(0, bounceEvery) };
                 fighters.Add(fighter);
                 byCombatant[combatant] = fighter;
             }
@@ -269,7 +337,7 @@ namespace Airships.Game
             }
             var raging = false;
             foreach (var enemy in Battle.Enemies) raging |= enemy.Enraged && enemy.Hp > 0;
-            AudioBank.SetDanger(raging || health < maximum * DangerHealthShare ? 1f : 0f);
+            AudioBank.SetDanger(raging || health < maximum * DangerHealthShare ? 1f : BattleDangerFloor);
         }
 
         void Update()
@@ -288,11 +356,16 @@ namespace Airships.Game
                 fighter.Model.SetEmission(Palette.Cloud * fighter.Flash * 0.75f);
             }
 
+            UpdateBeat();
+
             if (current != null)
             {
                 turnArrow.gameObject.SetActive(true);
                 var height = current.Model.HeadHeight * CharacterScale + 0.55f;
-                turnArrow.position = current.Model.Root.transform.position + Vector3.up * (height + Mathf.Sin(time * 5f) * 0.14f);
+
+                // The arrow drops onto every beat, so the music's pulse shows on the deck too.
+                var bounce = beat.Pulse(Now());
+                turnArrow.position = current.Model.Root.transform.position + Vector3.up * (height + bounce * bounce * 0.22f);
                 turnArrow.Rotate(0f, 180f * Time.deltaTime, 0f);
             }
             else
@@ -357,9 +430,58 @@ namespace Airships.Game
             yield return new WaitForSeconds(0.5f);
         }
 
+        // Seconds since the battle song's first sample, as the player hears it. Until the song is playing, or in
+        // automated runs, a clock of the battle's own stands in, on the same grid.
+        double Now()
+        {
+            if (!GameDirector.Autoplay && AudioBank.TryGetSongTime(song, director.Content.timing.audioLatencySeconds, out var seconds)) return seconds;
+            return Time.timeAsDouble - localClockStart;
+        }
+
+        IEnumerator WaitForClock(double moment)
+        {
+            while (Now() < moment) yield return null;
+        }
+
+        // The song starts as the screen opens. Its first sequence plays under the boarding party's entrance.
+        IEnumerator WaitForSong()
+        {
+            var waited = 0f;
+            while (!GameDirector.Autoplay && !AudioBank.TryGetSongTime(song, 0, out _) && waited < SongWaitSeconds)
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            localClockStart = Time.timeAsDouble;
+            clockReady = true;
+        }
+
+        // Counts the last beats before the first turn, so the fight starts on the music's big downbeat.
+        IEnumerator CountIn()
+        {
+            var start = beat.NextSequence(Now());
+            if (start - Now() > beat.BeatSeconds * 3.5) actionLabel.text = "READY?";
+            var shown = -1;
+            while (Now() < start)
+            {
+                var left = (int)Math.Ceiling((start - Now()) / beat.BeatSeconds);
+                if (left <= 3 && left != shown)
+                {
+                    shown = left;
+                    actionLabel.text = left.ToString();
+                    AudioBank.Play(Sfx.Tick, 1f, 0f);
+                }
+                yield return null;
+            }
+            actionLabel.text = "FIGHT!";
+            StartCoroutine(HideActionLabel());
+        }
+
         IEnumerator RunBattle()
         {
             yield return Entrance();
+            yield return WaitForSong();
+            yield return CountIn();
             while (Battle.Outcome == BattleOutcome.Ongoing)
             {
                 var opening = Battle.TakeTurnStartEvents();
@@ -371,34 +493,45 @@ namespace Airships.Game
                 RefreshIntents();
                 var actor = Battle.Current;
                 current = byCombatant[actor];
-                turnLabel.text = $"{actor.Name}'s turn";
 
-                BattleAction action = default;
-                if (actor.IsPlayer && !GameDirector.Autoplay)
+                BattleAction action;
+                double start;
+                if (actor.IsPlayer)
                 {
-                    var chosen = false;
-                    pendingChoice = a =>
+                    // A crew member's turn opens on the crash that starts a sequence, and lasts that sequence.
+                    var open = beat.NextSequence(Now());
+                    turnLabel.text = $"{actor.Name} is up!";
+                    yield return WaitForClock(open);
+
+                    // Running late, after a pause or a long hitch, the turn waits for the next sequence rather than
+                    // opening with its time already spent.
+                    while (Now() - open > BattleBeat.Grace)
                     {
-                        action = a;
-                        chosen = true;
-                    };
-                    ShowCommandMenu(actor);
-                    while (!chosen) yield return null;
-                    pendingChoice = null;
-                    ClearMenu();
+                        open = beat.NextSequence(Now());
+                        yield return WaitForClock(open);
+                    }
+                    yield return Choose(actor, open);
+                    action = chosenAction;
+                    if (!choiceMade)
+                    {
+                        // Too slow: the turn is lost, and the next fighter goes on the coming bar.
+                        yield return LoseTurn(actor);
+                        continue;
+                    }
+                    start = beat.NextAhead(Now());
                 }
                 else
                 {
-                    yield return new WaitForSeconds(0.2f);
-                    action = actor.IsPlayer ? ChooseAutoAction(actor) : Battle.ChooseEnemyAction(actor);
+                    turnLabel.text = $"{actor.Name}'s turn";
+                    start = beat.Next(Now(), BarBeats);
+                    action = Battle.ChooseEnemyAction(actor);
                 }
 
-                yield return PlayAction(actor, action);
+                yield return WaitForClock(start);
+                yield return PlayAction(actor, action, start);
                 ActionsResolved++;
                 CheckBattleBarks();
                 RefreshSabotage();
-                RefreshMomentum();
-                yield return new WaitForSeconds(0.12f);
             }
             var closing = Battle.TakeTurnStartEvents();
             if (closing.Count > 0) yield return ApplyResults(closing);
@@ -441,7 +574,6 @@ namespace Airships.Game
         // A plain policy for automated runs: heal when hurt, otherwise use the strongest attack.
         BattleAction ChooseAutoAction(Combatant actor)
         {
-            if (Battle.RushReady) return new BattleAction { Kind = BattleActionKind.Rush };
             var allies = Battle.Party;
             Combatant weakest = null;
             foreach (var ally in allies)
@@ -484,21 +616,17 @@ namespace Airships.Game
             return new BattleAction { Kind = BattleActionKind.Attack, Target = target };
         }
 
-        IEnumerator PlayAction(Combatant actor, BattleAction action)
+        // Starts on a beat of the music, at the moment start. Its timing prompt runs on the music's clock from there.
+        IEnumerator PlayAction(Combatant actor, BattleAction action, double start)
         {
             var fighter = byCombatant[actor];
             var isMagic = action.Kind == BattleActionKind.Skill && action.Skill.Kind == SkillKind.Magic;
             var isHeal = action.Kind == BattleActionKind.Skill && action.Skill.Kind == SkillKind.Heal;
             var isRanged = director.Content.Class(actor.ClassId).ranged;
-            var label = action.Kind == BattleActionKind.Skill ? action.Skill.name : action.Kind == BattleActionKind.Guard ? "Guard" : action.Kind == BattleActionKind.Rush ? "Boarding Rush" : action.Kind == BattleActionKind.Item ? action.Item.name : "Attack";
+            var label = action.Kind == BattleActionKind.Skill ? action.Skill.name : action.Kind == BattleActionKind.Guard ? "Guard" : action.Kind == BattleActionKind.Item ? action.Item.name : "Attack";
             actionLabel.text = label;
             StartCoroutine(HideActionLabel());
 
-            if (action.Kind == BattleActionKind.Rush)
-            {
-                yield return PlayRush(action);
-                yield break;
-            }
             if (action.Kind == BattleActionKind.Item)
             {
                 var used = Battle.Submit(action);
@@ -512,22 +640,9 @@ namespace Airships.Game
                 yield break;
             }
 
-            if (action.Kind == BattleActionKind.Guard)
-            {
-                var guarded = Battle.Submit(action);
-                Fx.Puff(fighter.Model.Root.transform.position + Vector3.up * 1.5f, Palette.Mana);
-                AudioBank.Play(Sfx.GuardUp, 0.8f);
-                ShowFloating(fighter, "GUARD", Palette.Mana, 40f);
-                fighter.Model.Animation.PlayThenReturn("Block");
-                yield return new WaitForSeconds(BlockMoment);
-                yield return ApplyResults(guarded);
-                yield break;
-            }
-
             // The pattern's last target lands on the attack's strike frame, so reading the swing helps.
-            var pattern = ShowTimingPrompt(actor, action, isHeal, isMagic);
-            var lead = Mathf.Max(0f, pattern.Length - StrikeMoment);
-            if (lead > 0f) yield return new WaitForSeconds(lead);
+            var pattern = ShowTimingPrompt(actor, action, isHeal, isMagic, start);
+            yield return WaitForClock(start + Mathf.Max(0f, pattern.Length - StrikeMoment));
 
             if (action.Kind == BattleActionKind.Skill && action.Skill.companion && fighter.Model.Companion != null)
             {
@@ -542,27 +657,6 @@ namespace Airships.Game
                 var target = action.Target ?? Battle.Opponents(actor).Find(c => c.Alive);
                 yield return Lunge(fighter, target != null ? byCombatant[target] : null, action);
             }
-        }
-
-        // The whole crew charges on one prompt.
-        IEnumerator PlayRush(BattleAction action)
-        {
-            director.ScreenFx.Milestone("BOARDING RUSH!", Palette.Accent, Sfx.WarHorn);
-            var pattern = TimingSequence.Pick(director.Content.timing, director.EncounterTier, true, patternRandom, lastPatternId);
-            lastPatternId = pattern.id;
-            timing.Begin(pattern, "ALL HANDS!", Palette.PlayerPaint);
-            var lead = Mathf.Max(0f, pattern.Length - StrikeMoment);
-            if (lead > 0f) yield return new WaitForSeconds(lead);
-            foreach (var fighter in fighters)
-            {
-                if (fighter.Combatant.IsPlayer && fighter.Combatant.Alive) fighter.Model.Animation.PlayThenReturn("AttackMelee");
-            }
-            yield return new WaitForSeconds(StrikeMoment);
-            yield return ResolveStrike(action);
-            AudioBank.Play(Sfx.Slash, 1f, 0f);
-            director.Stage.Shake(0.6f);
-            yield return ApplyResults(strikeResults);
-            yield return new WaitForSeconds(0.3f);
         }
 
         // The tip of what someone's holding, or their chest if it has none.
@@ -585,17 +679,18 @@ namespace Airships.Game
             return chest != null ? chest.position : fighter.Model.Root.transform.position + Vector3.up * 1.4f;
         }
 
-        TimingPattern ShowTimingPrompt(Combatant actor, BattleAction action, bool isHeal, bool isMagic)
+        TimingPattern ShowTimingPrompt(Combatant actor, BattleAction action, bool isHeal, bool isMagic, double start)
         {
             var pattern = TimingSequence.Pick(director.Content.timing, director.EncounterTier, actor.IsPlayer, patternRandom, lastPatternId);
             lastPatternId = pattern.id;
+            Func<double> clock = () => Now() - start;
             if (actor.IsPlayer)
             {
-                timing.Begin(pattern, isHeal ? "FOCUS!" : isMagic ? "CAST!" : "STRIKE!", isHeal ? Palette.Heal : Palette.PlayerPaint);
+                timing.Begin(pattern, isHeal ? "FOCUS!" : isMagic ? "CAST!" : "STRIKE!", isHeal ? Palette.Heal : Palette.PlayerPaint, clock);
                 return pattern;
             }
 
-            timing.Begin(pattern, "BLOCK!", Palette.Mana);
+            timing.Begin(pattern, "BLOCK!", Palette.Mana, clock);
             var hitsEveryone = action.Kind == BattleActionKind.Skill && action.Skill.Target == SkillTarget.AllEnemies;
             turnLabel.text = hitsEveryone || action.Target == null ? "Targeting everyone!" : $"Targeting {action.Target.Name}!";
             return pattern;
@@ -863,6 +958,10 @@ namespace Airships.Game
             canvas = UIKit.CreateCanvas("Boarding Hud", transform, 10);
             safe = UIKit.SafeArea(canvas.transform);
 
+            // Behind everything else: a tap on the deck picks the nearest enemy as the target.
+            var deckTaps = TapZone.Create("Deck Taps", safe, TapDeck);
+            UIKit.Fill((RectTransform)deckTaps.transform);
+
             var banner = UIKit.Panel("Turn Banner", safe, Palette.WithAlpha(Palette.Panel, 0.9f));
             UIKit.Place(banner.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(640f, 84f));
             turnLabel = UIKit.Text("Turn", banner.transform, "", 40f, Palette.TextLight);
@@ -871,7 +970,7 @@ namespace Airships.Game
             actionLabel = UIKit.Text("Action", safe, "", 54f, Palette.Accent);
             actionLabel.outlineWidth = 0.2f;
             actionLabel.outlineColor = Palette.Ink;
-            UIKit.Place(actionLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -116f), new Vector2(800f, 70f));
+            UIKit.Place(actionLabel.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -136f), new Vector2(800f, 70f));
 
             BuildPartyPanel();
             BuildEnemyPanel();
@@ -894,30 +993,10 @@ namespace Airships.Game
                 UIKit.Place(charge.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(690f, -62f), Vector2.one * 54f);
             }
             RefreshSabotage();
-            menuRoot = UIKit.Node("Menu", safe);
-            UIKit.Place(menuRoot, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-28f, 28f), new Vector2(620f, 500f));
-            BuildMomentum();
+            BuildActionPad();
+            BuildBeatTrack();
             timing = TimingPrompt.Create(safe, director.Content.timing);
             comms = CommsBar.Create(safe, director.Content.campaign, -108f);
-        }
-
-        void BuildMomentum()
-        {
-            var panel = UIKit.Panel("Momentum", safe, Palette.WithAlpha(Palette.Panel, 0.9f));
-            var y = 28f + 24f + Battle.Party.Count * 69f + 8f;
-            UIKit.Place(panel.rectTransform, Vector2.zero, Vector2.zero, new Vector2(28f, y), new Vector2(520f, 58f));
-            momentumLabel = UIKit.Text("Label", panel.transform, "MOMENTUM", 24f, Palette.TextLight, TextAlignmentOptions.Left);
-            UIKit.Place(momentumLabel.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(16f, 0f), new Vector2(190f, 40f));
-            momentumBar = UIKit.Bar("Bar", panel.transform, Palette.Accent);
-            UIKit.Place((RectTransform)momentumBar.transform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(210f, 0f), new Vector2(295f, 34f));
-            momentumBar.Set(0f, true);
-        }
-
-        void RefreshMomentum()
-        {
-            momentumBar.Set(Battle.Momentum / (float)PartyBattle.MaxMomentum);
-            momentumLabel.text = Battle.RushReady ? "RUSH READY!" : "MOMENTUM";
-            momentumLabel.color = Battle.RushReady ? Palette.Accent : Palette.TextLight;
         }
 
         // Enemies announce their turn, so the player can guard the target or strike first.
@@ -1023,6 +1102,11 @@ namespace Airships.Game
                 fighter.IntentText = UIKit.Text("Intent", panel.transform, "", 21f, Palette.Accent, TextAlignmentOptions.Left, false);
                 fighter.IntentText.characterSpacing = 0f;
                 UIKit.Place(fighter.IntentText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y - 32f), new Vector2(530f, 28f));
+
+                // Tapping an enemy's row picks them as the target, the same as tapping them on deck.
+                var enemy = fighter.Combatant;
+                var row = TapZone.Create("Pick Target", panel.transform, _ => PickTarget(enemy));
+                UIKit.Place((RectTransform)row.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y + 6f), new Vector2(560f, 68f));
             }
             RefreshBars(true);
         }
@@ -1043,122 +1127,400 @@ namespace Airships.Game
             }
         }
 
-        void ClearMenu()
+        // One sequence of the music to pick a move. Picking early starts it on the next beat, and running out of
+        // time loses the turn. A pause gives the window back once play resumes.
+        IEnumerator Choose(Combatant actor, double open)
         {
-            for (var i = menuRoot.childCount - 1; i >= 0; i--) Destroy(menuRoot.GetChild(i).gameObject);
-        }
-
-        void ShowCommandMenu(Combatant actor)
-        {
-            ClearMenu();
-            var row = 3;
-            if (Battle.RushReady) AddMenuButton(4, "BOARDING RUSH!", Palette.Accent, () => pendingChoice(new BattleAction { Kind = BattleActionKind.Rush }));
-            AddMenuButton(row--, "ATTACK", Palette.PlayerPaint, () => ShowEnemyTargets(actor, target =>
-                pendingChoice(new BattleAction { Kind = BattleActionKind.Attack, Target = target })));
-            AddMenuButton(row--, "SKILLS", Palette.PanelLight, () => ShowSkillMenu(actor));
-            var items = AddMenuButton(row--, "ITEMS", Palette.PanelLight, () => ShowItemMenu(actor));
-            items.Interactable = HasBattleItems();
-            var guard = AddMenuButton(row, "GUARD", Palette.PanelLight, () => pendingChoice(new BattleAction { Kind = BattleActionKind.Guard }));
-            AddIcon(guard, "Hud_Defend");
-        }
-
-        bool HasBattleItems()
-        {
-            foreach (var item in director.Content.items)
+            windowOpen = open;
+            windowClose = open + beat.SequenceSeconds;
+            choiceMade = false;
+            pendingChoice = a =>
             {
-                if (item.kind != "patch" && director.Save.ItemCount(item.id) > 0) return true;
-            }
-            return false;
-        }
+                if (choiceMade) return;
+                chosenAction = a;
+                choiceMade = true;
+            };
+            turnLabel.text = $"{actor.Name}: choose!";
+            if (GameDirector.Autoplay) pendingChoice(ChooseAutoAction(actor));
+            else ShowActionPad(actor);
 
-        static void AddIcon(GameButton button, string icon)
-        {
-            var image = UIKit.Icon("Icon", button.transform, icon);
-            UIKit.Place(image.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), Vector2.one * 68f);
-        }
-
-        void ShowItemMenu(Combatant actor)
-        {
-            ClearMenu();
-            var row = 1;
-            foreach (var definition in director.Content.items)
+            var paused = false;
+            while (!choiceMade)
             {
-                if (definition.kind == "patch" || director.Save.ItemCount(definition.id) <= 0) continue;
-                var item = definition;
-                var button = AddMenuButton(row++, $"{item.name}  x{director.Save.ItemCount(item.id)}", Palette.PanelLight, () =>
+                if (GameTime.Paused)
                 {
-                    if (item.kind == "heal") ShowAllyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Item, Item = item, Target = target }));
-                    else pendingChoice(new BattleAction { Kind = BattleActionKind.Item, Item = item });
-                });
-                button.Label.fontSize = 34f;
-                AddIcon(button, item.icon);
+                    paused = true;
+                    yield return null;
+                    continue;
+                }
+                if (paused)
+                {
+                    paused = false;
+                    windowClose = beat.NextSequence(Now()) + beat.SequenceSeconds;
+                    windowOpen = windowClose - beat.SequenceSeconds;
+                }
+                if (Now() >= windowClose) break;
+                yield return null;
             }
-            AddMenuButton(0, "BACK", Palette.Panel, () => ShowCommandMenu(actor));
+            HideActionPad();
+            pendingChoice = null;
+            if (!choiceMade) chosenAction = new BattleAction { Kind = BattleActionKind.Pass };
+            turnLabel.text = $"{actor.Name}'s turn";
         }
 
-        void ShowSkillMenu(Combatant actor)
+        IEnumerator LoseTurn(Combatant actor)
         {
-            ClearMenu();
-            var row = actor.Skills.Count;
-            foreach (var skill in actor.Skills)
+            turnLabel.text = $"{actor.Name} hesitated!";
+            ShowFloating(current, "TOO SLOW!", Palette.Danger, 50f);
+            AudioBank.Play(Sfx.Denied, 0.8f);
+            current.Model.Animation.PlayThenReturn("Hit");
+            var results = Battle.Submit(new BattleAction { Kind = BattleActionKind.Pass });
+            ActionsResolved++;
+            yield return ApplyResults(results);
+            RefreshSabotage();
+        }
+
+        // The selected enemy while they stand, else the weakest one not being spared.
+        Combatant ChosenEnemy()
+        {
+            if (selectedTarget != null && selectedTarget.Alive) return selectedTarget;
+            Combatant weakest = null;
+            foreach (var enemy in Battle.Enemies)
             {
-                var chosen = skill;
-                var button = AddMenuButton(row--, $"{skill.name}  ({skill.mpCost} MP)", Palette.PanelLight, () => ChooseSkillTarget(actor, chosen));
-                button.Interactable = PartyBattle.CanUse(actor, skill);
-                button.Label.fontSize = 36f;
+                if (!enemy.Alive || enemy == Battle.SpareTarget) continue;
+                if (weakest == null || enemy.Hp < weakest.Hp) weakest = enemy;
             }
-            AddMenuButton(0, "BACK", Palette.Panel, () => ShowCommandMenu(actor));
+            selectedTarget = weakest ?? Battle.Enemies.FirstOrDefault(c => c.Alive);
+            return selectedTarget;
         }
 
-        void ChooseSkillTarget(Combatant actor, SkillDef skill)
+        // There's no time for a menu, so a heal goes to whoever needs it most: the fallen first, for a revive.
+        Combatant NeediestAlly(bool revive)
         {
+            if (revive)
+            {
+                var fallen = Battle.Party.FirstOrDefault(c => !c.Alive);
+                if (fallen != null) return fallen;
+            }
+            Combatant neediest = null;
+            foreach (var ally in Battle.Party)
+            {
+                if (ally.Alive && (neediest == null || ally.Hp / ally.Stats.hp < neediest.Hp / neediest.Stats.hp)) neediest = ally;
+            }
+            return neediest;
+        }
+
+        bool AnyAllyHurt() => Battle.Party.Any(c => c.Alive && c.Hp < c.Stats.hp);
+
+        void PickTarget(Combatant enemy)
+        {
+            if (choosingActor == null || enemy == null || !enemy.Alive) return;
+            selectedTarget = enemy;
+            byCombatant[enemy].Flash = 0.7f;
+            AudioBank.Play(Sfx.Click, 0.9f, 0f);
+        }
+
+        // Picks the enemy whose figure is nearest the tap, if it's close enough to mean them.
+        void TapDeck(Vector2 screen)
+        {
+            if (choosingActor == null) return;
+            Combatant nearest = null;
+            var best = Screen.height * TapReachShare;
+            foreach (var enemy in Battle.Enemies)
+            {
+                if (!enemy.Alive) continue;
+                var fighter = byCombatant[enemy];
+                var chest = fighter.Model.Root.transform.position + Vector3.up * fighter.Model.HeadHeight * CharacterScale * 0.6f;
+                var at = director.Stage.MainCamera.WorldToScreenPoint(chest);
+                if (at.z <= 0f) continue;
+                var distance = Vector2.Distance(screen, at);
+                if (distance < best)
+                {
+                    best = distance;
+                    nearest = enemy;
+                }
+            }
+            PickTarget(nearest);
+        }
+
+        void BuildActionPad()
+        {
+            pad = UIKit.Node("Action Pad", safe);
+            UIKit.Place(pad, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-28f, 28f), new Vector2(660f, 600f));
+
+            // The ring drains over the turn's sequence, and a pip goes dark on each beat, so the time left is
+            // something the player can see and hear at once.
+            windowRing = new GameObject("Beat Ring", typeof(RectTransform)).AddComponent<Image>();
+            windowRing.transform.SetParent(pad, false);
+            windowRing.sprite = TimingPrompt.RingSprite;
+            windowRing.type = Image.Type.Filled;
+            windowRing.fillMethod = Image.FillMethod.Radial360;
+            windowRing.fillOrigin = (int)Image.Origin360.Top;
+            windowRing.fillClockwise = false;
+            windowRing.raycastTarget = false;
+            UIKit.Place(windowRing.rectTransform, new Vector2(1f, 0f), Vector2.one * 0.5f, PadCenter, Vector2.one * (AttackSize + 40f));
+            for (var i = 0; i < beat.SequenceBeats; i++)
+            {
+                var pip = UIKit.Solid("Beat Pip", pad, Palette.Accent);
+                pip.sprite = UIKit.Circle;
+                var angle = (90f - 360f * i / beat.SequenceBeats) * Mathf.Deg2Rad;
+                var radius = AttackSize * 0.5f + 40f;
+                UIKit.Place(pip.rectTransform, new Vector2(1f, 0f), Vector2.one * 0.5f, PadCenter + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius, Vector2.one * 22f);
+                beatPips.Add(pip);
+            }
+
+            attackButton = RoundButton("Attack", PadCenter, AttackSize, Palette.PlayerPaint, "Hud_Attack", 0.6f, out attackIcon,
+                () => pendingChoice?.Invoke(new BattleAction { Kind = BattleActionKind.Attack, Target = ChosenEnemy() }));
+            attackButton.Label.text = "ATTACK";
+            attackButton.Label.fontSize = 26f;
+            UIKit.Place(attackButton.Label.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 22f), new Vector2(200f, 34f));
+
+            for (var i = 0; i < BattleSetup.SkillSlots; i++)
+            {
+                var slot = new SkillSlot();
+                var chosen = slot;
+                slot.Button = RoundButton($"Skill {i + 1}", Around(SkillAngles[i], PadRadius), SkillSize, Palette.PanelLight, null, 0.92f, out slot.Icon, () => UseSkill(chosen));
+                slot.Lock = UIKit.Icon("Locked", slot.Button.transform, "Hud_Locked");
+                UIKit.Place(slot.Lock.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, Vector2.one * SkillSize * 0.6f);
+                slot.Caption = Caption(slot.Button, SkillAngles[i], SkillSize);
+                skillSlots.Add(slot);
+            }
+
+            rumButton = RoundButton("Rum", Around(RumAngle, PadRadius), RumSize, Palette.PanelLight, "Item_Rum", 0.86f, out rumIcon, UseRum);
+            rumCaption = Caption(rumButton, RumCaptionAngle, RumSize);
+
+            targetMark = UIKit.Icon("Target Mark", safe, "Target_Reticle");
+            targetMark.color = Palette.Danger;
+            targetMark.rectTransform.anchorMin = targetMark.rectTransform.anchorMax = safe.pivot;
+            targetMark.rectTransform.sizeDelta = Vector2.one * 120f;
+            HideActionPad();
+        }
+
+        static Vector2 Around(float degrees, float radius)
+        {
+            var angle = degrees * Mathf.Deg2Rad;
+            return PadCenter + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+        }
+
+        GameButton RoundButton(string name, Vector2 at, float size, Color color, string icon, float iconShare, out Image iconImage, Action onClick)
+        {
+            var rim = UIKit.Solid(name + " Rim", pad, Palette.Ink);
+            rim.sprite = UIKit.Circle;
+            UIKit.Place(rim.rectTransform, new Vector2(1f, 0f), Vector2.one * 0.5f, at, Vector2.one * (size + 10f));
+            var face = UIKit.Solid(name, rim.transform, color, true);
+            face.sprite = UIKit.Circle;
+            UIKit.Place(face.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, Vector2.one * size);
+            iconImage = UIKit.Icon("Icon", face.transform, icon);
+            UIKit.Place(iconImage.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, Vector2.one * size * iconShare);
+            var label = UIKit.Text("Label", face.transform, "", 20f, Palette.TextLight);
+            label.outlineWidth = 0.25f;
+            label.outlineColor = Palette.Ink;
+            var button = face.gameObject.AddComponent<GameButton>();
+            button.Setup(face, label, color, onClick);
+            return button;
+        }
+
+        // A small button's name and cost sit just outside it, away from the attack button.
+        TextMeshProUGUI Caption(GameButton button, float degrees, float size)
+        {
+            var caption = button.Label;
+            caption.fontSize = 19f;
+            caption.characterSpacing = 0f;
+            caption.lineSpacing = -20f;
+            var angle = degrees * Mathf.Deg2Rad;
+            var outward = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (size * 0.5f + 34f);
+            UIKit.Place(caption.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, outward, new Vector2(190f, 52f));
+            return caption;
+        }
+
+        void ShowActionPad(Combatant actor)
+        {
+            choosingActor = actor;
+            ChosenEnemy();
+            var member = Array.Find(director.Content.crew, c => c.id == actor.Id);
+            for (var i = 0; i < skillSlots.Count; i++)
+            {
+                var slot = skillSlots[i];
+                slot.Skill = null;
+                slot.Level = 0;
+                if (member?.skills != null && i < member.skills.Length)
+                {
+                    slot.Skill = director.Content.Skill(member.skills[i].skill);
+                    slot.Level = member.skills[i].level;
+                }
+                else if (i < actor.Skills.Count)
+                {
+                    slot.Skill = actor.Skills[i];
+                }
+
+                var root = slot.Button.transform.parent.gameObject;
+                root.SetActive(slot.Skill != null);
+                if (slot.Skill == null) continue;
+                var learned = actor.Skills.Contains(slot.Skill);
+                var affordable = learned && PartyBattle.CanUse(actor, slot.Skill);
+                // A skill not yet learned shows as a lock, not as the skill, until its level comes.
+                slot.Icon.sprite = KitArt.Icon(slot.Skill.icon);
+                slot.Icon.enabled = learned && slot.Icon.sprite != null;
+                slot.Icon.color = affordable ? Color.white : new Color(0.45f, 0.45f, 0.5f, learned ? 0.9f : 0.5f);
+                slot.Lock.gameObject.SetActive(!learned);
+                slot.Button.Interactable = affordable;
+                slot.Caption.text = learned ? $"{slot.Skill.name}\n<color=#57A6F0>{slot.Skill.mpCost} MP</color>" : $"LOCKED\nLv {slot.Level}";
+                slot.Caption.color = affordable ? Palette.TextLight : Palette.TextMuted;
+            }
+
+            var rum = director.Content.Item("rum");
+            var bottles = director.Save.ItemCount(rum.id);
+            var canDrink = bottles > 0 && AnyAllyHurt();
+            rumButton.Interactable = canDrink;
+            rumIcon.color = canDrink ? Color.white : new Color(0.45f, 0.45f, 0.5f, 0.8f);
+            rumCaption.text = $"Rum\n<color=#F2B134>x{bottles}</color>";
+            rumCaption.color = canDrink ? Palette.TextLight : Palette.TextMuted;
+
+            pad.gameObject.SetActive(true);
+        }
+
+        void HideActionPad()
+        {
+            choosingActor = null;
+            pad.gameObject.SetActive(false);
+            targetMark.gameObject.SetActive(false);
+        }
+
+        void UseSkill(SkillSlot slot)
+        {
+            var skill = slot.Skill;
+            if (choosingActor == null || skill == null) return;
             switch (skill.Target)
             {
                 case SkillTarget.Enemy:
-                    ShowEnemyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target }));
+                    pendingChoice?.Invoke(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = ChosenEnemy() });
                     break;
                 case SkillTarget.Ally:
-                    ShowAllyTargets(actor, target => pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = target }), skill.revive);
+                    pendingChoice?.Invoke(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill, Target = NeediestAlly(skill.revive) });
                     break;
                 default:
-                    pendingChoice(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill });
+                    pendingChoice?.Invoke(new BattleAction { Kind = BattleActionKind.Skill, Skill = skill });
                     break;
             }
         }
 
-        void ShowEnemyTargets(Combatant actor, Action<Combatant> picked)
+        void UseRum()
         {
-            ShowTargetList(actor, Battle.Enemies, picked, c => c == Battle.SpareTarget ? $"{c.Name}  (SPARE!)" : $"{c.Name}  ({Mathf.RoundToInt(100f * c.Hp / c.Stats.hp)}%)");
+            if (choosingActor == null) return;
+            pendingChoice?.Invoke(new BattleAction { Kind = BattleActionKind.Item, Item = director.Content.Item("rum"), Target = NeediestAlly(false) });
         }
 
-        void ShowAllyTargets(Combatant actor, Action<Combatant> picked, bool includeFallen = false)
+        // Bounces the fighters, lights the beat on the track and flashes the edges on a sequence's first beat.
+        void ShowBeat(bool playing, long index, int inSequence, float pulse)
         {
-            ShowTargetList(actor, Battle.Party, picked, c => c.Alive ? $"{c.Name}  ({c.Hp} HP)" : $"{c.Name}  (DOWN)", includeFallen);
-        }
-
-        void ShowTargetList(Combatant actor, IReadOnlyList<Combatant> options, Action<Combatant> picked, Func<Combatant, string> describe, bool includeFallen = false)
-        {
-            ClearMenu();
-            var row = 0;
-            foreach (var option in options)
+            var hit = playing ? pulse * pulse * pulse : 0f;
+            foreach (var fighter in fighters)
             {
-                if (option.Alive || includeFallen) row++;
+                var standing = !fighter.Fallen && fighter.Combatant.Alive;
+                var theirBeat = (index - fighter.BounceOffset) % fighter.BounceEvery == 0;
+                var squash = standing && theirBeat ? hit : 0f;
+                var spread = 1f + BounceSpread * squash;
+                fighter.Model.Root.transform.localScale = new Vector3(spread, 1f - BounceSquash * squash, spread) * CharacterScale;
             }
-            foreach (var option in options)
+
+            for (var i = 0; i < sequenceTrack.Count; i++)
             {
-                if (!option.Alive && !includeFallen) continue;
-                var target = option;
-                var button = AddMenuButton(row--, describe(option), Palette.PanelLight, () => picked(target));
-                button.Label.fontSize = 34f;
+                var pip = sequenceTrack[i];
+                pip.gameObject.SetActive(playing);
+                var lit = i == inSequence;
+                pip.color = lit ? (i == 0 ? Palette.Accent : Palette.TextLight) : Palette.WithAlpha(i == 0 ? Palette.Accent : Palette.TextMuted, 0.35f);
+                pip.rectTransform.localScale = Vector3.one * (lit ? 1f + 0.55f * pulse : 1f);
             }
-            AddMenuButton(0, "BACK", Palette.Panel, () => ShowCommandMenu(actor));
+
+            edgeFlash.color = Palette.WithAlpha(Palette.Accent, playing ? (inSequence == 0 ? DownbeatFlash : BeatFlash) * pulse * pulse : 0f);
         }
 
-        GameButton AddMenuButton(int row, string label, Color color, Action action)
+        void BuildBeatTrack()
         {
-            var button = UIKit.Button(label, menuRoot, label, 44f, color, action);
-            UIKit.Place((RectTransform)button.transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(0f, row * 100f), new Vector2(560f, 92f));
-            return button;
+            edgeFlash = new GameObject("Beat Edge Flash", typeof(RectTransform)).AddComponent<Image>();
+            edgeFlash.transform.SetParent(safe.parent, false);
+            edgeFlash.transform.SetAsFirstSibling();
+            edgeFlash.sprite = EdgeSprite();
+            edgeFlash.raycastTarget = false;
+            UIKit.Fill(edgeFlash.rectTransform);
+
+            // Eight pips under the turn banner, the first one larger and gold: the sequence a turn takes.
+            for (var i = 0; i < beat.SequenceBeats; i++)
+            {
+                var pip = UIKit.Solid("Sequence Beat", safe, Palette.TextMuted);
+                pip.sprite = UIKit.Circle;
+                var size = i == 0 ? 26f : 18f;
+                UIKit.Place(pip.rectTransform, new Vector2(0.5f, 1f), Vector2.one * 0.5f, new Vector2((i - (beat.SequenceBeats - 1) * 0.5f) * 44f, -118f), Vector2.one * size);
+                sequenceTrack.Add(pip);
+            }
+        }
+
+        // Clear in the middle, glowing toward the edges.
+        static Sprite EdgeSprite()
+        {
+            if (edgeSprite != null) return edgeSprite;
+            const int size = 128;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "Beat Edge", wrapMode = TextureWrapMode.Clamp };
+            var pixels = new Color32[size * size];
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var u = (x + 0.5f) / size * 2f - 1f;
+                    var v = (y + 0.5f) / size * 2f - 1f;
+                    var edge = Mathf.Max(Mathf.Abs(u), Mathf.Abs(v));
+                    var alpha = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.62f, 1f, edge));
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            edgeSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), Vector2.one * 0.5f);
+            return edgeSprite;
+        }
+
+        // The pad keeps the beat: its ring pulses on every beat, drains over the window and turns red for the last two.
+        void UpdateBeat()
+        {
+            if (pad == null) return;
+            var now = Now();
+            var pulse = beat.Pulse(now);
+            var inSequence = beat.BeatInSequence(now);
+            var index = beat.BeatIndex(now);
+            if (index != lastBeat && clockReady)
+            {
+                lastBeat = index;
+                if (inSequence == 0) director.Stage.Shake(DownbeatShake);
+                var remaining = windowClose - now;
+                if (pad.gameObject.activeSelf && remaining > 0 && remaining <= beat.BeatSeconds * WarningTicks + 0.02) AudioBank.Play(Sfx.Tick, 1f, 0f);
+            }
+            ShowBeat(clockReady, index, inSequence, pulse);
+            if (!pad.gameObject.activeSelf) return;
+
+            var left = Mathf.Clamp01((float)((windowClose - now) / beat.SequenceSeconds));
+            var urgent = windowClose - now <= beat.BeatSeconds * 2;
+            windowRing.fillAmount = left;
+            windowRing.color = urgent ? Palette.Danger : Palette.Accent;
+            windowRing.rectTransform.localScale = Vector3.one * (1f + 0.05f * pulse * pulse);
+            for (var i = 0; i < beatPips.Count; i++)
+            {
+                var played = now >= windowOpen + (i + 1) * beat.BeatSeconds;
+                var pip = beatPips[i];
+                pip.color = played ? Palette.WithAlpha(Palette.Ink, 0.7f) : urgent ? Palette.Danger : Palette.Accent;
+                var landing = !played && now >= windowOpen + i * beat.BeatSeconds;
+                pip.rectTransform.localScale = Vector3.one * (landing ? 1f + 0.6f * pulse : 1f);
+            }
+
+            var target = selectedTarget;
+            var show = target != null && target.Alive;
+            targetMark.gameObject.SetActive(show);
+            if (!show) return;
+            var fighter = byCombatant[target];
+            var head = fighter.Model.Root.transform.position + Vector3.up * (fighter.Model.HeadHeight * CharacterScale + 0.4f);
+            var screen = director.Stage.MainCamera.WorldToScreenPoint(head);
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(safe, screen, null, out var local)) targetMark.rectTransform.anchoredPosition = local;
+            targetMark.rectTransform.localScale = Vector3.one * (1f + 0.12f * pulse);
+            targetMark.rectTransform.Rotate(0f, 0f, -40f * Time.unscaledDeltaTime);
         }
     }
 }

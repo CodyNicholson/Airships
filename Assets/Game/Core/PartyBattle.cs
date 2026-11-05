@@ -62,6 +62,27 @@ namespace Airships.Core
     public static class BattleSetup
     {
         public const int MaxPartySize = 3;
+        public const int SkillSlots = 3;
+
+        // A crew member as they fight on deck: their own three skills if they have them, else their class's and signature's.
+        public static Combatant CreateCrew(GameContent content, CrewDef member, int level, int slot)
+        {
+            var combatant = Combatant.Create(member.id, member.name, content.Class(member.classId), member.baseStats, level, content, true, slot);
+            combatant.Look = member.look;
+            if (member.skills != null && member.skills.Length > 0)
+            {
+                combatant.Skills.Clear();
+                foreach (var unlock in member.skills)
+                {
+                    if (unlock.level <= level) combatant.Skills.Add(content.Skill(unlock.skill));
+                }
+            }
+            else
+            {
+                combatant.AddSignature(member.signature, content);
+            }
+            return combatant;
+        }
 
         public static List<Combatant> BuildParty(GameContent content, SaveData save)
         {
@@ -72,10 +93,7 @@ namespace Airships.Core
                 var member = Array.Find(content.crew, c => c.id == id);
                 var progress = save.crew.Find(c => c.id == id);
                 if (member == null || progress == null) continue;
-                var combatant = Combatant.Create(member.id, member.name, content.Class(member.classId), member.baseStats, progress.level, content, true, party.Count);
-                combatant.Look = member.look;
-                combatant.AddSignature(member.signature, content);
-                party.Add(combatant);
+                party.Add(CreateCrew(content, member, progress.level, party.Count));
             }
             return party;
         }
@@ -99,7 +117,8 @@ namespace Airships.Core
         }
     }
 
-    public enum BattleActionKind { Attack, Skill, Guard, Rush, Item }
+    // Pass is a lost turn: a crew member who let the music's window close without picking a move.
+    public enum BattleActionKind { Attack, Skill, Guard, Item, Pass }
 
     // How well a timed touch prompt was hit. Missing deals less damage or takes more.
     public enum TimingGrade { Miss, Good, Perfect }
@@ -113,7 +132,7 @@ namespace Airships.Core
         public ItemDef Item;
     }
 
-    public enum BattleEventKind { Damage, Heal, Guard, Defeated, MpSpent, Status, Stunned, Burned, Counter, Enraged, Revived, Rush }
+    public enum BattleEventKind { Damage, Heal, Guard, Defeated, MpSpent, Status, Stunned, Burned, Counter, Enraged, Revived }
 
     public struct BattleEvent
     {
@@ -141,9 +160,8 @@ namespace Airships.Core
         public const float EnrageScale = 1.3f;
         public const float GuardMpShare = 0.2f;
         public const float CounterPower = 0.7f;
-        public const float RushPower = 0.85f;
+        public const float AttackMpShare = 0.1f; // A crew member's plain attack wins back a little MP for their skills.
         public const float ReviveHealth = 0.4f;
-        public const int MaxMomentum = 6;
 
         readonly List<Combatant> party;
         readonly List<Combatant> enemies;
@@ -153,10 +171,6 @@ namespace Airships.Core
         readonly Dictionary<Combatant, BattleAction> intents = new Dictionary<Combatant, BattleAction>();
         readonly List<BattleEvent> turnStartEvents = new List<BattleEvent>();
         int turnIndex;
-
-        // Filled by landing timed prompts. When full, the whole crew can charge together.
-        public int Momentum { get; private set; }
-        public bool RushReady => Momentum >= MaxMomentum;
 
         public IReadOnlyList<Combatant> Party => party;
         public IReadOnlyList<Combatant> Enemies => enemies;
@@ -204,6 +218,7 @@ namespace Airships.Core
             {
                 case BattleActionKind.Attack:
                     ResolveHit(actor, action.Target, BasicAttackPower, SkillKind.Physical, "Attack", action.Timing, results);
+                    if (actor.IsPlayer) actor.Mp = Math.Min((int)actor.Stats.mp, actor.Mp + (int)Math.Ceiling(actor.Stats.mp * AttackMpShare));
                     break;
                 case BattleActionKind.Guard:
                     actor.Guarding = true;
@@ -213,15 +228,13 @@ namespace Airships.Core
                 case BattleActionKind.Skill:
                     ResolveSkill(actor, action, results);
                     break;
-                case BattleActionKind.Rush:
-                    ResolveRush(action, results);
-                    break;
                 case BattleActionKind.Item:
                     ResolveItem(actor, action, results);
                     break;
+                case BattleActionKind.Pass:
+                    break;
             }
 
-            GainMomentum(actor, action);
             CheckEnrage(results);
             UpdateOutcome();
             if (Outcome == BattleOutcome.Ongoing) Advance();
@@ -234,28 +247,6 @@ namespace Airships.Core
             var taken = new List<BattleEvent>(turnStartEvents);
             turnStartEvents.Clear();
             return taken;
-        }
-
-        void GainMomentum(Combatant actor, BattleAction action)
-        {
-            if (timing == null || action.Kind == BattleActionKind.Rush || action.Kind == BattleActionKind.Guard || action.Kind == BattleActionKind.Item) return;
-            var gain = action.Timing == TimingGrade.Perfect ? 2 : action.Timing == TimingGrade.Good ? 1 : 0;
-            if (!actor.IsPlayer) gain = action.Timing == TimingGrade.Perfect ? 1 : 0;
-            Momentum = Math.Min(MaxMomentum, Momentum + gain);
-        }
-
-        // Everyone charges at once: a strike from each living crew member against every enemy.
-        void ResolveRush(BattleAction action, List<BattleEvent> results)
-        {
-            Momentum = 0;
-            results.Add(new BattleEvent { Kind = BattleEventKind.Rush, Label = "Boarding Rush" });
-            foreach (var member in party.FindAll(c => c.Alive))
-            {
-                foreach (var enemy in enemies.FindAll(c => c.Alive && c != SpareTarget))
-                {
-                    ResolveHit(member, enemy, RushPower, SkillKind.Physical, "Boarding Rush", action.Timing, results);
-                }
-            }
         }
 
         void ResolveItem(Combatant actor, BattleAction action, List<BattleEvent> results)
@@ -424,8 +415,8 @@ namespace Airships.Core
                 return;
             }
 
-            // A perfect block from a guarding crew member turns the blow straight back.
-            if (timing != null && !actor.IsPlayer && target.IsPlayer && target.Guarding && grade == TimingGrade.Perfect && actor.Alive)
+            // A perfect block turns the blow straight back.
+            if (timing != null && !actor.IsPlayer && target.IsPlayer && grade == TimingGrade.Perfect && actor.Alive)
             {
                 var counter = Damage(target, actor, CounterPower, SkillKind.Physical, false, 1f);
                 actor.Hp = Math.Max(0, actor.Hp - counter);

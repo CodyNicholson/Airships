@@ -24,6 +24,10 @@ LOOPING = {
     "cannons_over_cumulus": None,
     "leviathan_of_the_upper_winds": "danger",
     "the_sovereign_descends": "danger",
+    # Deck battle songs on the shared three-second beat sequence. See BattleBeat in the game.
+    "boarding_cadence": "danger",
+    "riggings_ablaze": "danger",
+    "tyrants_tempo": "danger",
 }
 ONE_SHOTS = ["victory_fanfare", "defeat_lament"]
 

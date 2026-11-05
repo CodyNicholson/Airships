@@ -863,9 +863,9 @@
             "fogEnd": 420.0
         },
         {
-            "id": "QuarterdeckDusk",
-            "fileHq": "T_Sky_QuarterdeckDusk_HQ.png",
-            "fileLq": "T_Sky_QuarterdeckDusk_LQ.png",
+            "id": "HangarDusk",
+            "fileHq": "T_Sky_HangarDusk_HQ.png",
+            "fileLq": "T_Sky_HangarDusk_LQ.png",
             "sunX": -0.7200000286102295,
             "sunY": 0.1599999964237213,
             "sunZ": 0.6700000166893005,

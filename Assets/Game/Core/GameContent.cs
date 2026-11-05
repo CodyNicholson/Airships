@@ -54,6 +54,7 @@ namespace Airships.Core
         public int hits; // Above one, it strikes this many times.
         public bool revive; // Brings a fallen ally back.
         public bool companion; // Done by the character's companion, rather than by them.
+        public string icon; // The deck battle button's picture, such as "Skill_CinderFlame".
 
         public SkillKind Kind => (SkillKind)Enum.Parse(typeof(SkillKind), kind);
         public SkillTarget Target => (SkillTarget)Enum.Parse(typeof(SkillTarget), target);
@@ -69,6 +70,10 @@ namespace Airships.Core
         public string[] grants; // Campaign mechanics this person brings aboard.
         public string look; // How they appear on deck. See LookDef.
         public SkillUnlock[] signature; // Skills only this person knows.
+
+        // The three skills this person fights with on deck, and the level each opens at. When set, these
+        // replace their class's skills and their signature, so the battle screen has one button for each.
+        public SkillUnlock[] skills;
     }
 
     // A character's model, palette and what they carry.
@@ -361,7 +366,12 @@ namespace Airships.Core
         public float swipeDistance; // How far a flick must travel to count.
         public float swipeAngleDegrees; // How far off the shown direction a flick may be.
         public float dragTolerance; // How far a finger may stray from a drag's marker.
-        public TimingPattern[] patterns;
+        public TimingPattern[] patterns; // Written on the battle music's eighth-note grid, so every target lands on the music.
+
+        // The deck battle runs on its song's beat. A crew member has one sequence of beats to choose a move.
+        public float beatSeconds;
+        public int sequenceBeats;
+        public float audioLatencySeconds; // How long sound takes to reach the player, so what they see matches what they hear.
     }
 
     [Serializable]

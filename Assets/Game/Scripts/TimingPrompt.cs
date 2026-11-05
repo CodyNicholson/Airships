@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Airships.Core;
 using TMPro;
@@ -52,6 +53,7 @@ namespace Airships.Game
         int shownStep;
         int activePointer = NoPointer;
         const int NoPointer = int.MinValue;
+        Func<double> clock; // Seconds since the pattern began, from the music. Null runs on frame time.
 
         public bool Done => sequence == null || sequence.Done;
         public TimingGrade Grade => sequence != null ? sequence.Grade : TimingGrade.Miss;
@@ -128,6 +130,8 @@ namespace Airships.Game
             return image;
         }
 
+        public static Sprite RingSprite => Ring();
+
         static Sprite Ring()
         {
             if (ringSprite != null) return ringSprite;
@@ -176,9 +180,12 @@ namespace Airships.Game
             return arrowSprite;
         }
 
-        public void Begin(TimingPattern pattern, string text, Color color)
+        // With a clock, the pattern follows the music instead of the frame time, so its targets close on the beats
+        // the player hears. The clock gives seconds since the pattern's start, and may already be a little past zero.
+        public void Begin(TimingPattern pattern, string text, Color color, Func<double> musicClock = null)
         {
             sequence = new TimingSequence(pattern, def, area.rect.width, area.rect.height);
+            clock = musicClock;
             feedbackLeft = 0f;
             shownStep = 0;
             activePointer = NoPointer;
@@ -279,7 +286,10 @@ namespace Airships.Game
 
             if (GameDirector.Autoplay) Autoplay();
             else ReadKeyboard();
-            sequence.Advance(Time.deltaTime);
+
+            // The music plays on through a pause, so a paused prompt finishes on frame time instead.
+            if (GameTime.Paused) clock = null;
+            sequence.Advance(clock != null ? Mathf.Max(0f, (float)(clock() - sequence.Elapsed)) : Time.deltaTime);
             RefreshAfterInput();
             if (!sequence.Done) UpdateDials();
         }

@@ -401,6 +401,136 @@ namespace Airships.Game
             scroll.viewport = viewport.rectTransform;
             scroll.movementType = ScrollRect.MovementType.Clamped;
         }
+
+        // A full-screen pop-up: a dark scrim, a titled panel and a close button.
+        public static GameObject Overlay(Transform canvas, string title, Action close, out RectTransform panelRect)
+        {
+            var scrim = UIKit.Solid("Overlay", canvas, Palette.WithAlpha(Palette.Ink, 0.7f), true);
+            UIKit.Fill(scrim.rectTransform);
+            var panel = UIKit.Panel("Panel", scrim.transform, Palette.Panel);
+            UIKit.Place(panel.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, new Vector2(1500f, 960f));
+            panelRect = panel.rectTransform;
+            var heading = UIKit.Text("Title", panel.transform, title, 58f, Palette.Accent);
+            UIKit.Place(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(1200f, 80f));
+            var closeButton = UIKit.Button("Close", panel.transform, "", 34f, Palette.PanelLight, close);
+            UIKit.Place((RectTransform)closeButton.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -18f), new Vector2(90f, 80f));
+            var closeIcon = UIKit.Icon("Close Icon", closeButton.transform, "Hud_Close");
+            UIKit.Fill(closeIcon.rectTransform);
+            closeIcon.rectTransform.offsetMin = Vector2.one * 12f;
+            closeIcon.rectTransform.offsetMax = Vector2.one * -12f;
+            return scrim.gameObject;
+        }
+
+        // Starts a Free Skies dogfight, the endless open-sky fights between story missions.
+        public static void SailFreeSkies(GameDirector director)
+        {
+            director.SaveGame();
+            director.StartDogfight();
+        }
+    }
+
+    // The ships you own: repair any of them, pick the one to fly, and equip a signature weapon.
+    public static class FleetPanel
+    {
+        // onFlown runs after picking a new ship, so the screen behind can show it. onChanged runs after a
+        // repair or an equip, which spend gold or change the loadout.
+        public static GameObject Build(Transform canvas, GameDirector director, Action onFlown, Action onChanged, Action onClosed)
+        {
+            GameObject overlay = null;
+            void Close()
+            {
+                if (overlay != null) UnityEngine.Object.Destroy(overlay);
+                onClosed?.Invoke();
+            }
+            void Rebuild()
+            {
+                if (overlay != null) UnityEngine.Object.Destroy(overlay);
+                onChanged?.Invoke();
+                overlay = Fill(canvas, director, Close, Rebuild, onFlown);
+            }
+            overlay = Fill(canvas, director, Close, Rebuild, onFlown);
+            return overlay;
+        }
+
+        static GameObject Fill(Transform canvas, GameDirector director, Action close, Action rebuild, Action onFlown)
+        {
+            var overlay = CampaignLook.Overlay(canvas, "FLEET", close, out var panel);
+            var save = director.Save;
+            var content = director.Content;
+            CampaignLook.ScrollList(panel, new Vector2(1440f, 830f), new Vector2(0f, 24f), new Vector2(0.5f, 0f), out var list);
+            ((RectTransform)list.parent).pivot = new Vector2(0.5f, 0f);
+            var y = 0f;
+            foreach (var entry in save.fleet)
+            {
+                var progress = entry;
+                var ship = content.Ship(progress.id);
+                var loadout = Encounter.PlayerLoadout(content, save, progress.id);
+                var active = save.activeShip == progress.id;
+                var row = UIKit.Panel(ship.name, list, Palette.WithAlpha(active ? Palette.PlayerPaint : Palette.PanelLight, 0.8f));
+                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -y), new Vector2(1400f, 150f));
+                var shipIcon = UIKit.Icon("Ship Icon", row.transform, ship.icon);
+                UIKit.Place(shipIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), Vector2.one * 130f);
+                var name = UIKit.Text("Name", row.transform, active ? $"{ship.name}  (FLYING)" : ship.name, 34f, Palette.Accent, TextAlignmentOptions.Left);
+                UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(150f, -8f), new Vector2(760f, 46f));
+                var info = UIKit.Text("Stats", row.transform, $"Hull {Mathf.RoundToInt(loadout.Hull - progress.damage)}/{Mathf.RoundToInt(loadout.Hull)}   Armor {loadout.Armor:0}   Speed {loadout.Speed:0}   Turn {loadout.TurnDegrees:0}\n{ship.description}", 25f, Palette.TextLight, TextAlignmentOptions.TopLeft, false);
+                info.textWrappingMode = TextWrappingModes.Normal;
+                info.characterSpacing = 0f;
+                UIKit.Place(info.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(150f, -56f), new Vector2(760f, 90f));
+
+                var cost = Campaign.RepairCost(content, save, progress.id);
+                var repair = UIKit.Button("Repair", row.transform, cost > 0 ? $"REPAIR {cost}G" : "REPAIRED", 26f, Palette.Herb, () =>
+                {
+                    if (Campaign.Repair(content, save, progress.id)) director.SaveGame();
+                    rebuild();
+                });
+                repair.Interactable = cost > 0 && save.gold > 0;
+                UIKit.Place((RectTransform)repair.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-250f, 0f), new Vector2(230f, 104f));
+                var fly = UIKit.Button("Fly", row.transform, "FLY", 34f, Palette.PanelLight, () =>
+                {
+                    save.activeShip = progress.id;
+                    director.SaveGame();
+                    onFlown?.Invoke();
+                });
+                fly.Interactable = !active;
+                UIKit.Place((RectTransform)fly.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(220f, 104f));
+                y += 162f;
+            }
+
+            foreach (var id in save.campaign.signatures)
+            {
+                var signature = content.Signature(id);
+                var equipped = save.campaign.equippedSignature == id;
+                var row = UIKit.Panel(signature.name, list, Palette.WithAlpha(equipped ? Palette.PlayerPaint : Palette.PanelLight, 0.65f));
+                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -y), new Vector2(1400f, 92f));
+                var signatureIcon = UIKit.Icon("Weapon Icon", row.transform, signature.kind == "harpoon" ? "Module_HarpoonWinch" : signature.kind == "afterburner" ? "Module_Afterburner" : signature.kind == "ram" ? "Ship_Bastion" : "Module_SiegeCannon");
+                UIKit.Place(signatureIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), Vector2.one * 76f);
+                var text = UIKit.Text("Text", row.transform, $"{signature.name}: {signature.description}", 27f, Palette.TextLight, TextAlignmentOptions.Left, false);
+                text.characterSpacing = 0f;
+                UIKit.Place(text.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(100f, 0f), new Vector2(1040f, 80f));
+                var equip = UIKit.Button("Equip", row.transform, equipped ? "EQUIPPED" : "EQUIP", 26f, Palette.PanelLight, () =>
+                {
+                    save.campaign.equippedSignature = id;
+                    director.SaveGame();
+                    rebuild();
+                });
+                equip.Interactable = !equipped;
+                UIKit.Place((RectTransform)equip.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(220f, 76f));
+                y += 102f;
+            }
+
+            foreach (var id in save.campaign.modules)
+            {
+                var module = content.Module(id);
+                var moduleIcon = UIKit.Icon("Module Icon", list, "Item_WeaponModule");
+                UIKit.Place(moduleIcon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-660f, -y), Vector2.one * 42f);
+                var text = UIKit.Text("Module", list, $"{module.name}: {module.description}", 27f, Palette.TextMuted, TextAlignmentOptions.Left, false);
+                text.characterSpacing = 0f;
+                UIKit.Place(text.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(30f, -y), new Vector2(1300f, 44f));
+                y += 48f;
+            }
+            list.sizeDelta = new Vector2(0f, y);
+            return overlay;
+        }
     }
 
     // After a captain falls: the freeze-frame choice that blends story and progression.
@@ -439,7 +569,8 @@ namespace Airships.Game
             var module = !string.IsNullOrEmpty(phase.module) ? content.Module(phase.module) : null;
             var signature = !string.IsNullOrEmpty(phase.signature) ? content.Signature(phase.signature) : null;
 
-            AddCard(safe, -1, "SEIZE THE HELM", "Choice_SeizeHelm", new[] { $"Make {ship.name} your ship.", $"Hull {ship.hull}, armor {ship.armor}, speed {ship.speed}.", "Your old ship sails home with a prize crew." }, Palette.PlayerPaint, DavyJonesChoice.SeizeTheHelm);
+            var seize = AddCard(safe, -1, "SEIZE THE HELM", "Choice_SeizeHelm", new[] { $"Make {ship.name} your ship." }, Palette.PlayerPaint, DavyJonesChoice.SeizeTheHelm);
+            AddShipComparison(seize, director.Save.activeShip, phase.shipId);
             AddCard(safe, 0, "PRESS-GANG THE CREW", "Choice_PressGang", new[] { officerLine, "Repairs half your ship's damage.", "The captain lives." }, Palette.Herb, DavyJonesChoice.PressGang);
             AddCard(safe, 1, "SCUTTLE & PLUNDER", "Choice_ScuttlePlunder", new[] { $"Take {phase.gold} gold.", module != null ? $"Strip the {module.name}: {module.description}." : "Strip what's left for parts.", "The captain gets a lifeboat." }, Palette.Accent, DavyJonesChoice.ScuttleAndPlunder);
 
@@ -488,10 +619,13 @@ namespace Airships.Game
             Choose(DavyJonesChoice.SeizeTheHelm);
         }
 
-        void AddCard(RectTransform safe, int column, string title, string icon, string[] lines, Color color, DavyJonesChoice choice)
+        const float CardHeight = 440f;
+        const float StatRowHeight = 30f;
+
+        RectTransform AddCard(RectTransform safe, int column, string title, string icon, string[] lines, Color color, DavyJonesChoice choice)
         {
             var card = UIKit.Panel(title, safe, Palette.WithAlpha(Palette.Panel, 0.93f));
-            UIKit.Place(card.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(column * 620f, 88f), new Vector2(600f, 400f));
+            UIKit.Place(card.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(column * 620f, 88f), new Vector2(600f, CardHeight));
             var image = UIKit.Icon("Icon", card.transform, icon);
             UIKit.Place(image.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(14f, -14f), Vector2.one * 96f);
             for (var i = 0; i < lines.Length; i++)
@@ -505,6 +639,54 @@ namespace Airships.Game
             var button = UIKit.Button(title, card.transform, title, 32f, color, () => Choose(choice));
             button.ClickSound = Sfx.Confirm;
             UIKit.Place((RectTransform)button.transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(570f, 92f));
+            return card.rectTransform;
+        }
+
+        // The ship you fly now beside the one you'd take, with every upgrade and module counted on both,
+        // so the choice is a fair comparison. Their numbers show green where they beat yours.
+        void AddShipComparison(RectTransform card, string currentId, string prizeId)
+        {
+            var content = director.Content;
+            var save = director.Save;
+            var current = Encounter.PlayerLoadout(content, save, currentId);
+            var prize = Encounter.PlayerLoadout(content, save, prizeId);
+
+            var top = -100f;
+            AddStatCell(card, $"YOURS: {content.Ship(currentId).name}", 200f, top, 180f, Palette.TextMuted, TextAlignmentOptions.Center, 20f);
+            AddStatCell(card, $"THEIRS: {content.Ship(prizeId).name}", 392f, top, 190f, Palette.Accent, TextAlignmentOptions.Center, 20f);
+
+            var row = 0;
+            void AddRow(string label, float yours, float theirs, string unit = "")
+            {
+                var y = top - 30f - row++ * StatRowHeight;
+                var mine = Mathf.RoundToInt(yours);
+                var their = Mathf.RoundToInt(theirs);
+                var color = their > mine ? Palette.Heal : their < mine ? Palette.Danger : Palette.TextLight;
+                AddStatCell(card, label, 18f, y, 170f, Palette.TextMuted, TextAlignmentOptions.Left, 24f);
+                AddStatCell(card, $"{mine}{unit}", 200f, y, 180f, Palette.TextLight, TextAlignmentOptions.Center, 24f);
+                AddStatCell(card, $"{their}{unit}", 392f, y, 190f, color, TextAlignmentOptions.Center, 24f);
+            }
+            AddRow("Hull", current.Hull, prize.Hull);
+            AddRow("Armor", current.Armor, prize.Armor);
+            AddRow("Speed", current.Speed, prize.Speed);
+            AddRow("Turning", current.TurnDegrees, prize.TurnDegrees, "°");
+            AddRow("Broadside", Volley(current), Volley(prize));
+
+            var note = UIKit.Text("Prize Crew", card, "Your old ship sails home with a prize crew.", 22f, Palette.TextMuted, TextAlignmentOptions.Left, false);
+            note.characterSpacing = 0f;
+            UIKit.Place(note.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, top - 34f - row * StatRowHeight), new Vector2(564f, 30f));
+        }
+
+        // Damage from one full broadside, before armor.
+        static float Volley(ShipLoadout loadout) => loadout.Broadside == null ? 0f : loadout.Broadside.damage * Mathf.Max(1, loadout.Broadside.shots) * loadout.BroadsideDamageScale;
+
+        static void AddStatCell(RectTransform card, string value, float x, float y, float width, Color color, TextAlignmentOptions alignment, float size)
+        {
+            var text = UIKit.Text("Stat", card, value, size, color, alignment, false);
+            text.characterSpacing = 0f;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            UIKit.Place(text.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(x, y), new Vector2(width, StatRowHeight));
         }
 
         void Choose(DavyJonesChoice choice)
@@ -657,34 +839,43 @@ namespace Airships.Game
     }
 
     // The main menu is the deck of the ship you command. Crew stand around it and can be talked to.
-    public class QuarterdeckScreen : MonoBehaviour
+    // The main screen: the crew's hangar, with the ship you're flying moored in the berth behind them.
+    public class HangarScreen : MonoBehaviour
     {
+        const string HangarAsset = "SM_Env_HangarHub";
+        const float BerthLength = 13f; // Matches HANGAR_BERTH_LENGTH in the Blender kit: every ship is scaled to fill it.
+        const float ShipBob = 0.25f;
+        const float ShipBobRate = 0.8f;
+        const float IdlePropellerSpin = 90f; // Degrees per second, ticking over at the mooring.
         const int MaxCrewOnDeck = 7;
         static readonly Vector3 HelmStep = new Vector3(-1.3f, 0f, -0.4f); // Beside the wheel, not hidden behind it.
         static readonly Vector3 CompanionHubStep = new Vector3(-1.2f, 0f, -2f); // Forward of its owner, where it can be seen.
 
-        // The crew gather below the helm, close enough to read as a crew rather than six strangers.
-        static readonly Dictionary<string, Vector2> DeckSpots = new Dictionary<string, Vector2>
-        {
-            { "sable", new Vector2(-5.5f, 0.9f) },
-            { "lyra", new Vector2(-2.4f, 0.6f) },
-            { "morrow", new Vector2(-3.9f, -1.5f) },
-            { "brill", new Vector2(-0.9f, 0.1f) },
-            { "rook", new Vector2(0.9f, 0.5f) },
-            { "thorne", new Vector2(2.6f, -0.8f) },
-        };
+        // The crew gather below the overlook in this order from left to right, each in a lane of their own so
+        // nobody stands behind anyone else, in two staggered rows so they still read as a crew. Anyone not
+        // listed joins at the end.
+        static readonly string[] CrowdOrder = { "sable", "morrow", "lyra", "ivo", "brill", "hask", "wren", "rook", "thorne" };
+        const float CrowdCentreX = -1.45f;
+        const float LaneSpacing = 1.8f;
+        const float FrontRowZ = -0.7f;
+        const float BackRowZ = 0.7f;
         const float CardWidth = 760f;
         const float CardMargin = 28f;
         const float ClearMargin = 40f; // Between the crew and the screen's edge or the card.
         const float PersonHeight = 2.2f;
         const float PersonHalfWidth = 0.7f;
         const float HubFov = 46f;
-        const float TagStagger = 44f; // Neighbors' name tags sit at different heights, so they never overlap.
+        const float MenuBottom = 96f;
+        const float TagStagger = 44f; // Front-row name tags sit lower than the back row's, so neighbors' tags never overlap.
 
         GameDirector director;
         Canvas canvas;
         RectTransform safe;
         DeckModel deck;
+        ShipModel ship;
+        Vector3 berth;
+        readonly List<HubPoint> shipPoints = new List<HubPoint>();
+        GameButton repairButton;
         TextMeshProUGUI goldText;
         GameObject overlay;
         GameObject settings;
@@ -701,18 +892,60 @@ namespace Airships.Game
             var content = director.Content;
             var save = director.Save;
             var shipDef = content.Ship(string.IsNullOrEmpty(save.activeShip) ? content.campaign.startingShip : save.activeShip);
-            deck = Models.CreateDeck(transform, string.IsNullOrEmpty(shipDef.faction) ? KitArt.Crimson : shipDef.faction, "SM_Env_QuarterdeckHub");
+            deck = Models.CreateDeck(transform, string.IsNullOrEmpty(shipDef.faction) ? KitArt.Crimson : shipDef.faction, HangarAsset);
+            CentreOnStage();
+            MoorShip(shipDef);
             cameraRig = new GameObject("Hub Camera Rig").transform;
             cameraRig.SetParent(transform, false);
             cameraLook = new GameObject("Hub Look").transform;
             cameraLook.SetParent(transform, false);
 
-            canvas = UIKit.CreateCanvas("Quarterdeck", transform, 10);
+            canvas = UIKit.CreateCanvas("Hangar", transform, 10);
             safe = UIKit.SafeArea(canvas.transform);
             BuildHeader(shipDef);
             BuildMenu();
             StartCoroutine(BuildCrew());
             if (GameDirector.Autoplay) StartCoroutine(AutoPlay());
+        }
+
+        // The hangar reaches out the back to its berth, so its pivot isn't the middle of the floor. The crew's
+        // spots are measured from the middle of the floor, so that's what goes at the origin.
+        void CentreOnStage()
+        {
+            var stage = KitArt.Socket(deck.Kit, "centre_stage");
+            if (stage == null) return;
+            var offset = stage.position - deck.Root.transform.position;
+            offset.y = 0f;
+            deck.Kit.transform.position -= offset;
+        }
+
+        // The ship you're flying, broadside in the berth and scaled to fill it, whichever ship it is.
+        void MoorShip(ShipDef shipDef)
+        {
+            var socket = KitArt.Socket(deck.Kit, "ship_berth");
+            if (socket == null) return;
+            berth = socket.position;
+            ship = Models.CreateShip(shipDef.name, shipDef, deck.Root.transform);
+            ship.Root.transform.rotation = Quaternion.Euler(0f, -90f, 0f);
+            var bounds = ShipBounds();
+            var length = Mathf.Max(bounds.size.x, bounds.size.z);
+            if (length > 0.01f) ship.Root.transform.localScale *= BerthLength / length;
+            bounds = ShipBounds();
+            ship.Root.transform.position += berth - bounds.center;
+
+            // The camera keeps the whole ship in shot, not just the crew.
+            bounds = ShipBounds();
+            shipPoints.Add(new HubPoint(bounds.min.x, bounds.min.y, bounds.center.z));
+            shipPoints.Add(new HubPoint(bounds.max.x, bounds.max.y, bounds.center.z));
+        }
+
+        Bounds ShipBounds()
+        {
+            var renderers = ship.Root.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return new Bounds(ship.Root.transform.position, Vector3.zero);
+            var bounds = renderers[0].bounds;
+            foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+            return bounds;
         }
 
         void BuildHeader(ShipDef shipDef)
@@ -762,11 +995,15 @@ namespace Airships.Game
                 ending.fontStyle = FontStyles.Normal;
             }
 
-            var y = 16f;
-            AddMenuButton("BOUNTY BOARD", "Story_Bounty", ref y, ShowBoard, Campaign.PrologueDone(save, content), BoardCount() > 0 ? Palette.Danger : Palette.PanelLight);
+            // Up off the bottom edge, so the lowest button clears the phone's rounded corner.
+            var y = MenuBottom;
+            repairButton = AddMenuButton("", "Hud_Repair", ref y, RepairShip, false, Palette.Herb);
+            RefreshRepair();
+            // With no bounties posted, the board's place goes to Free Skies, the other way to go and fight.
+            if (BoardCount() > 0) AddMenuButton("BOUNTY BOARD", "Story_Bounty", ref y, ShowBoard, Campaign.PrologueDone(save, content), Palette.Danger);
+            else AddMenuButton("FREE SKIES", "Hud_FireBroadside", ref y, () => CampaignLook.SailFreeSkies(director), Campaign.PrologueDone(save, content), Palette.PlayerPaint);
             AddMenuButton("VOYAGE LOG", "Hud_Map", ref y, ShowLog, Campaign.PrologueDone(save, content) || Campaign.AllChaptersUnlocked, Palette.PanelLight);
-            AddMenuButton("FLEET", "Ship_RustWing", ref y, ShowFleet, save.fleet.Count > 0, Palette.PanelLight);
-            AddMenuButton("CREW & SHIPWRIGHT", "Hud_Crew", ref y, director.ShowPort, Campaign.PrologueDone(save, content), Palette.PanelLight);
+            AddMenuButton("CREW & UPGRADES", "Hud_Crew", ref y, director.ShowPort, Campaign.PrologueDone(save, content), Palette.PanelLight);
             AddMenuButton("SETTINGS", "Hud_Settings", ref y, ToggleSettings, true, Palette.Panel);
             BuildCiphers(card.transform);
         }
@@ -846,7 +1083,35 @@ namespace Airships.Game
             return text;
         }
 
-        void AddMenuButton(string label, string icon, ref float y, Action action, bool enabled, Color color)
+        // Pays to fix the ship you're flying, right from the hangar. Short of gold, it fixes what the gold covers.
+        void RepairShip()
+        {
+            var content = director.Content;
+            var save = director.Save;
+            var cost = Campaign.RepairCost(content, save, save.activeShip);
+            var gold = save.gold;
+            if (!Campaign.Repair(content, save, save.activeShip))
+            {
+                AudioBank.Play(Sfx.Denied, 0.6f);
+                return;
+            }
+            director.SaveGame();
+            var left = Campaign.RepairCost(content, save, save.activeShip);
+            var spent = gold - save.gold;
+            director.ScreenFx.Milestone(left > 0 ? $"Patched what {spent} gold could buy. {left}G more for the rest." : $"Hull repaired for {spent} gold", Palette.Heal, Sfx.Heal);
+            RefreshHeader();
+            RefreshRepair();
+        }
+
+        void RefreshRepair()
+        {
+            var save = director.Save;
+            var cost = Campaign.RepairCost(director.Content, save, save.activeShip);
+            repairButton.Label.text = cost > 0 ? $"REPAIR SHIP  {cost}G" : "SHIP REPAIRED";
+            repairButton.Interactable = cost > 0 && save.gold > 0;
+        }
+
+        GameButton AddMenuButton(string label, string icon, ref float y, Action action, bool enabled, Color color)
         {
             var button = UIKit.Button(label, safe, label, 30f, color, action);
             UIKit.Place((RectTransform)button.transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-28f, y), new Vector2(460f, 86f));
@@ -858,6 +1123,7 @@ namespace Airships.Game
             var image = UIKit.Icon("Icon", button.transform, icon);
             UIKit.Place(image.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, 0f), Vector2.one * 66f);
             y += 96f;
+            return button;
         }
 
         // A frame late, once the camera has settled, because name tags are placed from where it sees crew.
@@ -866,6 +1132,7 @@ namespace Airships.Game
             var crew = director.Save.crew;
             var models = new List<CharacterModel>();
             var onDeck = Mathf.Min(crew.Count, MaxCrewOnDeck);
+            var lanes = CrowdLanes(crew, onDeck);
             for (var i = 0; i < onDeck; i++)
             {
                 var member = director.Content.Crew(crew[i].id);
@@ -877,9 +1144,9 @@ namespace Airships.Game
                 var spot = station != null ? station : spare;
                 model.Root.transform.position = spot != null ? spot.position : deck.Root.transform.position;
                 if (crew[i].id == Campaign.Protagonist) model.Root.transform.position += HelmStep;
-                if (DeckSpots.TryGetValue(crew[i].id, out var deckSpot))
+                if (lanes.TryGetValue(crew[i].id, out var lane))
                 {
-                    model.Root.transform.position = new Vector3(deckSpot.x, model.Root.transform.position.y, deckSpot.y);
+                    model.Root.transform.position = new Vector3(lane.x, model.Root.transform.position.y, lane.y);
                 }
                 var toDeck = new Vector3(0f, 0f, -12f) - model.Root.transform.position;
                 toDeck.y = 0f;
@@ -916,10 +1183,35 @@ namespace Airships.Game
                 rect.anchorMin = Vector2.zero;
                 rect.anchorMax = Vector2.zero;
                 var tagX = Mathf.Clamp(screen.x * scale, ClearLeftEdge(scale) + width * 0.5f, ClearRightEdge(scale) - width * 0.5f);
-                rect.anchoredPosition = new Vector2(tagX, screen.y * scale - 34f - (i % 2) * TagStagger);
+                var frontRow = world.z < 0f;
+                rect.anchoredPosition = new Vector2(tagX, screen.y * scale - 34f - (frontRow ? TagStagger : 0f));
                 rect.sizeDelta = new Vector2(width, 58f);
                 tags.Add(tag.gameObject);
             }
+        }
+
+        // Evenly spaced lanes for everyone on the floor (Vane stays on the overlook), centred under it.
+        static Dictionary<string, Vector2> CrowdLanes(List<CrewProgress> crew, int onDeck)
+        {
+            var floor = new List<string>();
+            for (var i = 0; i < onDeck; i++)
+            {
+                if (crew[i].id != Campaign.Protagonist) floor.Add(crew[i].id);
+            }
+            floor.Sort((a, b) => Rank(a).CompareTo(Rank(b)));
+            var lanes = new Dictionary<string, Vector2>();
+            var left = CrowdCentreX - (floor.Count - 1) * LaneSpacing * 0.5f;
+            for (var i = 0; i < floor.Count; i++)
+            {
+                lanes[floor[i]] = new Vector2(left + i * LaneSpacing, i % 2 == 0 ? FrontRowZ : BackRowZ);
+            }
+            return lanes;
+        }
+
+        static int Rank(string crewId)
+        {
+            var index = Array.IndexOf(CrowdOrder, crewId);
+            return index >= 0 ? index : CrowdOrder.Length;
         }
 
         // Canvas units from the left of the screen. The menu column fills everything right of the card's edge.
@@ -936,6 +1228,7 @@ namespace Airships.Game
                 points.Add(new HubPoint(at.x - PersonHalfWidth, at.y, at.z));
                 points.Add(new HubPoint(at.x + PersonHalfWidth, at.y + PersonHeight, at.z));
             }
+            points.AddRange(shipPoints);
             var scale = UIKit.ReferenceHeight / Mathf.Max(1f, Screen.height);
             var canvasWidth = Screen.width * scale;
             var area = new HubClearArea(ClearLeftEdge(scale) / canvasWidth, ClearRightEdge(scale) / canvasWidth, HubFraming.ClearBottom, HubFraming.ClearTop);
@@ -949,7 +1242,6 @@ namespace Airships.Game
             if (dressed) return;
             dressed = true;
             var faction = KitArt.Crimson;
-            PropAt("SM_Prop_HelmWheel", faction, "station_helm", new Vector3(0f, 0f, -0.9f), 1f);
             PropAt("SM_Prop_SkyChartTable", faction, "station_lyra_table", Vector3.zero, 1f);
             PropAt("SM_Prop_BountyBoard", faction, "station_bounty_board", Vector3.zero, 1f);
             PropAt("SM_Prop_HangingLantern", faction, "lantern_0", Vector3.zero, 1f);
@@ -975,7 +1267,12 @@ namespace Airships.Game
         void Update()
         {
             time += Time.deltaTime;
-            deck.Root.transform.localRotation = Quaternion.Euler(Mathf.Sin(time * 0.6f) * 0.5f, 0f, Mathf.Sin(time * 0.45f) * 0.8f);
+            if (ship == null) return;
+
+            // Moored, the ship rides gently at its lines with its propellers ticking over.
+            ship.Body.localPosition = Vector3.up * (Mathf.Sin(time * ShipBobRate) * ShipBob / Mathf.Max(0.01f, ship.Root.transform.localScale.y));
+            ship.Body.localRotation = Quaternion.Euler(Mathf.Sin(time * 0.5f) * 0.8f, 0f, Mathf.Sin(time * 0.37f) * 1.2f);
+            foreach (var propeller in ship.Propellers) propeller.Rotate(0f, 0f, IdlePropellerSpin * Time.deltaTime, Space.Self);
         }
 
         void Talk(string crewId)
@@ -1028,21 +1325,8 @@ namespace Airships.Game
         GameObject BuildOverlay(string title, out RectTransform panelRect)
         {
             if (overlay != null) Destroy(overlay);
-            var scrim = UIKit.Solid("Overlay", canvas.transform, Palette.WithAlpha(Palette.Ink, 0.7f), true);
-            UIKit.Fill(scrim.rectTransform);
-            overlay = scrim.gameObject;
-            var panel = UIKit.Panel("Panel", scrim.transform, Palette.Panel);
-            UIKit.Place(panel.rectTransform, Vector2.one * 0.5f, Vector2.one * 0.5f, Vector2.zero, new Vector2(1500f, 960f));
-            panelRect = panel.rectTransform;
-            var heading = UIKit.Text("Title", panel.transform, title, 58f, Palette.Accent);
-            UIKit.Place(heading.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(1200f, 80f));
-            var close = UIKit.Button("Close", panel.transform, "", 34f, Palette.PanelLight, CloseOverlay);
-            UIKit.Place((RectTransform)close.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -18f), new Vector2(90f, 80f));
-            var closeIcon = UIKit.Icon("Close Icon", close.transform, "Hud_Close");
-            UIKit.Fill(closeIcon.rectTransform);
-            closeIcon.rectTransform.offsetMin = Vector2.one * 12f;
-            closeIcon.rectTransform.offsetMax = Vector2.one * -12f;
-            return scrim.gameObject;
+            overlay = CampaignLook.Overlay(canvas.transform, title, CloseOverlay, out panelRect);
+            return overlay;
         }
 
         void CloseOverlay()
@@ -1070,8 +1354,12 @@ namespace Airships.Game
             if (y <= 0f)
             {
                 var empty = UIKit.Text("Empty", list, "No bounties posted. Talk to your crew, or let a captain get away.", 34f, Palette.TextMuted);
-                UIKit.Place(empty.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -60f), new Vector2(1400f, 60f));
+                UIKit.Place(empty.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(1400f, 60f));
+                y += 110f;
             }
+
+            // Always last on the board: open-sky fights, for when no bounty takes your fancy.
+            AddBoardRow(list, ref y, "Hud_FireBroadside", "FREE SKIES", "Open-sky dogfights against raiders, for gold and salvage. No story, no bounty.", Palette.PlayerPaint, () => CampaignLook.SailFreeSkies(director));
             list.sizeDelta = new Vector2(0f, y);
         }
 
@@ -1091,85 +1379,6 @@ namespace Airships.Game
             go.ClickSound = Sfx.Confirm;
             UIKit.Place((RectTransform)go.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-16f, 0f), new Vector2(230f, 104f));
             y += 150f;
-        }
-
-        void ShowFleet()
-        {
-            BuildOverlay("FLEET", out var panel);
-            var save = director.Save;
-            var content = director.Content;
-            CampaignLook.ScrollList(panel, new Vector2(1440f, 830f), new Vector2(0f, 24f), new Vector2(0.5f, 0f), out var list);
-            ((RectTransform)list.parent).pivot = new Vector2(0.5f, 0f);
-            var y = 0f;
-            foreach (var entry in save.fleet)
-            {
-                var progress = entry;
-                var ship = content.Ship(progress.id);
-                var loadout = Encounter.PlayerLoadout(content, save, progress.id);
-                var active = save.activeShip == progress.id;
-                var row = UIKit.Panel(ship.name, list, Palette.WithAlpha(active ? Palette.PlayerPaint : Palette.PanelLight, 0.8f));
-                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -y), new Vector2(1400f, 150f));
-                var shipIcon = UIKit.Icon("Ship Icon", row.transform, ship.icon);
-                UIKit.Place(shipIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(10f, 0f), Vector2.one * 130f);
-                var name = UIKit.Text("Name", row.transform, active ? $"{ship.name}  (FLYING)" : ship.name, 34f, Palette.Accent, TextAlignmentOptions.Left);
-                UIKit.Place(name.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(150f, -8f), new Vector2(760f, 46f));
-                var info = UIKit.Text("Stats", row.transform, $"Hull {Mathf.RoundToInt(loadout.Hull - progress.damage)}/{Mathf.RoundToInt(loadout.Hull)}   Armor {loadout.Armor:0}   Speed {loadout.Speed:0}   Turn {loadout.TurnDegrees:0}\n{ship.description}", 25f, Palette.TextLight, TextAlignmentOptions.TopLeft, false);
-                info.textWrappingMode = TextWrappingModes.Normal;
-                info.characterSpacing = 0f;
-                UIKit.Place(info.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(150f, -56f), new Vector2(760f, 90f));
-
-                var cost = Campaign.RepairCost(content, save, progress.id);
-                var repair = UIKit.Button("Repair", row.transform, cost > 0 ? $"REPAIR {cost}G" : "REPAIRED", 26f, Palette.Herb, () =>
-                {
-                    if (Campaign.Repair(content, save, progress.id)) director.SaveGame();
-                    ShowFleet();
-                });
-                repair.Interactable = cost > 0 && save.gold > 0;
-                UIKit.Place((RectTransform)repair.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-250f, 0f), new Vector2(230f, 104f));
-                var fly = UIKit.Button("Fly", row.transform, "FLY", 34f, Palette.PanelLight, () =>
-                {
-                    save.activeShip = progress.id;
-                    director.SaveGame();
-                    director.ShowHub();
-                });
-                fly.Interactable = !active;
-                UIKit.Place((RectTransform)fly.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(220f, 104f));
-                y += 162f;
-            }
-
-            foreach (var id in save.campaign.signatures)
-            {
-                var signature = content.Signature(id);
-                var equipped = save.campaign.equippedSignature == id;
-                var row = UIKit.Panel(signature.name, list, Palette.WithAlpha(equipped ? Palette.PlayerPaint : Palette.PanelLight, 0.65f));
-                UIKit.Place(row.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -y), new Vector2(1400f, 92f));
-                var signatureIcon = UIKit.Icon("Weapon Icon", row.transform, signature.kind == "harpoon" ? "Module_HarpoonWinch" : signature.kind == "afterburner" ? "Module_Afterburner" : signature.kind == "ram" ? "Ship_Bastion" : "Module_SiegeCannon");
-                UIKit.Place(signatureIcon.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), Vector2.one * 76f);
-                var text = UIKit.Text("Text", row.transform, $"{signature.name}: {signature.description}", 27f, Palette.TextLight, TextAlignmentOptions.Left, false);
-                text.characterSpacing = 0f;
-                UIKit.Place(text.rectTransform, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(100f, 0f), new Vector2(1040f, 80f));
-                var equip = UIKit.Button("Equip", row.transform, equipped ? "EQUIPPED" : "EQUIP", 26f, Palette.PanelLight, () =>
-                {
-                    save.campaign.equippedSignature = id;
-                    director.SaveGame();
-                    ShowFleet();
-                });
-                equip.Interactable = !equipped;
-                UIKit.Place((RectTransform)equip.transform, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-14f, 0f), new Vector2(220f, 76f));
-                y += 102f;
-            }
-
-            foreach (var id in save.campaign.modules)
-            {
-                var module = content.Module(id);
-                var moduleIcon = UIKit.Icon("Module Icon", list, "Item_WeaponModule");
-                UIKit.Place(moduleIcon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-660f, -y), Vector2.one * 42f);
-                var text = UIKit.Text("Module", list, $"{module.name}: {module.description}", 27f, Palette.TextMuted, TextAlignmentOptions.Left, false);
-                text.characterSpacing = 0f;
-                UIKit.Place(text.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(30f, -y), new Vector2(1300f, 44f));
-                y += 48f;
-            }
-            list.sizeDelta = new Vector2(0f, y);
         }
 
         // Automated runs talk to everyone, patch the ship, spend gold, then take the next mission.

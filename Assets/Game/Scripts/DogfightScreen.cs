@@ -28,6 +28,17 @@ namespace Airships.Game
         const int MaxEnemyRows = 4;
         const float EnemyRowHeight = 46f;
         const float RattleSeconds = 0.9f;
+        const int ShockBolts = 8;
+        bool kitSettled; // A fight's repair kit is paid for once, whichever way the fight ends.
+
+        // A sunk ship noses over and falls, burning, past the bottom of the sky.
+        const float SinkDepth = -320f; // Far under the lowest the fight goes, and the clouds below it.
+        const float SinkNoseDive = 62f; // Degrees the bow tips down by the end of the plunge.
+        const float SinkTipSeconds = 3.2f;
+        const float SinkMaxFall = 75f;
+        const float SinkLongest = 12f;
+        const float SinkFinishWait = 4f; // How much longer the win waits for a sinking ship to fall away.
+        const int ShockBoltsAlwaysShown = 3;
         const string Torpedo = "torpedo";
 
         public DogfightSim Sim { get; private set; }
@@ -45,6 +56,8 @@ namespace Airships.Game
             public Bar MarkerHull;
             public string Name;
             public float Rattle;
+            public SparkCluster Shock; // Made the first time a jellyfish shocks this ship.
+            public bool Sinking; // Shot down, and falling out of the sky. The sinking animation moves it.
             public List<EffectEmitter> Fires = new List<EffectEmitter>();
             public List<EffectEmitter> Embers = new List<EffectEmitter>();
             public List<EffectEmitter> Smoke = new List<EffectEmitter>();
@@ -118,7 +131,6 @@ namespace Airships.Game
         readonly HashSet<int> missiles = new HashSet<int>();
         readonly HashSet<int> torpedoes = new HashSet<int>();
         readonly List<EnemyRow> enemyRows = new List<EnemyRow>();
-        Image boardLine;
         TextMeshProUGUI enemyHullText;
         readonly List<PickupView> pickupViews = new List<PickupView>();
         RawImage rain;
@@ -630,7 +642,9 @@ namespace Airships.Game
                     AudioBank.Play(Sfx.Explosion, 1f, 0f);
                     director.Stage.Shake(2.2f);
                     GameTime.HitStop(0.09f);
-                    if (e.ShipId != player.Id) HideShipSoon(e.ShipId);
+                    if (e.ShipId == player.Id) break;
+                    if (doomed != null && !doomed.State.BoardsOnContact && !doomed.Sinking) StartCoroutine(Sink(doomed));
+                    else HideShipSoon(e.ShipId);
                     break;
                 case DogfightEventKind.ShotBlocked:
                     if (torpedoes.Contains(e.ProjectileId)) BurstTorpedo(e, NearnessToPlayer(e));
@@ -640,6 +654,7 @@ namespace Airships.Game
                     break;
                 case DogfightEventKind.HazardHit:
                     PresentCrash(e);
+                    if (e.HazardKind == HazardKind.Jellyfish) PresentShock(e);
                     break;
                 case DogfightEventKind.HazardBroken:
                     hazardViews.Hide(e.HazardId);
@@ -807,11 +822,71 @@ namespace Airships.Game
 
         IEnumerator HideAfter(ShipView view)
         {
+            HideMarker(view);
+            yield return new WaitForSeconds(view.State.Departed ? 0f : 1.6f);
+            view.Model.Root.SetActive(false);
+        }
+
+        static void HideMarker(ShipView view)
+        {
             view.Marker?.gameObject.SetActive(false);
             view.Label?.gameObject.SetActive(false);
             if (view.MarkerHull != null) view.MarkerHull.gameObject.SetActive(false);
-            yield return new WaitForSeconds(view.State.Departed ? 0f : 1.6f);
+        }
+
+        // A sunk ship blows apart all along its hull, then noses over and falls, burning, until it
+        // drops out of sight into the depths under the fight.
+        IEnumerator Sink(ShipView view)
+        {
+            view.Sinking = true;
+            HideMarker(view);
+            var root = view.Model.Root.transform;
+            var body = view.Model.Body;
+            var radius = view.State.Loadout.Radius;
+            var blastScale = view.Model.Scale * Mathf.Clamp(radius / 6f, 0.6f, 1.6f);
+            var hull = new Vector3(radius * 0.5f, radius * 0.3f, radius);
+            var forward = root.forward;
+            var glide = Mathf.Max(view.State.Speed, 8f);
+            var fall = 0f;
+            var roll = (Random.value < 0.5f ? -1f : 1f) * Random.Range(18f, 40f);
+            var blastTimer = 0f;
+            var boomTimer = 0.3f;
+            var time = 0f;
+            while (root.position.y > SinkDepth && time < SinkLongest)
+            {
+                var step = Time.deltaTime;
+                time += step;
+                var tip = Mathf.SmoothStep(0f, 1f, time / SinkTipSeconds);
+
+                // It loses way slowly as the bow drops, and falls faster the further it's tipped.
+                glide = Mathf.MoveTowards(glide, 6f, 8f * step);
+                fall = Mathf.Min(SinkMaxFall, fall + (2f + 12f * tip) * step);
+                root.position += forward * (glide * step) + Vector3.down * (fall * step);
+                body.localRotation = Quaternion.Euler(SinkNoseDive * tip, 0f, roll * tip + Mathf.Sin(time * 1.7f) * 3f);
+
+                // Blasts go off all over the hull, from bow to stern.
+                blastTimer -= step;
+                if (blastTimer <= 0f)
+                {
+                    blastTimer = Random.Range(0.07f, 0.2f);
+                    var point = body.TransformPoint(Vector3.Scale(Random.insideUnitSphere, hull) + Vector3.up * radius * 0.2f);
+                    Effects.Play(Random.value < 0.65f ? "ShipExplosion" : "HullImpact", point, blastScale * Random.Range(0.35f, 0.75f));
+                    Fx.Burst(point, Palette.Spark, 6, 12f, 1.2f, 0.4f);
+                }
+                boomTimer -= step;
+                if (boomTimer <= 0f)
+                {
+                    boomTimer = Random.Range(0.3f, 0.65f);
+                    var distance = Vector3.Distance(root.position, playerView.Model.Root.transform.position);
+                    AudioBank.Play(Sfx.Explosion, 0.4f * Mathf.Lerp(1f, FarSoundLevel, Mathf.InverseLerp(CloseSoundMeters, FarSoundMeters, distance)), 0.2f);
+                }
+
+                // A trail of black smoke behind the plunge.
+                Fx.Burst(body.TransformPoint(new Vector3(0f, radius * 0.2f, -radius * 0.4f)), Palette.Ink, 1, 2f, radius * 0.6f, 1.8f, 2f);
+                yield return null;
+            }
             view.Model.Root.SetActive(false);
+            view.Sinking = false;
         }
 
         // Crash feedback scales with the damage, which scales with the size of what was hit.
@@ -834,6 +909,19 @@ namespace Airships.Game
             {
                 view.Flash = 1f;
             }
+        }
+
+        // A jellyfish's sting: a crack of current, on top of the crash.
+        void PresentShock(DogfightEvent e)
+        {
+            var position = new Vector3(e.X, e.Y, e.Z);
+            Fx.Burst(position, Palette.Storm, 14, 18f, 1.2f, 0.35f);
+            var hitPlayer = e.ShipId == player.Id;
+            AudioBank.Play(Sfx.LightningCrack, hitPlayer ? 0.7f : 0.35f * NearnessToPlayer(e));
+            if (!hitPlayer) return;
+            AudioBank.Play(Sfx.Stunned, 0.8f);
+            director.ScreenFx.Flash(Palette.Storm, 0.3f, 0.15f);
+            director.ScreenFx.FloatingNumber(position + Vector3.up * 6f, director.Stage.MainCamera, "SHOCKED!", Palette.Storm, 40f);
         }
 
         void PresentEaten(DogfightEvent e)
@@ -1014,6 +1102,7 @@ namespace Airships.Game
             hookLine.enabled = false;
             AudioBank.SetEngine(0f);
             var outcome = Encounter.Outcome;
+            SpendFreeSkiesKit();
             var boarded = Encounter.BoardedEnemy != null && viewById.TryGetValue(Encounter.BoardedEnemy.Ship.Id, out var boardedView) ? boardedView : null;
             var focusView = boarded ?? (Encounter.Target != null && viewById.TryGetValue(Encounter.Target.Ship.Id, out var targetView) ? targetView : playerView);
 
@@ -1037,6 +1126,9 @@ namespace Airships.Game
             director.ScreenFx.Milestone(banner, outcome == SkyOutcome.TargetEscaped ? Palette.Danger : Palette.Accent);
             director.Stage.FrameTarget(focusView.Model.Root.transform, focusView.Model.Body, new Vector3(30f, 16f, -34f), 42f, 1f);
             yield return new WaitForSecondsRealtime(2f);
+
+            // Lets the last ship shot down finish its fall before moving on.
+            for (var waited = 0f; waited < SinkFinishWait && views.Exists(view => view.Sinking); waited += Time.unscaledDeltaTime) yield return null;
 
             if (director.Run != null)
             {
@@ -1095,8 +1187,9 @@ namespace Airships.Game
             bobTime += Time.deltaTime;
             foreach (var view in views)
             {
-                if (swallowing && view == playerView) continue;
+                if (swallowing && view == playerView || view.Sinking) continue;
                 PlaceShip(view.Model, view.State, view.Previous, view.PreviousHeading, alpha);
+                ShockShip(view);
                 RattleShip(view);
             }
             hazardViews.Update(alpha, new Vector3(player.X, player.Y, player.Z));
@@ -1137,6 +1230,20 @@ namespace Airships.Game
             foreach (var view in views)
             {
                 view.Flash = Mathf.MoveTowards(view.Flash, 0f, Time.deltaTime * 6f);
+                if (view.Sinking)
+                {
+                    // The hull glows like a banked fire as it burns.
+                    var embers = Mathf.Lerp(0.25f, 0.7f, Mathf.PerlinNoise(Time.time * 6f, view.State.Id * 1.7f));
+                    view.Model.Material.SetColor("_Emission", Palette.Danger * embers);
+                    continue;
+                }
+                if (IsShocked(view))
+                {
+                    // The hull lights up with the current, in stutters.
+                    var surge = Mathf.Lerp(0.15f, 0.85f, Mathf.PerlinNoise(Time.time * 16f, view.State.Id * 3.1f));
+                    view.Model.Material.SetColor("_Emission", Palette.Storm * Mathf.Max(surge, view.Flash));
+                    continue;
+                }
                 var color = view == playerView ? Palette.Danger * 0.7f : Palette.Spark * 0.6f;
                 view.Model.Material.SetColor("_Emission", color * view.Flash);
             }
@@ -1161,6 +1268,27 @@ namespace Airships.Game
             if (rain != null) rain.uvRect = new Rect(Time.time * 0.05f, Time.time * 1.2f, rain.rectTransform.rect.width / 512f, rain.rectTransform.rect.height / 512f);
         }
 
+        bool IsShocked(ShipView view) => view.State.Stunned && view.State.Alive && !ended;
+
+        // A shocked ship hangs where it was hit, shuddering, with arcs crawling over its hull until
+        // the current lets go of it.
+        void ShockShip(ShipView view)
+        {
+            if (!IsShocked(view))
+            {
+                view.Shock?.Hide();
+                return;
+            }
+            var radius = view.State.Loadout.Radius;
+            if (view.Shock == null) view.Shock = new SparkCluster(view.Model.Body, ShockBolts);
+            view.Shock.Update(new Vector3(0f, radius * 0.2f, 0f), new Vector3(radius * 0.45f, radius * 0.35f, radius * 0.85f), radius * 0.35f, radius * 0.8f, 0.55f, ShockBoltsAlwaysShown);
+            view.Rattle = Mathf.Max(view.Rattle, 0.6f);
+            if (Random.value < Time.deltaTime * 10f)
+            {
+                Fx.Burst(view.Model.Body.TransformPoint(Random.insideUnitSphere * radius * 0.6f), Palette.Storm, 3, 7f, 0.9f, 0.25f);
+            }
+        }
+
         // Shakes the hull on top of its usual motion, and dies away quickly.
         void RattleShip(ShipView view)
         {
@@ -1178,7 +1306,7 @@ namespace Airships.Game
             var state = view.State;
             var alive = state.Alive;
             var share = state.Hull / Mathf.Max(1f, state.Loadout.Hull);
-            var burning = Encounter.BetrayalStarted && view == playerView || (state.Hull > 0f && !state.Departed && (share < 0.35f || state.BurnTimer > 0f));
+            var burning = view.Sinking || Encounter.BetrayalStarted && view == playerView || (state.Hull > 0f && !state.Departed && (share < 0.35f || state.BurnTimer > 0f));
             SetActive(view.Fires, burning);
             SetActive(view.Embers, burning);
             SetActive(view.Smoke, burning || (alive && share < 0.5f));
@@ -1326,12 +1454,6 @@ namespace Airships.Game
 
             playerHull = BuildHullBar(safe, director.Sky.PlayerShipName, new Vector2(0f, 1f), new Vector2(28f, -20f), Palette.Heal, out playerHullText, out _);
             enemyHull = BuildHullBar(safe, "", new Vector2(1f, 1f), new Vector2(-28f, -20f), Palette.Danger, out enemyHullText, out enemyName);
-            boardLine = UIKit.Solid("Boarding Line", enemyHull.transform, Palette.Accent);
-            var share = director.Content.skyRules.mainBoardHullShare;
-            boardLine.rectTransform.anchorMin = new Vector2(share, 0f);
-            boardLine.rectTransform.anchorMax = new Vector2(share, 1f);
-            boardLine.rectTransform.sizeDelta = new Vector2(6f, 0f);
-            boardLine.gameObject.SetActive(false);
             BuildEnemyParts(safe);
             playerHull.Set(player.Hull / player.Loadout.Hull, true);
 
@@ -1407,7 +1529,7 @@ namespace Airships.Game
                 case "capture":
                     var main = Encounter.Main;
                     if (main == null) return "";
-                    return Sim.IsBoardable(main.Ship) ? $"BOARD {main.Spawn.name}: close in and GRAPPLE" : $"BOARD {main.Spawn.name}: beat them under {Mathf.RoundToInt(director.Content.skyRules.mainBoardHullShare * 100f)}% hull";
+                    return Sim.IsBoardable(main.Ship) ? $"BOARD {main.Spawn.name}: close in and GRAPPLE" : $"BOARD {main.Spawn.name}: beat their hull down to {Mathf.RoundToInt(DogfightSim.BoardableHull)}";
                 case "disable_engines": return "Knock out their engines";
                 case "survive": return "Survive the storm";
                 case "collect": return $"Collect them all: {Encounter.PickupsTaken} of {Encounter.Pickups.Count}";
@@ -1697,8 +1819,7 @@ namespace Airships.Game
             if (focus == null) return;
             var hullShare = focus.Hull / focus.Loadout.Hull;
             enemyHull.Set(hullShare);
-            boardLine.gameObject.SetActive(focus.Boarding == BoardingRule.Main);
-            enemyHullText.text = focus.Boarding == BoardingRule.Main && Sim.IsBoardable(focus) ? "BOARD!" : $"{Mathf.CeilToInt(hullShare * 100f)}%";
+            enemyHullText.text = Sim.IsBoardable(focus) ? "BOARD!" : $"{Mathf.CeilToInt(hullShare * 100f)}%";
             PlaceAltitudeTick(enemyAltitudeTick, focus.Y);
             enemyParts.SetActive(ammoChoices.Count > 1); // Only special ammo can damage them.
             if (enemyParts.activeSelf)
@@ -1946,8 +2067,20 @@ namespace Airships.Game
             {
                 ended = true;
                 Resume();
+                SpendFreeSkiesKit();
                 director.RetreatToPort();
             });
+        }
+
+        // Story missions settle their repair kit when the mission records the fight. Free Skies does it here,
+        // however the fight ends: a kit that patched the hull is gone even if you retreat or lose.
+        void SpendFreeSkiesKit()
+        {
+            if (director.Run != null || kitSettled) return;
+            kitSettled = true;
+            var kits = director.Save.ItemCount("repair_kit");
+            Campaign.SpendRepairKit(director.Save, Encounter);
+            if (director.Save.ItemCount("repair_kit") != kits) director.SaveGame();
         }
 
         static void AddPauseButton(Transform parent, string label, float y, Color color, System.Action action)
