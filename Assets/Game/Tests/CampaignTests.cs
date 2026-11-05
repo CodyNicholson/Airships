@@ -2286,5 +2286,37 @@ namespace Airships.Tests
             run.FinishDeck(phase, battle.Party);
             return true;
         }
+
+        [Test]
+        public void VaneDressesForTheAct()
+        {
+            Assert.AreEqual("SK_Vane", content.LookAt("vane", 0).asset, "Prologue: the deckhand");
+            Assert.AreEqual("SK_Vane", content.LookAt("vane", 1).asset, "Act I: cast off");
+            Assert.AreEqual("SK_VaneCaptain", content.LookAt("vane", 2).asset, "Act II: a captain");
+            Assert.AreEqual("SK_VaneCaptain", content.LookAt("vane", 3).asset);
+            Assert.AreEqual("SK_VaneKing", content.LookAt("vane", 4).asset, "Act IV: King of All Pirates");
+            Assert.AreEqual("VaneKing", content.LookAt("vane", 4).portrait);
+            Assert.AreEqual("SK_Hask", content.LookAt("hask", 4).asset, "Looks without variants never change");
+            Assert.AreEqual("SK_Vane", content.Look("vane").asset, "With no story act wired up, the base look");
+        }
+
+        [Test]
+        public void StoryActFollowsTheNextStoryMission()
+        {
+            var save = Started();
+            Assert.AreEqual(0, Campaign.StoryAct(save, content));
+            foreach (var mission in content.campaign.missions)
+            {
+                if (mission.IsStory && mission.act < 2) save.campaign.completed.Add(mission.id);
+            }
+            Assert.AreEqual(2, Campaign.StoryAct(save, content));
+            content.storyAct = () => Campaign.StoryAct(save, content);
+            Assert.AreEqual("SK_VaneCaptain", content.Look("vane").asset);
+            foreach (var mission in content.campaign.missions)
+            {
+                if (mission.IsStory) save.campaign.completed.Add(mission.id);
+            }
+            Assert.AreEqual(4, Campaign.StoryAct(save, content), "Once the story is over, the last act");
+        }
     }
 }

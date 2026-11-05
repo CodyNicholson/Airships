@@ -112,7 +112,18 @@
       "SM_Prop_BigWrench",
       "SM_Prop_ArmadaHalberd",
       "SM_Prop_ShadowStaff",
-      "SM_Prop_DriftwoodLyre"
+      "SM_Prop_DriftwoodLyre",
+      "SM_Prop_LightningStaff",
+      "SM_Prop_Linstock",
+      "SM_Prop_BoneSaw",
+      "SM_Prop_ScrapCutlass",
+      "SM_Prop_CaptainCutlass",
+      "SM_Prop_KingCutlass",
+      "SM_Prop_SwordCane",
+      "SM_Prop_GildedRapier",
+      "SM_Prop_FleetCutlass",
+      "SM_Prop_RegulatorKey",
+      "SM_Prop_WeatherStaff"
     ],
     "weapon.L": [
       "SM_Prop_Cutlass",
@@ -127,19 +138,32 @@
       "SM_Prop_BigWrench",
       "SM_Prop_ArmadaHalberd",
       "SM_Prop_ShadowStaff",
-      "SM_Prop_DriftwoodLyre"
+      "SM_Prop_DriftwoodLyre",
+      "SM_Prop_LightningStaff",
+      "SM_Prop_Linstock",
+      "SM_Prop_BoneSaw",
+      "SM_Prop_ScrapCutlass",
+      "SM_Prop_CaptainCutlass",
+      "SM_Prop_KingCutlass",
+      "SM_Prop_SwordCane",
+      "SM_Prop_GildedRapier",
+      "SM_Prop_FleetCutlass",
+      "SM_Prop_RegulatorKey",
+      "SM_Prop_WeatherStaff"
     ],
     "gun.R": [
       "SM_Prop_Flintlock",
       "SM_Prop_DuelPistol",
       "SM_Prop_HandMortar",
-      "SM_Prop_ArmadaMusket"
+      "SM_Prop_ArmadaMusket",
+      "SM_Prop_Blunderbuss"
     ],
     "gun.L": [
       "SM_Prop_Flintlock",
       "SM_Prop_DuelPistol",
       "SM_Prop_HandMortar",
-      "SM_Prop_ArmadaMusket"
+      "SM_Prop_ArmadaMusket",
+      "SM_Prop_Blunderbuss"
     ]
   },
   "palette_atlases": {
@@ -2703,6 +2727,45 @@
         }
       }
     },
+    "Weapon_Blunderbuss": {
+      "source_model": "SM_Prop_Blunderbuss",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_Blunderbuss_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_Blunderbuss_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_BoneSaw": {
+      "source_model": "SM_Prop_BoneSaw",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_BoneSaw_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_BoneSaw_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_CaptainCutlass": {
+      "source_model": "SM_Prop_CaptainCutlass",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_CaptainCutlass_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_CaptainCutlass_LQ.png",
+          "size": 128
+        }
+      }
+    },
     "Weapon_Cutlass": {
       "source_model": "SM_Prop_Cutlass",
       "variants": {
@@ -2725,6 +2788,32 @@
         },
         "LQ": {
           "file": "T_Icon_Weapon_DuelPistol_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_FleetCutlass": {
+      "source_model": "SM_Prop_FleetCutlass",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_FleetCutlass_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_FleetCutlass_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_GildedRapier": {
+      "source_model": "SM_Prop_GildedRapier",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_GildedRapier_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_GildedRapier_LQ.png",
           "size": 128
         }
       }
@@ -2768,6 +2857,45 @@
         }
       }
     },
+    "Weapon_KingCutlass": {
+      "source_model": "SM_Prop_KingCutlass",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_KingCutlass_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_KingCutlass_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_LightningStaff": {
+      "source_model": "SM_Prop_LightningStaff",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_LightningStaff_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_LightningStaff_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_Linstock": {
+      "source_model": "SM_Prop_Linstock",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_Linstock_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_Linstock_LQ.png",
+          "size": 128
+        }
+      }
+    },
     "Weapon_Musket": {
       "source_model": "SM_Prop_ArmadaMusket",
       "variants": {
@@ -2777,6 +2905,19 @@
         },
         "LQ": {
           "file": "T_Icon_Weapon_Musket_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_RegulatorKey": {
+      "source_model": "SM_Prop_RegulatorKey",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_RegulatorKey_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_RegulatorKey_LQ.png",
           "size": 128
         }
       }
@@ -2807,6 +2948,32 @@
         }
       }
     },
+    "Weapon_ScrapCutlass": {
+      "source_model": "SM_Prop_ScrapCutlass",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_ScrapCutlass_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_ScrapCutlass_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_SwordCane": {
+      "source_model": "SM_Prop_SwordCane",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_SwordCane_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_SwordCane_LQ.png",
+          "size": 128
+        }
+      }
+    },
     "Weapon_TwinScimitar": {
       "source_model": "SM_Prop_TwinScimitar",
       "variants": {
@@ -2829,6 +2996,19 @@
         },
         "LQ": {
           "file": "T_Icon_Weapon_WardenFlail_LQ.png",
+          "size": 128
+        }
+      }
+    },
+    "Weapon_WeatherStaff": {
+      "source_model": "SM_Prop_WeatherStaff",
+      "variants": {
+        "HQ": {
+          "file": "T_Icon_Weapon_WeatherStaff_HQ.png",
+          "size": 256
+        },
+        "LQ": {
+          "file": "T_Icon_Weapon_WeatherStaff_LQ.png",
           "size": 128
         }
       }
@@ -8502,6 +8682,484 @@
       },
       "default_faction": "Sorcerer"
     },
+    "SM_Prop_LightningStaff": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 410
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 134
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.0088,
+            1.17,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0088,
+            1.78,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0179,
+            1.17,
+            -0.0022
+          ],
+          "trail_tip": [
+            -0.0179,
+            1.78,
+            -0.0022
+          ]
+        }
+      },
+      "default_faction": "Azure"
+    },
+    "SM_Prop_Linstock": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 284
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 116
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0012,
+            0.58,
+            0.0
+          ],
+          "muzzle": [
+            0.0618,
+            1.24,
+            0.006
+          ],
+          "trail_tip": [
+            -0.0012,
+            1.25,
+            0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0009,
+            0.58,
+            -0.0038
+          ],
+          "muzzle": [
+            0.0621,
+            1.24,
+            0.0022
+          ],
+          "trail_tip": [
+            -0.0009,
+            1.25,
+            -0.0038
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SM_Prop_BoneSaw": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 272
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 64
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0323,
+            0.07,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0777,
+            0.51,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.036,
+            0.07,
+            -0.0
+          ],
+          "trail_tip": [
+            0.074,
+            0.51,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Emerald"
+    },
+    "SM_Prop_ScrapCutlass": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 216
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 48
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0225,
+            0.1,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0775,
+            0.86,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0225,
+            0.1,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0775,
+            0.86,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SM_Prop_CaptainCutlass": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 188
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 76
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0253,
+            0.1142,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0747,
+            0.9042,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0259,
+            0.1142,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0741,
+            0.9042,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SM_Prop_KingCutlass": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 240
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 76
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0086,
+            0.1177,
+            -0.0
+          ],
+          "trail_tip": [
+            0.1014,
+            0.9877,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0272,
+            0.1177,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0828,
+            0.9877,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SM_Prop_SwordCane": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 208
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 92
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.0,
+            0.0996,
+            -0.0045
+          ],
+          "trail_tip": [
+            0.0,
+            0.9496,
+            -0.0045
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.0,
+            0.0977,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            0.9477,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Syndicate"
+    },
+    "SM_Prop_GildedRapier": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 244
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 76
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.0,
+            0.0888,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            1.0588,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.0,
+            0.0888,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            1.0588,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Emerald"
+    },
+    "SM_Prop_FleetCutlass": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 172
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 70
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0231,
+            0.0984,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0769,
+            0.8684,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0238,
+            0.0984,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0762,
+            0.8684,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SM_Prop_Blunderbuss": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 218
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 62
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            -0.0427,
+            0.1026,
+            -0.0
+          ],
+          "muzzle": [
+            0.0773,
+            0.6826,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            -0.0404,
+            0.1053,
+            -0.0067
+          ],
+          "muzzle": [
+            0.0796,
+            0.6853,
+            -0.0067
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SM_Prop_RegulatorKey": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 228
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 84
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.0,
+            0.4,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            1.12,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.0,
+            0.4,
+            -0.0
+          ],
+          "trail_tip": [
+            0.0,
+            1.12,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Emerald"
+    },
+    "SM_Prop_WeatherStaff": {
+      "variants": {
+        "HQ": {
+          "tier": "prop",
+          "tris": 240
+        },
+        "LQ": {
+          "tier": "prop_low",
+          "tris": 142
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "grip": [
+            0.02,
+            1.15,
+            -0.0
+          ],
+          "trail_tip": [
+            0.02,
+            1.89,
+            -0.0
+          ]
+        },
+        "LQ": {
+          "grip": [
+            0.02,
+            1.15,
+            -0.0
+          ],
+          "trail_tip": [
+            0.02,
+            1.89,
+            -0.0
+          ]
+        }
+      },
+      "default_faction": "Azure"
+    },
     "SM_Prop_DriftwoodLyre": {
       "variants": {
         "HQ": {
@@ -10646,49 +11304,148 @@
       "variants": {
         "HQ": {
           "tier": "hero",
-          "tris": 1872
+          "tris": 2992
         },
         "LQ": {
           "tier": "hero_low",
-          "tris": 564
+          "tris": 952
         }
       },
       "sockets": {
         "HQ": {
           "chest_centre": [
-            -0.032,
+            0.0,
             1.2,
-            0.0692
+            0.0247
           ],
           "head_top": [
-            -0.032,
+            0.0,
             1.85,
-            0.0692
+            0.0247
           ],
           "portrait_look_at": [
-            -0.032,
+            0.0,
             1.56,
-            0.0692
+            0.0247
           ]
         },
         "LQ": {
           "chest_centre": [
-            -0.0191,
+            0.0,
             1.2,
-            0.0926
+            0.0469
           ],
           "head_top": [
-            -0.0191,
+            0.0,
             1.85,
-            0.0926
+            0.0469
           ],
           "portrait_look_at": [
-            -0.0191,
+            0.0,
             1.56,
-            0.0926
+            0.0469
           ]
         }
-      }
+      },
+      "default_faction": "Crimson"
+    },
+    "SK_VaneCaptain": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3252
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 908
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            0.0247
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            0.0247
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.56,
+            0.0247
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            0.0336
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            0.0336
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.56,
+            0.0336
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SK_VaneKing": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3924
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1234
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0089
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0089
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.56,
+            -0.0089
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            0.0291
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            0.0291
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.56,
+            0.0291
+          ]
+        }
+      },
+      "default_faction": "Crimson"
     },
     "SK_CassianPirate": {
       "variants": {
@@ -11030,6 +11787,496 @@
         }
       },
       "default_faction": "Bosun"
+    },
+    "SK_Ivo": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3338
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 836
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            -0.0073,
+            1.104,
+            0.013
+          ],
+          "head_top": [
+            -0.0073,
+            1.702,
+            0.013
+          ],
+          "portrait_look_at": [
+            -0.0073,
+            1.4352,
+            0.013
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            -0.0115,
+            1.104,
+            0.0303
+          ],
+          "head_top": [
+            -0.0115,
+            1.702,
+            0.0303
+          ],
+          "portrait_look_at": [
+            -0.0115,
+            1.4352,
+            0.0303
+          ]
+        }
+      },
+      "default_faction": "Azure"
+    },
+    "SK_Hask": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 4028
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1062
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0068,
+            1.272,
+            -0.0152
+          ],
+          "head_top": [
+            0.0068,
+            1.961,
+            -0.0152
+          ],
+          "portrait_look_at": [
+            0.0068,
+            1.6536,
+            -0.0152
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.272,
+            -0.0231
+          ],
+          "head_top": [
+            0.0,
+            1.961,
+            -0.0231
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.6536,
+            -0.0231
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SK_Wren": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3190
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 788
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.32,
+            -0.0164
+          ],
+          "head_top": [
+            0.0,
+            2.035,
+            -0.0164
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.716,
+            -0.0164
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.32,
+            -0.0318
+          ],
+          "head_top": [
+            0.0,
+            2.035,
+            -0.0318
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.716,
+            -0.0318
+          ]
+        }
+      },
+      "default_faction": "Emerald"
+    },
+    "SK_Gorse": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3522
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1123
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.14,
+            -0.0383
+          ],
+          "head_top": [
+            0.0,
+            1.7575,
+            -0.0383
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.482,
+            -0.0383
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.14,
+            -0.0309
+          ],
+          "head_top": [
+            0.0,
+            1.7575,
+            -0.0309
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.482,
+            -0.0309
+          ]
+        }
+      },
+      "default_faction": "Scrap"
+    },
+    "SK_Ashgrave": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3096
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1100
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.3244,
+            0.0177
+          ],
+          "head_top": [
+            0.0,
+            2.0394,
+            0.0177
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.7204,
+            0.0177
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.3244,
+            0.0152
+          ],
+          "head_top": [
+            0.0,
+            2.0394,
+            0.0152
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.7204,
+            0.0152
+          ]
+        }
+      },
+      "default_faction": "Syndicate"
+    },
+    "SK_Thrace": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3352
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1198
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            -0.0389,
+            1.272,
+            0.0164
+          ],
+          "head_top": [
+            -0.0389,
+            1.961,
+            0.0164
+          ],
+          "portrait_look_at": [
+            -0.0389,
+            1.6536,
+            0.0164
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            -0.0407,
+            1.272,
+            0.0265
+          ],
+          "head_top": [
+            -0.0407,
+            1.961,
+            0.0265
+          ],
+          "portrait_look_at": [
+            -0.0407,
+            1.6536,
+            0.0265
+          ]
+        }
+      },
+      "default_faction": "Emerald"
+    },
+    "SK_Ria": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 2880
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 894
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.128,
+            -0.0031
+          ],
+          "head_top": [
+            0.0,
+            1.739,
+            -0.0031
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.4664,
+            -0.0031
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.128,
+            0.0073
+          ],
+          "head_top": [
+            0.0,
+            1.739,
+            0.0073
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.4664,
+            0.0073
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SK_Mirren": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3824
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1094
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.176,
+            0.0186
+          ],
+          "head_top": [
+            0.0,
+            1.813,
+            0.0186
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.5288,
+            0.0186
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.176,
+            0.0217
+          ],
+          "head_top": [
+            0.0,
+            1.813,
+            0.0217
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.5288,
+            0.0217
+          ]
+        }
+      },
+      "default_faction": "Crimson"
+    },
+    "SK_Odessa": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3016
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 992
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0038
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0038
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.56,
+            -0.0038
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.2,
+            -0.0025
+          ],
+          "head_top": [
+            0.0,
+            1.85,
+            -0.0025
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.56,
+            -0.0025
+          ]
+        }
+      },
+      "default_faction": "Emerald"
+    },
+    "SK_Tobin": {
+      "variants": {
+        "HQ": {
+          "tier": "hero",
+          "tris": 3020
+        },
+        "LQ": {
+          "tier": "hero_low",
+          "tris": 1086
+        }
+      },
+      "sockets": {
+        "HQ": {
+          "chest_centre": [
+            0.0,
+            1.296,
+            0.0216
+          ],
+          "head_top": [
+            0.0,
+            1.998,
+            0.0216
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.6848,
+            0.0216
+          ]
+        },
+        "LQ": {
+          "chest_centre": [
+            0.0,
+            1.296,
+            0.0216
+          ],
+          "head_top": [
+            0.0,
+            1.998,
+            0.0216
+          ],
+          "portrait_look_at": [
+            0.0,
+            1.6848,
+            0.0216
+          ]
+        }
+      },
+      "default_faction": "Azure"
     },
     "SK_Thorne": {
       "variants": {

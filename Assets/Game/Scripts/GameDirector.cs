@@ -76,6 +76,8 @@ namespace Airships.Game
             Content = JsonUtility.FromJson<GameContent>(Resources.Load<TextAsset>("game_content").text);
             Content.campaign = JsonUtility.FromJson<CampaignDef>(Resources.Load<TextAsset>("campaign_content").text);
             Save = SaveStore.Load(Content);
+            // Characters dress for the act being played, or, between missions, for how far the story has got.
+            Content.storyAct = () => Run != null ? Run.Mission.act : Campaign.StoryAct(Save, Content);
 
             GameTime.Reset();
             Stage = WorldStage.Create();

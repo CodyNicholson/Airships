@@ -89,6 +89,9 @@ namespace Airships.Core
         public string gunL;
         public string portrait;
         public string companion; // A model that goes everywhere this character goes.
+        // An alternate look for a character as the story goes on: replaces the look named here from story act fromAct.
+        public string variantOf;
+        public int fromAct;
     }
 
     // Used from a deck battle's menu. Bought in port or found as loot.
@@ -398,6 +401,9 @@ namespace Airships.Core
         // Loaded from its own file, because story and mission data is far larger than balance data.
         [NonSerialized] public CampaignDef campaign;
 
+        // The story act the game is in right now, for looks that change as the story goes on. Set by the director.
+        [NonSerialized] public Func<int> storyAct;
+
         public ClassDef Class(string id) => Find(classes, c => c.id == id, id);
         public SkillDef Skill(string id) => Find(skills, s => s.id == id, id);
         public CannonDef Cannon(string id) => Find(cannons, c => c.id == id, id);
@@ -408,7 +414,19 @@ namespace Airships.Core
         public ModuleDef Module(string id) => Find(modules, m => m.id == id, id);
         public WeatherDef Weather(string id) => Find(weathers, w => w.id == id, id);
         public CrewDef Crew(string id) => Find(crew, c => c.id == id, id);
-        public LookDef Look(string id) => Array.Find(looks ?? new LookDef[0], l => l.id == id);
+        public LookDef Look(string id) => LookAt(id, storyAct != null ? storyAct() : 0);
+
+        // A look as it is in a given story act: its latest variant that has begun by then, else the look itself.
+        public LookDef LookAt(string id, int act)
+        {
+            var all = looks ?? new LookDef[0];
+            var best = Array.Find(all, l => l.id == id);
+            foreach (var look in all)
+            {
+                if (look.variantOf == id && look.fromAct <= act && (best == null || look.fromAct > best.fromAct)) best = look;
+            }
+            return best;
+        }
         public ItemDef Item(string id) => Find(items, i => i.id == id, id);
 
         static T Find<T>(T[] items, Predicate<T> match, string id)

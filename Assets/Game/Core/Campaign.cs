@@ -64,7 +64,7 @@ namespace Airships.Core
 
         // TESTING: every story chapter can be started from the Voyage Log at any time, from the very first launch.
         // Set to false before release, and the log goes back to unlocking chapters as they're played.
-        public static bool AllChaptersUnlocked = true;
+        public static bool AllChaptersUnlocked = false;
 
         public static bool IsDone(SaveData save, string missionId) => save.campaign.completed.Contains(missionId);
         public static bool HasMechanic(SaveData save, string mechanic) => save.campaign.mechanics.Contains(mechanic);
@@ -106,6 +106,19 @@ namespace Airships.Core
                 if (mission.IsStory && !IsDone(save, mission.id)) return mission;
             }
             return null;
+        }
+
+        // The act the story has reached: the next unfinished story mission's, or the last act once it's all done.
+        public static int StoryAct(SaveData save, GameContent content)
+        {
+            var next = NextStoryMission(save, content);
+            if (next != null) return next.act;
+            var last = 0;
+            foreach (var mission in content.campaign.missions)
+            {
+                if (mission.IsStory) last = Math.Max(last, mission.act);
+            }
+            return last;
         }
 
         // Brings a save up to the start of a story mission, as though every story mission before it had been played:
